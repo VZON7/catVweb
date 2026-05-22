@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ Scrollytelling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════════════════════
+   RESET & TOKENS
+═══════════════════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --lavender : #eae8f5;
+  --dark     : #2d2b3d;
+  --mid      : #5a5870;
+  --pink     : #FF3F6C;
+  --purple   : #7B68EE;
+  --cyan     : #42C6FF;
+}
+
+html { scroll-behavior: auto; }
+
+body {
+  overflow-x: hidden;
+  background: var(--lavender);
+  min-height: 400vh; /* overwritten by JS once video loads */
+}
+
+/* ═══════════════════════════════════════════════════════
+   VIDEO LAYER  –  position:fixed, full-bleed
+═══════════════════════════════════════════════════════ */
+.vid-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.vid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* 0.5 s fade between phases */
+  transition: opacity 0.5s ease;
+}
+
+#vIntro { opacity: 1; }
+#vMain  { opacity: 0; }
+#vOutro { opacity: 0; }
+
+/* ═══════════════════════════════════════════════════════
+   GRADIENT OVERLAY  –  fades left-side text background
+═══════════════════════════════════════════════════════ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    108deg,
+    rgba(234,232,245,.76)  0%,
+    rgba(234,232,245,.35) 42%,
+    rgba(234,232,245,.04) 74%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   DECORATIVE BLOBS
+═══════════════════════════════════════════════════════ */
+.blobs {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(58px);
+  opacity: .22;
+}
+.b1 {
+  width: 270px; height: 270px;
+  background: var(--pink);
+  top: -80px; left: -75px;
+  animation: bfloat 7s ease-in-out infinite;
+}
+.b2 {
+  width: 190px; height: 190px;
+  background: var(--purple);
+  bottom: 70px; left: -45px;
+  animation: bfloat 9s ease-in-out infinite reverse;
+}
+.b3 {
+  width: 145px; height: 145px;
+  background: var(--cyan);
+  top: 36%; left: 23%;
+  opacity: .16;
+  animation: bfloat 11s ease-in-out infinite;
+}
+@keyframes bfloat {
+  0%,100% { transform: translateY(0)    scale(1);    }
+  50%      { transform: translateY(-26px) scale(1.06); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   DECORATIVE SPINNING STARS
+═══════════════════════════════════════════════════════ */
+.dstar {
+  position: fixed;
+  z-index: 2;
+  pointer-events: none;
+}
+.dstar svg { width: 100%; height: 100%; }
+
+.ds1 { top: 9%;  left: 5%;  width: 38px; height: 38px;
+       animation: starspin 14s linear infinite; }
+.ds2 { top: 70%; left: 2%;  width: 25px; height: 25px; opacity: .6;
+       animation: starspin 10s linear infinite reverse; }
+.ds3 { top: 87%; left: 56%; width: 19px; height: 19px; opacity: .45;
+       animation: starspin 18s linear infinite; }
+
+@keyframes starspin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════
+   RAINBOW PROGRESS BAR
+═══════════════════════════════════════════════════════ */
+#progressBar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--pink), var(--purple), var(--cyan));
+  z-index: 100;
+  transition: width .08s linear;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TEXT LAYER
+═══════════════════════════════════════════════════════ */
+.text-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+/* Individual scene card */
+.scene {
+  position: absolute;
+  left: clamp(28px, 8vw, 110px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(500px, 88vw);
+  opacity: 0;
+  transition: opacity .6s ease;
+  will-change: opacity;
+}
+.scene.active { opacity: 1; }
+
+/* ── Chip tag ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+  background: var(--pink);
+  color: #fff;
+}
+.chip.alt  { background: var(--purple); }
+.chip.alt2 { background: var(--cyan); color: var(--dark); }
+
+/* ── Headline (Lilita One = reference "Heya! I'm Dani!" weight) ── */
+.hl {
+  font-family: 'Lilita One', cursive;
+  font-size: clamp(50px, 6.8vw, 90px);
+  line-height: 1.04;
+  color: var(--dark);
+  margin-bottom: 14px;
+}
+.hl .ap  { color: var(--pink);   }
+.hl .ap2 { color: var(--purple); }
+
+/* ── Sub-copy ── */
+.sub {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: clamp(14px, 1.6vw, 18px);
+  color: var(--mid);
+  line-height: 1.68;
+  max-width: 390px;
+  margin-bottom: 26px;
+}
+
+/* ── Tiny animated stars row (intro) ── */
+.tstars { display: flex; gap: 7px; margin-top: 6px; }
+.ts {
+  font-size: 17px;
+  animation: tspulse 2s ease-in-out infinite;
+}
+@keyframes tspulse {
+  0%,100% { transform: scale(1);    opacity: 1; }
+  50%      { transform: scale(1.3); opacity: .7; }
+}
+
+/* ── CTA buttons (reference: filled + dashed outline) ── */
+.ctas {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  pointer-events: all;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 22px;
+  border-radius: 999px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform .16s ease, box-shadow .16s ease;
+  white-space: nowrap;
+}
+.btn:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,.14); }
+
+.btn-fill {
+  background: var(--pink);
+  color: #fff;
+  border: 2px solid var(--pink);
+}
+.btn-dash {
+  background: rgba(255,255,255,.65);
+  backdrop-filter: blur(8px);
+  color: var(--dark);
+  border: 2.5px dashed var(--dark);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCROLL HINT
+═══════════════════════════════════════════════════════ */
+#scrollHint {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  text-align: center;
+  transition: opacity .5s ease;
+}
+#scrollHint p {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--mid);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  margin-bottom: 7px;
+}
+.s-arrow {
+  width: 20px; height: 20px;
+  margin: 0 auto;
+  border-right: 2.5px solid var(--mid);
+  border-bottom: 2.5px solid var(--mid);
+  transform: rotate(45deg);
+  animation: sarrow 1.5s ease-in-out infinite;
+}
+@keyframes sarrow {
+  0%,100% { transform: rotate(45deg) translateY(0);   }
+  50%      { transform: rotate(45deg) translateY(5px); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* On mobile the full overlay covers the background for readability */
+  .overlay { background: rgba(234,232,245,.55); }
+  .b1, .b3 { display: none; }
+}
+@media (max-width: 480px) {
+  .hl { font-size: clamp(40px, 11vw, 56px); }
+  .ctas { flex-direction: column; }
+  .btn { justify-content: center; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ── Progress bar ──────────────────────────────────── -->
+<div id="progressBar"></div>
+
+<!-- ── Decorative blobs ──────────────────────────────── -->
+<div class="blobs">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+
+<!-- ── Spinning star decorations ─────────────────────── -->
+<div class="dstar ds1">
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M12 2l2.09 6.26H21l-5.47 3.97 2.09 6.26L12 14.52l-5.62 3.97 2.09-6.26L3 8.26h6.91z" fill="#FF3F6C"/>
+  </svg>
+</div>
+<div class="dstar ds2">
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M12 2l2.09 6.26H21l-5.47 3.97 2.09 6.26L12 14.52l-5.62 3.97 2.09-6.26L3 8.26h6.91z" fill="#7B68EE"/>
+  </svg>
+</div>
+<div class="dstar ds3">
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M12 2l2.09 6.26H21l-5.47 3.97 2.09 6.26L12 14.52l-5.62 3.97 2.09-6.26L3 8.26h6.91z" fill="#42C6FF"/>
+  </svg>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     THREE VIDEOS  (all: muted + playsinline + preload)
+     intro / outro = autoplay loop
+     main          = seek-only, no autoplay
+══════════════════════════════════════════════════════ -->
+<div class="vid-wrap">
+  <video id="vIntro" class="vid"
+         loop muted autoplay playsinline preload="auto">
+    <source src="intro-loop.mp4" type="video/mp4">
+  </video>
+  <video id="vMain" class="vid"
+         muted playsinline preload="auto">
+    <source src="main.mp4" type="video/mp4">
+  </video>
+  <video id="vOutro" class="vid"
+         loop muted autoplay playsinline preload="auto">
+    <source src="outro-loop.mp4" type="video/mp4">
+  </video>
+</div>
+
+<!-- ── Gradient overlay ──────────────────────────────── -->
+<div class="overlay"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     TEXT SCENES
+══════════════════════════════════════════════════════ -->
+<div class="text-layer">
+
+  <!-- ❶ INTRO — shown at scroll progress ≈ 0 -->
+  <div class="scene active" id="s-intro">
+    <span class="chip">✦ 今天也很可爱</span>
+    <h1 class="hl">
+      嘿，<br>
+      <span class="ap">来看这里！</span>
+    </h1>
+    <p class="sub">慢慢向下滚动，和她一起度过这一天。</p>
+    <div class="tstars">
+      <span class="ts" style="color:var(--pink);  animation-delay:0s">★</span>
+      <span class="ts" style="color:var(--purple);animation-delay:.35s">★</span>
+      <span class="ts" style="color:var(--cyan);  animation-delay:.7s">★</span>
+    </div>
+  </div>
+
+  <!-- ❷ SCENE 1 — main 0–20%
+       时间区间：main.mp4 起始至约20%时长
+       情绪：蛰伏前的微妙动感 -->
+  <div class="scene" id="s-1">
+    <span class="chip alt2">01 · 萌动</span>
+    <h1 class="hl">
+      有什么，<br>
+      <span class="ap">悄悄靠近了</span>
+    </h1>
+    <p class="sub">身体里有一股力量，想要伸展出去——</p>
+  </div>
+
+  <!-- ❸ SCENE 2 — main 20–40%
+       时间区间：约20%–40%时长
+       情绪：空间感打开，自由的前奏 -->
+  <div class="scene" id="s-2">
+    <span class="chip">02 · 舒展</span>
+    <h1 class="hl">
+      整个宇宙<br>
+      <span class="ap2">为我让开</span>
+    </h1>
+    <p class="sub">这一刻，空间向四面八方无限延伸。</p>
+  </div>
+
+  <!-- ❹ SCENE 3 — main 40–60%
+       时间区间：约40%–60%时长
+       情绪：高潮，全身舒展到极限 -->
+  <div class="scene" id="s-3">
+    <span class="chip alt">03 · 顶点</span>
+    <h1 class="hl">
+      <span class="ap">啊——！</span><br>
+      就是现在
+    </h1>
+    <p class="sub">全身的细胞都在欢呼，这才是活着的感觉。</p>
+  </div>
+
+  <!-- ❺ SCENE 4 — main 60–80%
+       时间区间：约60%–80%时长
+       情绪：力气回流，温柔落地 -->
+  <div class="scene" id="s-4">
+    <span class="chip alt2">04 · 回落</span>
+    <h1 class="hl">
+      慢慢地，<br>
+      <span class="ap2">重新落地</span>
+    </h1>
+    <p class="sub">刚才的力气，流进了每一根毛发里。</p>
+  </div>
+
+  <!-- ❻ SCENE 5 — main 80–95%
+       时间区间：约80%至结尾
+       情绪：满足，圆满 -->
+  <div class="scene" id="s-5">
+    <span class="chip">05 · 圆满</span>
+    <h1 class="hl">
+      嗯，<br>
+      <span class="ap">刚刚好</span>
+    </h1>
+    <p class="sub">伸完这一个懒腰，今天也是完整的一天。</p>
+  </div>
+
+  <!-- ❼ OUTRO — shown at scroll progress ≥ 0.95
+       outro-loop 自动循环，文案收尾 + CTA -->
+  <div class="scene" id="s-outro">
+    <span class="chip alt">✦ 明天见</span>
+    <h1 class="hl">
+      明天还是<br>
+      <span class="ap2">会再来的</span>
+    </h1>
+    <p class="sub">
+      阳光、懒腰、刚刚好的温度。<br>
+      每一天都是礼物。
+    </p>
+    <div class="ctas">
+      <a href="#" class="btn btn-fill" id="btnReplay">
+        <!-- replay icon -->
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8
+                   c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6
+                   s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+                fill="currentColor"/>
+        </svg>
+        再看一遍
+      </a>
+      <a href="#" class="btn btn-dash">
+        <!-- play icon -->
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z
+                   m-2 14.5v-9l6 4.5-6 4.5z"
+                fill="currentColor"/>
+        </svg>
+        看看更多
+      </a>
+    </div>
+  </div>
+
+</div><!-- end .text-layer -->
+
+<!-- ── Scroll hint ────────────────────────────────────── -->
+<div id="scrollHint">
+  <p>向下滚动</p>
+  <div class="s-arrow"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SCROLLYTELLING ENGINE  –  pure vanilla JS, no deps
+══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ── DOM refs ───────────────────────────────────────── */
+const vIntro = document.getElementById('vIntro');
+const vMain  = document.getElementById('vMain');
+const vOutro = document.getElementById('vOutro');
+const pBar   = document.getElementById('progressBar');
+const hint   = document.getElementById('scrollHint');
+
+const SCENES = {
+  intro : document.getElementById('s-intro'),
+  s1    : document.getElementById('s-1'),
+  s2    : document.getElementById('s-2'),
+  s3    : document.getElementById('s-3'),
+  s4    : document.getElementById('s-4'),
+  s5    : document.getElementById('s-5'),
+  outro : document.getElementById('s-outro'),
+};
+
+/* ── Config ─────────────────────────────────────────── */
+// Fraction of total scroll reserved for intro / outro loops
+const INTRO_FRAC = 0.05;
+const OUTRO_FRAC = 0.95;
+// Lerp smoothing for video seek (0 = no smooth, 1 = instant)
+const LERP = 0.22;
+
+/* ── State ──────────────────────────────────────────── */
+let mainDuration = 0;
+let targetTime   = 0;
+let currentTime  = 0;
+let curPhase     = 'init';  // 'intro' | 'main' | 'outro'
+let curScene     = '';
+let ready        = false;
+
+/* ════════════════════════════════════════════════════
+   PAGE HEIGHT
+   Total body height = main.duration × 100vh
+   This gives ~1 vh of scroll per second of video.
+════════════════════════════════════════════════════ */
+function setPageHeight () {
+  const h = mainDuration * window.innerHeight;
+  document.body.style.height = Math.max(h, window.innerHeight * 4) + 'px';
+}
+
+vMain.addEventListener('loadedmetadata', () => {
+  mainDuration = vMain.duration;
+  setPageHeight();
+  ready = true;
+  render();
+});
+
+// Fallback: proceed even if video metadata never fires (e.g. file missing)
+setTimeout(() => {
+  if (!ready) {
+    mainDuration = mainDuration || 8;
+    setPageHeight();
+    ready = true;
+    render();
+  }
+}, 3000);
+
+window.addEventListener('resize', () => { if (ready) setPageHeight(); }, { passive: true });
+
+/* ════════════════════════════════════════════════════
+   SCROLL PROGRESS  →  0 … 1
+════════════════════════════════════════════════════ */
+function getScrollP () {
+  const maxScroll = document.body.scrollHeight - window.innerHeight;
+  return maxScroll > 0 ? Math.min(window.scrollY / maxScroll, 1) : 0;
+}
+
+/* ════════════════════════════════════════════════════
+   DERIVE PHASE + SCENE + mainProgress FROM p
+════════════════════════════════════════════════════ */
+function calcState (p) {
+  if (p < INTRO_FRAC) {
+    return { phase: 'intro', scene: 'intro', mainP: 0 };
+  }
+  if (p >= OUTRO_FRAC) {
+    return { phase: 'outro', scene: 'outro', mainP: 1 };
+  }
+  // Map [INTRO_FRAC … OUTRO_FRAC] → [0 … 1]
+  const mainP = (p - INTRO_FRAC) / (OUTRO_FRAC - INTRO_FRAC);
+  let scene;
+  if      (mainP < 0.20) scene = 's1';
+  else if (mainP < 0.40) scene = 's2';
+  else if (mainP < 0.60) scene = 's3';
+  else if (mainP < 0.80) scene = 's4';
+  else                   scene = 's5';
+  return { phase: 'main', scene, mainP };
+}
+
+/* ════════════════════════════════════════════════════
+   VIDEO PHASE SWITCHING
+   opacity transitions handled by CSS (0.5 s ease)
+════════════════════════════════════════════════════ */
+function setPhase (phase) {
+  if (phase === curPhase) return;
+  curPhase = phase;
+
+  if (phase === 'intro') {
+    vIntro.style.opacity = '1';
+    vMain.style.opacity  = '0';
+    vOutro.style.opacity = '0';
+    vIntro.play().catch(() => {});
+    vOutro.pause();
+  } else if (phase === 'main') {
+    vIntro.style.opacity = '0';
+    vMain.style.opacity  = '1';
+    vOutro.style.opacity = '0';
+    vIntro.pause();
+    vOutro.pause();
+    // Main is seek-only — make sure it never plays on its own
+    if (!vMain.paused) vMain.pause();
+  } else { // 'outro'
+    vIntro.style.opacity = '0';
+    vMain.style.opacity  = '0';
+    vOutro.style.opacity = '1';
+    vIntro.pause();
+    vOutro.play().catch(() => {});
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   TEXT SCENE SWITCHING  (toggle .active → CSS opacity)
+════════════════════════════════════════════════════ */
+function setScene (name) {
+  if (name === curScene) return;
+  curScene = name;
+  for (const [key, el] of Object.entries(SCENES)) {
+    el.classList.toggle('active', key === name);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   RAF SMOOTH SEEK LOOP
+   Runs every frame; lerps currentTime → targetTime
+   and writes to vMain.currentTime only when in main phase.
+════════════════════════════════════════════════════ */
+function rafSeek () {
+  if (curPhase === 'main' && mainDuration > 0) {
+    const diff = targetTime - currentTime;
+    if (Math.abs(diff) > 0.001) {
+      currentTime += diff * LERP;
+      if (vMain.readyState >= 2) {
+        try { vMain.currentTime = currentTime; } catch (_) {}
+      }
+    }
+  }
+  requestAnimationFrame(rafSeek);
+}
+requestAnimationFrame(rafSeek);
+
+/* ════════════════════════════════════════════════════
+   MAIN RENDER  –  called on scroll + resize
+════════════════════════════════════════════════════ */
+function render () {
+  const p = getScrollP();
+  const { phase, scene, mainP } = calcState(p);
+
+  // Progress bar
+  pBar.style.width = (p * 100).toFixed(2) + '%';
+
+  // Scroll hint fades out as soon as user starts scrolling
+  hint.style.opacity = window.scrollY < 50 ? '1' : '0';
+
+  setPhase(phase);
+  setScene(scene);
+
+  // Update seek target for the RAF loop
+  if (phase === 'main') {
+    targetTime = mainP * mainDuration;
+  }
+}
+
+/* ── Event listeners ────────────────────────────────── */
+window.addEventListener('scroll', () => { if (ready) render(); }, { passive: true });
+
+/* ── "Replay" CTA button ──────────────────────────────── */
+document.getElementById('btnReplay').addEventListener('click', (e) => {
+  e.preventDefault();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ── Initial paint ─────────────────────────────────────── */
+requestAnimationFrame(() => { if (ready) render(); });
+</script>
+</body>
+</html>
