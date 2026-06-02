@@ -6,7 +6,7 @@
 <title>✦ Scrollytelling</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <style>
 
 /* ═══════════════════════════════════════════════════════
@@ -23,12 +23,25 @@
   --cyan     : #42C6FF;
 }
 
-html { scroll-behavior: auto; }
+html {
+  /* One scroll = one full page snap */
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100%;
+}
 
 body {
   overflow-x: hidden;
   background: var(--lavender);
-  min-height: 400vh; /* overwritten by JS once video loads */
+}
+
+/* ═══════════════════════════════════════════════════════
+   SNAP SECTIONS  –  invisible full-screen page triggers
+═══════════════════════════════════════════════════════ */
+.snap-section {
+  height: 100vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always; /* never skip a section */
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -154,13 +167,13 @@ body {
   align-items: center;
 }
 
-/* Individual scene card */
+/* Individual scene card – transparent, floats directly on video */
 .scene {
   position: absolute;
-  left: clamp(28px, 8vw, 110px);
+  left: 8%;
   top: 50%;
   transform: translateY(-50%);
-  width: min(500px, 88vw);
+  width: min(460px, 78vw);
   opacity: 0;
   transition: opacity .6s ease;
   will-change: opacity;
@@ -171,41 +184,43 @@ body {
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 900;
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
+  font-family: 'ZCOOL XiaoWei', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  letter-spacing: .03em;
   padding: 5px 14px;
-  border-radius: 20px;
-  margin-bottom: 14px;
-  background: var(--pink);
+  border-radius: 999px;
+  margin-bottom: 20px;
+  background: #737CA1;
   color: #fff;
 }
-.chip.alt  { background: var(--purple); }
-.chip.alt2 { background: var(--cyan); color: var(--dark); }
+.chip.alt  { background: #737CA1; }
+.chip.alt2 { background: #737CA1; color: #fff; }
 
-/* ── Headline (Lilita One = reference "Heya! I'm Dani!" weight) ── */
+/* ── Headline ── */
 .hl {
-  font-family: 'Lilita One', cursive;
-  font-size: clamp(50px, 6.8vw, 90px);
-  line-height: 1.04;
-  color: var(--dark);
-  margin-bottom: 14px;
+  font-family: 'ZCOOL KuaiLe', cursive;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.18;
+  color: #413839;
+  margin-bottom: 20px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  text-shadow: 0 1px 8px rgba(255,255,255,0.6);
 }
-.hl .ap  { color: var(--pink);   }
-.hl .ap2 { color: var(--purple); }
+.hl .ap, .hl .ap2 { color: #413839; }
+.sub .ap, .sub .ap2 { color: #4D4D4F; }
 
 /* ── Sub-copy ── */
 .sub {
-  font-family: 'Nunito', sans-serif;
-  font-weight: 600;
-  font-size: clamp(14px, 1.6vw, 18px);
-  color: var(--mid);
-  line-height: 1.68;
-  max-width: 390px;
+  font-family: 'ZCOOL XiaoWei', sans-serif;
+  font-weight: 400;
+  font-size: 1.2rem;
+  color: #4D4D4F;
+  line-height: 1.72;
+  max-width: 360px;
   margin-bottom: 26px;
+  text-shadow: 0 1px 8px rgba(255,255,255,0.6);
 }
 
 /* ── Tiny animated stars row (intro) ── */
@@ -297,12 +312,13 @@ body {
   .b1, .b3 { display: none; }
 }
 @media (max-width: 480px) {
-  .hl { font-size: clamp(40px, 11vw, 56px); }
+  .scene { left: 5%; width: 88vw; padding: 28px 24px; }
   .ctas { flex-direction: column; }
   .btn { justify-content: center; }
 }
-
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 </head>
 <body>
 
@@ -365,10 +381,10 @@ body {
   <div class="scene active" id="s-intro">
     <span class="chip">✦ 今天也很可爱</span>
     <h1 class="hl">
-      嘿，<br>
-      <span class="ap">来看这里！</span>
+      Halo,<br>
+      <span class="ap">早安午安晚安</span>
     </h1>
-    <p class="sub">慢慢向下滚动，和她一起度过这一天。</p>
+    <p class="sub">不知道你在那里是白天还是黑夜，但是我一直都很想你。</p>
     <div class="tstars">
       <span class="ts" style="color:var(--pink);  animation-delay:0s">★</span>
       <span class="ts" style="color:var(--purple);animation-delay:.35s">★</span>
@@ -380,60 +396,58 @@ body {
        时间区间：main.mp4 起始至约20%时长
        情绪：蛰伏前的微妙动感 -->
   <div class="scene" id="s-1">
-    <span class="chip alt2">01 · 萌动</span>
+    <span class="chip alt2">· 在呢 ·</span>
     <h1 class="hl">
-      有什么，<br>
-      <span class="ap">悄悄靠近了</span>
+      今天你在上课<br>
+      <span class="ap">还是在打游戏？</span>
     </h1>
-    <p class="sub">身体里有一股力量，想要伸展出去——</p>
+    <p class="sub">不管你在干嘛，我都会一直陪你的。</p>
   </div>
 
   <!-- ❸ SCENE 2 — main 20–40%
        时间区间：约20%–40%时长
        情绪：空间感打开，自由的前奏 -->
   <div class="scene" id="s-2">
-    <span class="chip">02 · 舒展</span>
+    <span class="chip">· 抓包了 ·</span>
     <h1 class="hl">
-      整个宇宙<br>
-      <span class="ap2">为我让开</span>
+      别以为我没注意，<br>
+      <span class="ap2">你刚才分心看我了。</span>
     </h1>
-    <p class="sub">这一刻，空间向四面八方无限延伸。</p>
+    <p class="sub">嗯...</p>
   </div>
 
   <!-- ❹ SCENE 3 — main 40–60%
        时间区间：约40%–60%时长
        情绪：高潮，全身舒展到极限 -->
   <div class="scene" id="s-3">
-    <span class="chip alt">03 · 顶点</span>
+    <span class="chip alt">· 伸懒腰 ·</span>
     <h1 class="hl">
-      <span class="ap">啊——！</span><br>
-      就是现在
+      伸个懒腰，<span class="ap">卖卖萌，</span>
     </h1>
-    <p class="sub">全身的细胞都在欢呼，这才是活着的感觉。</p>
+    <p class="sub">因为每次我伸懒腰你就会看着我笑。</p>
   </div>
 
   <!-- ❺ SCENE 4 — main 60–80%
        时间区间：约60%–80%时长
        情绪：力气回流，温柔落地 -->
   <div class="scene" id="s-4">
-    <span class="chip alt2">04 · 回落</span>
+    <span class="chip alt2">· 本来就可爱 ·</span>
     <h1 class="hl">
-      慢慢地，<br>
-      <span class="ap2">重新落地</span>
+      你一定觉得<br>
+      <span class="ap2">我很可爱，</span>
     </h1>
-    <p class="sub">刚才的力气，流进了每一根毛发里。</p>
+    <p class="sub">因为我也这样觉得。</p>
   </div>
 
   <!-- ❻ SCENE 5 — main 80–95%
        时间区间：约80%至结尾
        情绪：满足，圆满 -->
   <div class="scene" id="s-5">
-    <span class="chip">05 · 圆满</span>
+    <span class="chip">· 求摸摸 ·</span>
     <h1 class="hl">
-      嗯，<br>
-      <span class="ap">刚刚好</span>
+      有点无聊。。。
     </h1>
-    <p class="sub">伸完这一个懒腰，今天也是完整的一天。</p>
+    <p class="sub">躺下再<span class="ap">撒个娇</span>试试。</p>
   </div>
 
   <!-- ❼ OUTRO — shown at scroll progress ≥ 0.95
@@ -441,13 +455,9 @@ body {
   <div class="scene" id="s-outro">
     <span class="chip alt">✦ 明天见</span>
     <h1 class="hl">
-      明天还是<br>
-      <span class="ap2">会再来的</span>
+      <span class="ap">喵呜~</span>
     </h1>
-    <p class="sub">
-      阳光、懒腰、刚刚好的温度。<br>
-      每一天都是礼物。
-    </p>
+    <p class="sub">休息一下，摸摸我嘛。</p>
     <div class="ctas">
       <a href="#" class="btn btn-fill" id="btnReplay">
         <!-- replay icon -->
@@ -480,6 +490,19 @@ body {
 </div>
 
 <!-- ══════════════════════════════════════════════════════
+     SNAP SECTIONS  (7 invisible full-screen pages)
+     Each one triggers a scene + video seek via
+     IntersectionObserver when it enters the viewport.
+══════════════════════════════════════════════════════ -->
+<section class="snap-section" data-idx="0"></section><!-- intro      -->
+<section class="snap-section" data-idx="1"></section><!-- 01 萌动    -->
+<section class="snap-section" data-idx="2"></section><!-- 02 舒展    -->
+<section class="snap-section" data-idx="3"></section><!-- 03 顶点    -->
+<section class="snap-section" data-idx="4"></section><!-- 04 回落    -->
+<section class="snap-section" data-idx="5"></section><!-- 05 圆满    -->
+<section class="snap-section" data-idx="6"></section><!-- outro      -->
+
+<!-- ══════════════════════════════════════════════════════
      SCROLLYTELLING ENGINE  –  pure vanilla JS, no deps
 ══════════════════════════════════════════════════════ -->
 <script>
@@ -492,7 +515,7 @@ const vOutro = document.getElementById('vOutro');
 const pBar   = document.getElementById('progressBar');
 const hint   = document.getElementById('scrollHint');
 
-const SCENES = {
+const TEXT_SCENES = {
   intro : document.getElementById('s-intro'),
   s1    : document.getElementById('s-1'),
   s2    : document.getElementById('s-2'),
@@ -502,82 +525,44 @@ const SCENES = {
   outro : document.getElementById('s-outro'),
 };
 
-/* ── Config ─────────────────────────────────────────── */
-// Fraction of total scroll reserved for intro / outro loops
-const INTRO_FRAC = 0.05;
-const OUTRO_FRAC = 0.95;
-// Lerp smoothing for video seek (0 = no smooth, 1 = instant)
-const LERP = 0.22;
+/* ════════════════════════════════════════════════════
+   SECTION MAP
+   mainFrac = where in main.mp4 to seek (0–1).
+   Uses the midpoint of each scene's time band so the
+   "hero frame" is centred on that scene.
+════════════════════════════════════════════════════ */
+const SECTION_MAP = [
+  { phase: 'intro', scene: 'intro', mainFrac: null },
+  { phase: 'main',  scene: 's1',   mainFrac: 0.10 }, // mid of 0–20 %
+  { phase: 'main',  scene: 's2',   mainFrac: 0.30 }, // mid of 20–40 %
+  { phase: 'main',  scene: 's3',   mainFrac: 0.50 }, // mid of 40–60 %
+  { phase: 'main',  scene: 's4',   mainFrac: 0.70 }, // mid of 60–80 %
+  { phase: 'main',  scene: 's5',   mainFrac: 0.90 }, // mid of 80–100 %
+  { phase: 'outro', scene: 'outro', mainFrac: null },
+];
 
 /* ── State ──────────────────────────────────────────── */
+const LERP       = 0.22;
 let mainDuration = 0;
 let targetTime   = 0;
 let currentTime  = 0;
-let curPhase     = 'init';  // 'intro' | 'main' | 'outro'
+let curPhase     = 'init';
 let curScene     = '';
-let ready        = false;
+let pendingFrac  = null; // seek here once duration is known
 
 /* ════════════════════════════════════════════════════
-   PAGE HEIGHT
-   Total body height = main.duration × 100vh
-   This gives ~1 vh of scroll per second of video.
+   VIDEO DURATION  (needed for seek targets)
 ════════════════════════════════════════════════════ */
-function setPageHeight () {
-  const h = mainDuration * window.innerHeight;
-  document.body.style.height = Math.max(h, window.innerHeight * 4) + 'px';
-}
-
 vMain.addEventListener('loadedmetadata', () => {
   mainDuration = vMain.duration;
-  setPageHeight();
-  ready = true;
-  render();
+  if (pendingFrac !== null) {
+    targetTime  = pendingFrac * mainDuration;
+    pendingFrac = null;
+  }
 });
 
-// Fallback: proceed even if video metadata never fires (e.g. file missing)
-setTimeout(() => {
-  if (!ready) {
-    mainDuration = mainDuration || 8;
-    setPageHeight();
-    ready = true;
-    render();
-  }
-}, 3000);
-
-window.addEventListener('resize', () => { if (ready) setPageHeight(); }, { passive: true });
-
 /* ════════════════════════════════════════════════════
-   SCROLL PROGRESS  →  0 … 1
-════════════════════════════════════════════════════ */
-function getScrollP () {
-  const maxScroll = document.body.scrollHeight - window.innerHeight;
-  return maxScroll > 0 ? Math.min(window.scrollY / maxScroll, 1) : 0;
-}
-
-/* ════════════════════════════════════════════════════
-   DERIVE PHASE + SCENE + mainProgress FROM p
-════════════════════════════════════════════════════ */
-function calcState (p) {
-  if (p < INTRO_FRAC) {
-    return { phase: 'intro', scene: 'intro', mainP: 0 };
-  }
-  if (p >= OUTRO_FRAC) {
-    return { phase: 'outro', scene: 'outro', mainP: 1 };
-  }
-  // Map [INTRO_FRAC … OUTRO_FRAC] → [0 … 1]
-  const mainP = (p - INTRO_FRAC) / (OUTRO_FRAC - INTRO_FRAC);
-  let scene;
-  if      (mainP < 0.20) scene = 's1';
-  else if (mainP < 0.40) scene = 's2';
-  else if (mainP < 0.60) scene = 's3';
-  else if (mainP < 0.80) scene = 's4';
-  else                   scene = 's5';
-  return { phase: 'main', scene, mainP };
-}
-
-/* ════════════════════════════════════════════════════
-   VIDEO PHASE SWITCHING
-   opacity transitions handled by CSS (0.5 s ease)
+   VIDEO PHASE SWITCHING  (CSS handles 0.5 s fade)
 ════════════════════════════════════════════════════ */
 function setPhase (phase) {
   if (phase === curPhase) return;
@@ -595,8 +580,7 @@ function setPhase (phase) {
     vOutro.style.opacity = '0';
     vIntro.pause();
     vOutro.pause();
-    // Main is seek-only — make sure it never plays on its own
-    if (!vMain.paused) vMain.pause();
+    if (!vMain.paused) vMain.pause(); // seek-only, never auto-play
   } else { // 'outro'
     vIntro.style.opacity = '0';
     vMain.style.opacity  = '0';
@@ -607,20 +591,18 @@ function setPhase (phase) {
 }
 
 /* ════════════════════════════════════════════════════
-   TEXT SCENE SWITCHING  (toggle .active → CSS opacity)
+   TEXT SCENE SWITCHING
 ════════════════════════════════════════════════════ */
 function setScene (name) {
   if (name === curScene) return;
   curScene = name;
-  for (const [key, el] of Object.entries(SCENES)) {
+  for (const [key, el] of Object.entries(TEXT_SCENES)) {
     el.classList.toggle('active', key === name);
   }
 }
 
 /* ════════════════════════════════════════════════════
    RAF SMOOTH SEEK LOOP
-   Runs every frame; lerps currentTime → targetTime
-   and writes to vMain.currentTime only when in main phase.
 ════════════════════════════════════════════════════ */
 function rafSeek () {
   if (curPhase === 'main' && mainDuration > 0) {
@@ -637,38 +619,166 @@ function rafSeek () {
 requestAnimationFrame(rafSeek);
 
 /* ════════════════════════════════════════════════════
-   MAIN RENDER  –  called on scroll + resize
+   ACTIVATE SECTION
+   Called by IntersectionObserver when a snap section
+   crosses 50 % visibility.
 ════════════════════════════════════════════════════ */
-function render () {
-  const p = getScrollP();
-  const { phase, scene, mainP } = calcState(p);
+function activateSection (idx) {
+  const { phase, scene, mainFrac } = SECTION_MAP[idx];
 
-  // Progress bar
-  pBar.style.width = (p * 100).toFixed(2) + '%';
+  // Progress bar steps between sections
+  pBar.style.width = (idx / (SECTION_MAP.length - 1) * 100).toFixed(1) + '%';
 
-  // Scroll hint fades out as soon as user starts scrolling
-  hint.style.opacity = window.scrollY < 50 ? '1' : '0';
+  // Scroll hint only on the first page
+  hint.style.opacity = idx === 0 ? '1' : '0';
 
   setPhase(phase);
   setScene(scene);
 
-  // Update seek target for the RAF loop
-  if (phase === 'main') {
-    targetTime = mainP * mainDuration;
+  if (phase === 'main' && mainFrac !== null) {
+    if (mainDuration > 0) {
+      targetTime = mainFrac * mainDuration;
+    } else {
+      pendingFrac = mainFrac; // apply once loadedmetadata fires
+    }
   }
 }
 
-/* ── Event listeners ────────────────────────────────── */
-window.addEventListener('scroll', () => { if (ready) render(); }, { passive: true });
+/* ════════════════════════════════════════════════════
+   INTERSECTIONOBSERVER  –  watches all snap sections
+════════════════════════════════════════════════════ */
+const snapSections = document.querySelectorAll('.snap-section');
 
-/* ── "Replay" CTA button ──────────────────────────────── */
+const io = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      activateSection(parseInt(entry.target.dataset.idx, 10));
+    }
+  }
+}, { threshold: 0.5 }); // fire when section is ≥ 50 % in view
+
+snapSections.forEach(s => io.observe(s));
+
+/* ── "Replay" CTA button ──────────────────────────── */
 document.getElementById('btnReplay').addEventListener('click', (e) => {
   e.preventDefault();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-/* ── Initial paint ─────────────────────────────────────── */
-requestAnimationFrame(() => { if (ready) render(); });
+/* ── Initial state ────────────────────────────────── */
+activateSection(0);
+
+/* ════════════════════════════════════════════════════
+   GSAP SCROLL FLOAT  –  per-character headline reveal
+   yPercent 120→0, opacity 0→1, scaleY 2.3→1, scrub
+════════════════════════════════════════════════════ */
+gsap.registerPlugin(ScrollTrigger);
+
+// Punctuation that must not start a new line in CJK typography
+const CJK_TRAIL = new Set('。！？、；：…，」』）');
+
+function splitHL(el) {
+  const chars = [];
+  let lastWrap = null; // outer wrapper of most recently created char
+  function walk(node) {
+    if (node.nodeType === 3) { // text node
+      const frag = document.createDocumentFragment();
+      for (const ch of node.textContent) {
+        if (ch === '\n' || ch === ' ') {
+          frag.appendChild(document.createTextNode(ch));
+          lastWrap = null;
+        } else if (CJK_TRAIL.has(ch) && lastWrap) {
+          // Attach to previous char's wrapper → same inline-block, can't line-break between them
+          const inner = document.createElement('span');
+          inner.className = 'gsap-char';
+          inner.style.display = 'inline-block';
+          inner.textContent = ch;
+          lastWrap.appendChild(inner);
+          chars.push(inner);
+        } else {
+          const wrap = document.createElement('span');
+          wrap.style.cssText =
+            'display:inline-block;overflow:hidden;vertical-align:bottom;line-height:1.3em;';
+          const inner = document.createElement('span');
+          inner.className = 'gsap-char';
+          inner.style.display = 'inline-block';
+          inner.textContent = ch;
+          wrap.appendChild(inner);
+          frag.appendChild(wrap);
+          chars.push(inner);
+          lastWrap = wrap;
+        }
+      }
+      node.parentNode.replaceChild(frag, node);
+    } else if (node.nodeType === 1) {
+      Array.from(node.childNodes).forEach(walk);
+    }
+  }
+  Array.from(el.childNodes).forEach(walk);
+  return chars;
+}
+
+[
+  { idx: 0, id: 's-intro' },
+  { idx: 1, id: 's-1'    },
+  { idx: 2, id: 's-2'    },
+  { idx: 3, id: 's-3'    },
+  { idx: 4, id: 's-4'    },
+  { idx: 5, id: 's-5'    },
+  { idx: 6, id: 's-outro'},
+].forEach(({ idx, id }) => {
+  const hlEl = document.querySelector('#' + id + ' .hl');
+  if (!hlEl) return;
+  const chars = splitHL(hlEl);
+  if (!chars.length) return;
+
+  const tl = gsap.timeline({ paused: true });
+  tl.from(chars, {
+    yPercent       : 120,
+    opacity        : 0,
+    scaleY         : 2.3,
+    transformOrigin: '50% 100%',
+    stagger        : 0.03,
+    ease           : 'none',
+    duration       : 1,
+  });
+
+  ScrollTrigger.create({
+    trigger  : snapSections[idx],
+    start    : 'top bottom',
+    end      : 'top top',
+    scrub    : true,
+    animation: tl,
+  });
+});
+
+/* ── Chip label pop-in  (back.out bounce, non-scrub) ── */
+[
+  { idx: 0, id: 's-intro' },
+  { idx: 1, id: 's-1'    },
+  { idx: 2, id: 's-2'    },
+  { idx: 3, id: 's-3'    },
+  { idx: 4, id: 's-4'    },
+  { idx: 5, id: 's-5'    },
+  { idx: 6, id: 's-outro'},
+].forEach(({ idx, id }) => {
+  const chip = document.querySelector('#' + id + ' .chip');
+  if (!chip) return;
+  gsap.fromTo(chip,
+    { scale: 0, opacity: 0 },
+    {
+      scale         : 1,
+      opacity       : 1,
+      duration      : 0.5,
+      ease          : 'back.out(2.5)',
+      scrollTrigger : {
+        trigger      : snapSections[idx],
+        start        : 'top bottom',
+        toggleActions: 'play none none reverse',
+      },
+    }
+  );
+});
 </script>
 </body>
 </html>
