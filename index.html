@@ -23,12 +23,25 @@
   --cyan     : #42C6FF;
 }
 
-html { scroll-behavior: auto; }
+html {
+  /* One scroll = one full page snap */
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100%;
+}
 
 body {
   overflow-x: hidden;
   background: var(--lavender);
-  min-height: 400vh; /* overwritten by JS once video loads */
+}
+
+/* ═══════════════════════════════════════════════════════
+   SNAP SECTIONS  –  invisible full-screen page triggers
+═══════════════════════════════════════════════════════ */
+.snap-section {
+  height: 100vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always; /* never skip a section */
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -480,6 +493,19 @@ body {
 </div>
 
 <!-- ══════════════════════════════════════════════════════
+     SNAP SECTIONS  (7 invisible full-screen pages)
+     Each one triggers a scene + video seek via
+     IntersectionObserver when it enters the viewport.
+══════════════════════════════════════════════════════ -->
+<section class="snap-section" data-idx="0"></section><!-- intro      -->
+<section class="snap-section" data-idx="1"></section><!-- 01 萌动    -->
+<section class="snap-section" data-idx="2"></section><!-- 02 舒展    -->
+<section class="snap-section" data-idx="3"></section><!-- 03 顶点    -->
+<section class="snap-section" data-idx="4"></section><!-- 04 回落    -->
+<section class="snap-section" data-idx="5"></section><!-- 05 圆满    -->
+<section class="snap-section" data-idx="6"></section><!-- outro      -->
+
+<!-- ══════════════════════════════════════════════════════
      SCROLLYTELLING ENGINE  –  pure vanilla JS, no deps
 ══════════════════════════════════════════════════════ -->
 <script>
@@ -492,7 +518,7 @@ const vOutro = document.getElementById('vOutro');
 const pBar   = document.getElementById('progressBar');
 const hint   = document.getElementById('scrollHint');
 
-const SCENES = {
+const TEXT_SCENES = {
   intro : document.getElementById('s-intro'),
   s1    : document.getElementById('s-1'),
   s2    : document.getElementById('s-2'),
@@ -502,82 +528,44 @@ const SCENES = {
   outro : document.getElementById('s-outro'),
 };
 
-/* ── Config ─────────────────────────────────────────── */
-// Fraction of total scroll reserved for intro / outro loops
-const INTRO_FRAC = 0.05;
-const OUTRO_FRAC = 0.95;
-// Lerp smoothing for video seek (0 = no smooth, 1 = instant)
-const LERP = 0.22;
+/* ════════════════════════════════════════════════════
+   SECTION MAP
+   mainFrac = where in main.mp4 to seek (0–1).
+   Uses the midpoint of each scene's time band so the
+   "hero frame" is centred on that scene.
+════════════════════════════════════════════════════ */
+const SECTION_MAP = [
+  { phase: 'intro', scene: 'intro', mainFrac: null },
+  { phase: 'main',  scene: 's1',   mainFrac: 0.10 }, // mid of 0–20 %
+  { phase: 'main',  scene: 's2',   mainFrac: 0.30 }, // mid of 20–40 %
+  { phase: 'main',  scene: 's3',   mainFrac: 0.50 }, // mid of 40–60 %
+  { phase: 'main',  scene: 's4',   mainFrac: 0.70 }, // mid of 60–80 %
+  { phase: 'main',  scene: 's5',   mainFrac: 0.90 }, // mid of 80–100 %
+  { phase: 'outro', scene: 'outro', mainFrac: null },
+];
 
 /* ── State ──────────────────────────────────────────── */
+const LERP       = 0.22;
 let mainDuration = 0;
 let targetTime   = 0;
 let currentTime  = 0;
-let curPhase     = 'init';  // 'intro' | 'main' | 'outro'
+let curPhase     = 'init';
 let curScene     = '';
-let ready        = false;
+let pendingFrac  = null; // seek here once duration is known
 
 /* ════════════════════════════════════════════════════
-   PAGE HEIGHT
-   Total body height = main.duration × 100vh
-   This gives ~1 vh of scroll per second of video.
+   VIDEO DURATION  (needed for seek targets)
 ════════════════════════════════════════════════════ */
-function setPageHeight () {
-  const h = mainDuration * window.innerHeight;
-  document.body.style.height = Math.max(h, window.innerHeight * 4) + 'px';
-}
-
 vMain.addEventListener('loadedmetadata', () => {
   mainDuration = vMain.duration;
-  setPageHeight();
-  ready = true;
-  render();
+  if (pendingFrac !== null) {
+    targetTime  = pendingFrac * mainDuration;
+    pendingFrac = null;
+  }
 });
 
-// Fallback: proceed even if video metadata never fires (e.g. file missing)
-setTimeout(() => {
-  if (!ready) {
-    mainDuration = mainDuration || 8;
-    setPageHeight();
-    ready = true;
-    render();
-  }
-}, 3000);
-
-window.addEventListener('resize', () => { if (ready) setPageHeight(); }, { passive: true });
-
 /* ════════════════════════════════════════════════════
-   SCROLL PROGRESS  →  0 … 1
-════════════════════════════════════════════════════ */
-function getScrollP () {
-  const maxScroll = document.body.scrollHeight - window.innerHeight;
-  return maxScroll > 0 ? Math.min(window.scrollY / maxScroll, 1) : 0;
-}
-
-/* ════════════════════════════════════════════════════
-   DERIVE PHASE + SCENE + mainProgress FROM p
-════════════════════════════════════════════════════ */
-function calcState (p) {
-  if (p < INTRO_FRAC) {
-    return { phase: 'intro', scene: 'intro', mainP: 0 };
-  }
-  if (p >= OUTRO_FRAC) {
-    return { phase: 'outro', scene: 'outro', mainP: 1 };
-  }
-  // Map [INTRO_FRAC … OUTRO_FRAC] → [0 … 1]
-  const mainP = (p - INTRO_FRAC) / (OUTRO_FRAC - INTRO_FRAC);
-  let scene;
-  if      (mainP < 0.20) scene = 's1';
-  else if (mainP < 0.40) scene = 's2';
-  else if (mainP < 0.60) scene = 's3';
-  else if (mainP < 0.80) scene = 's4';
-  else                   scene = 's5';
-  return { phase: 'main', scene, mainP };
-}
-
-/* ════════════════════════════════════════════════════
-   VIDEO PHASE SWITCHING
-   opacity transitions handled by CSS (0.5 s ease)
+   VIDEO PHASE SWITCHING  (CSS handles 0.5 s fade)
 ════════════════════════════════════════════════════ */
 function setPhase (phase) {
   if (phase === curPhase) return;
@@ -595,8 +583,7 @@ function setPhase (phase) {
     vOutro.style.opacity = '0';
     vIntro.pause();
     vOutro.pause();
-    // Main is seek-only — make sure it never plays on its own
-    if (!vMain.paused) vMain.pause();
+    if (!vMain.paused) vMain.pause(); // seek-only, never auto-play
   } else { // 'outro'
     vIntro.style.opacity = '0';
     vMain.style.opacity  = '0';
@@ -607,20 +594,18 @@ function setPhase (phase) {
 }
 
 /* ════════════════════════════════════════════════════
-   TEXT SCENE SWITCHING  (toggle .active → CSS opacity)
+   TEXT SCENE SWITCHING
 ════════════════════════════════════════════════════ */
 function setScene (name) {
   if (name === curScene) return;
   curScene = name;
-  for (const [key, el] of Object.entries(SCENES)) {
+  for (const [key, el] of Object.entries(TEXT_SCENES)) {
     el.classList.toggle('active', key === name);
   }
 }
 
 /* ════════════════════════════════════════════════════
    RAF SMOOTH SEEK LOOP
-   Runs every frame; lerps currentTime → targetTime
-   and writes to vMain.currentTime only when in main phase.
 ════════════════════════════════════════════════════ */
 function rafSeek () {
   if (curPhase === 'main' && mainDuration > 0) {
@@ -637,38 +622,54 @@ function rafSeek () {
 requestAnimationFrame(rafSeek);
 
 /* ════════════════════════════════════════════════════
-   MAIN RENDER  –  called on scroll + resize
+   ACTIVATE SECTION
+   Called by IntersectionObserver when a snap section
+   crosses 50 % visibility.
 ════════════════════════════════════════════════════ */
-function render () {
-  const p = getScrollP();
-  const { phase, scene, mainP } = calcState(p);
+function activateSection (idx) {
+  const { phase, scene, mainFrac } = SECTION_MAP[idx];
 
-  // Progress bar
-  pBar.style.width = (p * 100).toFixed(2) + '%';
+  // Progress bar steps between sections
+  pBar.style.width = (idx / (SECTION_MAP.length - 1) * 100).toFixed(1) + '%';
 
-  // Scroll hint fades out as soon as user starts scrolling
-  hint.style.opacity = window.scrollY < 50 ? '1' : '0';
+  // Scroll hint only on the first page
+  hint.style.opacity = idx === 0 ? '1' : '0';
 
   setPhase(phase);
   setScene(scene);
 
-  // Update seek target for the RAF loop
-  if (phase === 'main') {
-    targetTime = mainP * mainDuration;
+  if (phase === 'main' && mainFrac !== null) {
+    if (mainDuration > 0) {
+      targetTime = mainFrac * mainDuration;
+    } else {
+      pendingFrac = mainFrac; // apply once loadedmetadata fires
+    }
   }
 }
 
-/* ── Event listeners ────────────────────────────────── */
-window.addEventListener('scroll', () => { if (ready) render(); }, { passive: true });
+/* ════════════════════════════════════════════════════
+   INTERSECTIONOBSERVER  –  watches all snap sections
+════════════════════════════════════════════════════ */
+const snapSections = document.querySelectorAll('.snap-section');
 
-/* ── "Replay" CTA button ──────────────────────────────── */
+const io = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      activateSection(parseInt(entry.target.dataset.idx, 10));
+    }
+  }
+}, { threshold: 0.5 }); // fire when section is ≥ 50 % in view
+
+snapSections.forEach(s => io.observe(s));
+
+/* ── "Replay" CTA button ──────────────────────────── */
 document.getElementById('btnReplay').addEventListener('click', (e) => {
   e.preventDefault();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-/* ── Initial paint ─────────────────────────────────────── */
-requestAnimationFrame(() => { if (ready) render(); });
+/* ── Initial state ────────────────────────────────── */
+activateSection(0);
 </script>
 </body>
 </html>
