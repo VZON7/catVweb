@@ -674,14 +674,27 @@ activateSection(0);
 ════════════════════════════════════════════════════ */
 gsap.registerPlugin(ScrollTrigger);
 
+// Punctuation that must not start a new line in CJK typography
+const CJK_TRAIL = new Set('。！？、；：…，」』）');
+
 function splitHL(el) {
   const chars = [];
+  let lastWrap = null; // outer wrapper of most recently created char
   function walk(node) {
     if (node.nodeType === 3) { // text node
       const frag = document.createDocumentFragment();
       for (const ch of node.textContent) {
         if (ch === '\n' || ch === ' ') {
           frag.appendChild(document.createTextNode(ch));
+          lastWrap = null;
+        } else if (CJK_TRAIL.has(ch) && lastWrap) {
+          // Attach to previous char's wrapper → same inline-block, can't line-break between them
+          const inner = document.createElement('span');
+          inner.className = 'gsap-char';
+          inner.style.display = 'inline-block';
+          inner.textContent = ch;
+          lastWrap.appendChild(inner);
+          chars.push(inner);
         } else {
           const wrap = document.createElement('span');
           wrap.style.cssText =
@@ -693,6 +706,7 @@ function splitHL(el) {
           wrap.appendChild(inner);
           frag.appendChild(wrap);
           chars.push(inner);
+          lastWrap = wrap;
         }
       }
       node.parentNode.replaceChild(frag, node);
