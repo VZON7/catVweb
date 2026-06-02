@@ -205,6 +205,7 @@ body {
   color: #413839;
   margin-bottom: 20px;
   word-break: keep-all;
+  overflow-wrap: break-word;
   text-shadow: 0 1px 8px rgba(255,255,255,0.6);
 }
 .hl .ap, .hl .ap2 { color: #413839; }
@@ -735,6 +736,34 @@ function splitHL(el) {
     scrub    : true,
     animation: tl,
   });
+});
+
+/* ── Chip label pop-in  (back.out bounce, non-scrub) ── */
+[
+  { idx: 0, id: 's-intro' },
+  { idx: 1, id: 's-1'    },
+  { idx: 2, id: 's-2'    },
+  { idx: 3, id: 's-3'    },
+  { idx: 4, id: 's-4'    },
+  { idx: 5, id: 's-5'    },
+  { idx: 6, id: 's-outro'},
+].forEach(({ idx, id }) => {
+  const chip = document.querySelector('#' + id + ' .chip');
+  if (!chip) return;
+  gsap.fromTo(chip,
+    { scale: 0, opacity: 0 },
+    {
+      scale         : 1,
+      opacity       : 1,
+      duration      : 0.5,
+      ease          : 'back.out(2.5)',
+      scrollTrigger : {
+        trigger      : snapSections[idx],
+        start        : 'top bottom',
+        toggleActions: 'play none none reverse',
+      },
+    }
+  );
 });
 </script>
 </body>
