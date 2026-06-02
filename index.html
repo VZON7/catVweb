@@ -437,17 +437,7 @@ body {
     <p class="sub">刚才的力气，流进了每一根毛发里。</p>
   </div>
 
-  <!-- ❻ SCENE 4b — main 68–80%（新增：专门展示猫躺下的过渡帧）-->
-  <div class="scene" id="s-4b">
-    <span class="chip alt2">04 · 蜷缩</span>
-    <h1 class="hl">
-      就这样，<br>
-      <span class="ap2">轻轻落下</span>
-    </h1>
-    <p class="sub">毛茸茸的一团，蜷成了整个世界。</p>
-  </div>
-
-  <!-- ❼ SCENE 5 — main 80–95%
+  <!-- ❻ SCENE 5 — main 80–95%
        时间区间：约80%至结尾
        情绪：满足，圆满 -->
   <div class="scene" id="s-5">
@@ -535,7 +525,6 @@ const TEXT_SCENES = {
   s2    : document.getElementById('s-2'),
   s3    : document.getElementById('s-3'),
   s4    : document.getElementById('s-4'),
-  s4b   : document.getElementById('s-4b'),
   s5    : document.getElementById('s-5'),
   outro : document.getElementById('s-outro'),
 };
@@ -551,9 +540,9 @@ const SECTION_MAP = [
   { phase: 'main',  scene: 's1',   mainFrac: 0.10 }, // mid of 0–20 %
   { phase: 'main',  scene: 's2',   mainFrac: 0.30 }, // mid of 20–40 %
   { phase: 'main',  scene: 's3',   mainFrac: 0.50 }, // mid of 40–60 %
-  { phase: 'main',  scene: 's4',   mainFrac: 0.66 }, // 60–72 %：开始回落
-  { phase: 'main',  scene: 's4b',  mainFrac: 0.79 }, // 72–85 %：躺下过渡帧（新增页）
-  { phase: 'main',  scene: 's5',   mainFrac: 0.92 }, // 85–100 %：圆满落定
+  { phase: 'main',  scene: 's4',   mainFrac: 0.66 }, // 回落起始帧
+  { phase: 'main',  scene: 's4',   mainFrac: 0.79 }, // 回落→圆满过渡帧（文字不变，多一页给猫躺下）
+  { phase: 'main',  scene: 's5',   mainFrac: 0.92 }, // 圆满落定
   { phase: 'outro', scene: 'outro', mainFrac: null },
 ];
 
