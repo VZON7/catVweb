@@ -66,6 +66,7 @@ body {
 #vIntro { opacity: 1; }
 #vMain  { opacity: 0; }
 #vScene3{ opacity: 0; }
+#vScene5{ opacity: 0; }
 #vOutro { opacity: 0; }
 
 /* ═══════════════════════════════════════════════════════
@@ -368,6 +369,10 @@ body {
          loop muted autoplay playsinline preload="auto">
     <source src="sitstretch-loop.mp4" type="video/mp4">
   </video>
+  <video id="vScene5" class="vid"
+         loop muted autoplay playsinline preload="auto">
+    <source src="playful-loop.mp4" type="video/mp4">
+  </video>
   <video id="vOutro" class="vid"
          loop muted autoplay playsinline preload="auto">
     <source src="outro-loop.mp4" type="video/mp4">
@@ -517,6 +522,7 @@ body {
 const vIntro  = document.getElementById('vIntro');
 const vMain   = document.getElementById('vMain');
 const vScene3 = document.getElementById('vScene3');
+const vScene5 = document.getElementById('vScene5');
 const vOutro  = document.getElementById('vOutro');
 const pBar   = document.getElementById('progressBar');
 const hint   = document.getElementById('scrollHint');
@@ -543,7 +549,7 @@ const SECTION_MAP = [
   { phase: 'main',  scene: 's2',   mainFrac: 0.30 }, // mid of 20–40 %
   { phase: 'scene3', scene: 's3',  mainFrac: null },  // dedicated sit-stretch loop
   { phase: 'main',  scene: 's4',   mainFrac: 0.70 }, // mid of 60–80 %
-  { phase: 'main',  scene: 's5',   mainFrac: 0.90 }, // mid of 80–100 %
+  { phase: 'scene5', scene: 's5',  mainFrac: null },  // dedicated playful loop
   { phase: 'outro', scene: 'outro', mainFrac: null },
 ];
 
@@ -575,35 +581,44 @@ function setPhase (phase) {
   curPhase = phase;
 
   if (phase === 'intro') {
-    vIntro.style.opacity = '1';
-    vMain.style.opacity  = '0';
-    vOutro.style.opacity = '0';
+    vIntro.style.opacity  = '1';
+    vMain.style.opacity   = '0';
+    vScene3.style.opacity = '0';
+    vScene5.style.opacity = '0';
+    vOutro.style.opacity  = '0';
     vIntro.play().catch(() => {});
-    vOutro.pause();
+    vScene3.pause(); vScene5.pause(); vOutro.pause();
   } else if (phase === 'main') {
     vIntro.style.opacity  = '0';
     vMain.style.opacity   = '1';
     vScene3.style.opacity = '0';
+    vScene5.style.opacity = '0';
     vOutro.style.opacity  = '0';
-    vIntro.pause();
-    vScene3.pause();
-    vOutro.pause();
-    if (!vMain.paused) vMain.pause(); // seek-only, never auto-play
+    vIntro.pause(); vScene3.pause(); vScene5.pause(); vOutro.pause();
+    if (!vMain.paused) vMain.pause();
   } else if (phase === 'scene3') {
     vIntro.style.opacity  = '0';
     vMain.style.opacity   = '0';
     vScene3.style.opacity = '1';
+    vScene5.style.opacity = '0';
     vOutro.style.opacity  = '0';
-    vIntro.pause();
-    vOutro.pause();
+    vIntro.pause(); vScene5.pause(); vOutro.pause();
     vScene3.play().catch(() => {});
+  } else if (phase === 'scene5') {
+    vIntro.style.opacity  = '0';
+    vMain.style.opacity   = '0';
+    vScene3.style.opacity = '0';
+    vScene5.style.opacity = '1';
+    vOutro.style.opacity  = '0';
+    vIntro.pause(); vScene3.pause(); vOutro.pause();
+    vScene5.play().catch(() => {});
   } else { // 'outro'
     vIntro.style.opacity  = '0';
     vMain.style.opacity   = '0';
     vScene3.style.opacity = '0';
+    vScene5.style.opacity = '0';
     vOutro.style.opacity  = '1';
-    vIntro.pause();
-    vScene3.pause();
+    vIntro.pause(); vScene3.pause(); vScene5.pause();
     vOutro.play().catch(() => {});
   }
 }
