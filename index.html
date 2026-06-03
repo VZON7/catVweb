@@ -544,13 +544,13 @@ const TEXT_SCENES = {
    "hero frame" is centred on that scene.
 ════════════════════════════════════════════════════ */
 const SECTION_MAP = [
-  { phase: 'intro', scene: 'intro', mainFrac: null },
-  { phase: 'main',  scene: 's1',   mainFrac: 0.10 }, // mid of 0–20 %
-  { phase: 'main',  scene: 's2',   mainFrac: 0.30 }, // mid of 20–40 %
-  { phase: 'scene3', scene: 's3',  mainFrac: null },  // dedicated sit-stretch loop
-  { phase: 'main',  scene: 's4',   mainFrac: 0.70 }, // mid of 60–80 %
-  { phase: 'scene5', scene: 's5',  mainFrac: null },  // dedicated playful loop
-  { phase: 'outro', scene: 'outro', mainFrac: null },
+  { phase: 'intro',  scene: 'intro', mainFrac: null },
+  { phase: 'intro',  scene: 's1',   mainFrac: null }, // intro-loop
+  { phase: 'intro',  scene: 's2',   mainFrac: null }, // intro-loop
+  { phase: 'scene3', scene: 's3',   mainFrac: null }, // dedicated sit-stretch loop
+  { phase: 'intro',  scene: 's4',   mainFrac: null }, // intro-loop
+  { phase: 'scene5', scene: 's5',   mainFrac: null }, // dedicated playful loop
+  { phase: 'outro',  scene: 'outro', mainFrac: null },
 ];
 
 /* ── State ──────────────────────────────────────────── */
