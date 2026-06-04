@@ -338,12 +338,28 @@ function getWeekStart(){
 }
 
 // RENDER
+function saveFormInputs(){
+  const saved={};
+  ['f-title','f-note','f-link','f-linklabel'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)saved[id]=el.value;
+  });
+  return saved;
+}
+function restoreFormInputs(saved){
+  Object.keys(saved).forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&saved[id]!==undefined)el.value=saved[id];
+  });
+}
 function renderAll(){
+  const savedInputs=saveFormInputs();
   recalcTotalCoins();syncNav();
   renderSidebar();
   if(view==='stats')renderStats();
   else renderJournal();
   renderDayStats();
+  restoreFormInputs(savedInputs);
 }
 
 function renderDayStats(){
