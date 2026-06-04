@@ -572,7 +572,18 @@ function openForm(){
 function cancelForm(){showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
 
 function saveEntry(){
-  const t=(document.getElementById('f-title')||{}).value?.trim();if(!t)return;
+  const titleEl=document.getElementById('f-title');
+  const t=titleEl?titleEl.value.trim():'';
+  if(!t){
+    if(titleEl){
+      titleEl.style.borderColor='var(--pink)';
+      titleEl.style.boxShadow='0 0 0 3px rgba(255,63,108,0.15)';
+      titleEl.placeholder='请先写下今天做了什么…';
+      titleEl.focus();
+      setTimeout(()=>{titleEl.style.borderColor='rgba(123,104,238,0.25)';titleEl.style.boxShadow='none';titleEl.placeholder='今天做了什么…'},2000);
+    }
+    return;
+  }
   const p=formProj?proj(formProj):null;
   const fields={},skipped={...skippedFields};
   if(p&&p.fields){
