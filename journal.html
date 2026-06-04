@@ -273,7 +273,7 @@ const todayKey=dk(today);
 
 // STATE
 let weekOffset=0,selDate=new Date(today),view='journal';
-let showForm=false,formProj=null,showProjPicker=false;
+let showForm=false,formProj=null,showProjPicker=false,formTitle='';
 let formExtras={note:false,link:false};
 let openDropId=null,skippedFields={};
 let editingId=null,editState={};
@@ -338,28 +338,14 @@ function getWeekStart(){
 }
 
 // RENDER
-function saveFormInputs(){
-  const saved={};
-  ['f-title','f-note','f-link','f-linklabel'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el)saved[id]=el.value;
-  });
-  return saved;
-}
-function restoreFormInputs(saved){
-  Object.keys(saved).forEach(id=>{
-    const el=document.getElementById(id);
-    if(el&&saved[id]!==undefined)el.value=saved[id];
-  });
-}
 function renderAll(){
-  const savedInputs=saveFormInputs();
   recalcTotalCoins();syncNav();
   renderSidebar();
   if(view==='stats')renderStats();
   else renderJournal();
   renderDayStats();
-  restoreFormInputs(savedInputs);
+  const el=document.getElementById('f-title');
+  if(el&&formTitle)el.value=formTitle;
 }
 
 function renderDayStats(){
@@ -543,7 +529,7 @@ function buildNewForm(){
   const previewCoins=3+(formExtras.note?1:0)+(formExtras.link?1:0);
   wrap.innerHTML=`${ppHTML}
     <div class="form-row">
-      <input type="text" id="f-title" placeholder="今天做了什么…" style="font-weight:700">
+      <input type="text" id="f-title" placeholder="今天做了什么…" style="font-weight:700" oninput="formTitle=this.value">
       <button class="proj-sel-btn" onclick="toggleProjPicker()">
         ${p?`<div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}`:'＋ 选择 project'}
         <span style="opacity:.4;margin-left:2px">▾</span>
@@ -577,19 +563,19 @@ function addNewOpt(fid){
   if(!window._fv)window._fv={};window._fv[fid]=v;openDropId=null;renderAll();
 }
 function toggleProjPicker(){showProjPicker=!showProjPicker;renderAll()}
-function selectProj(id){formProj=id;showProjPicker=false;window._fv={};skippedFields={};openDropId=null;renderAll();setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50)}
+function selectProj(id){formProj=id;showProjPicker=false;window._fv={};skippedFields={};openDropId=null;renderAll();}
 function toggleExtra(k){formExtras[k]=!formExtras[k];renderAll()}
 
 function openForm(){
   if(dk(selDate)!==todayKey)selDate=new Date(today);
-  showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
+  formTitle='';showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
 }
-function cancelForm(){showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
+function cancelForm(){formTitle='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
 
 function saveEntry(){
   const titleEl=document.getElementById('f-title');
-  const t=titleEl?titleEl.value.trim():'';
+  const t=(titleEl?titleEl.value.trim():'')||formTitle.trim();
   if(!t){
     if(titleEl){
       titleEl.style.borderColor='var(--pink)';
@@ -614,7 +600,7 @@ function saveEntry(){
   const linklabel=formExtras.link?(document.getElementById('f-linklabel')||{}).value?.trim()||'':'';
   if(!entries[todayKey])entries[todayKey]=[];
   entries[todayKey].push({id:Date.now(),projId:formProj||'',title:t,fields,skipped,note,link,linkLabel:linklabel});
-  showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;
+  formTitle='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;
   saveData();renderAll();
 }
 
