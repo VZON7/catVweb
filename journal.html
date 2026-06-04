@@ -273,7 +273,7 @@ const todayKey=dk(today);
 
 // STATE
 let weekOffset=0,selDate=new Date(today),view='journal';
-let showForm=false,formProj=null,showProjPicker=false,formTitle='';
+let showForm=false,formProj=null,showProjPicker=false,formTitle='',formNote='',formLink='',formLinkLabel='';
 let formExtras={note:false,link:false};
 let openDropId=null,skippedFields={};
 let editingId=null,editState={};
@@ -346,6 +346,12 @@ function renderAll(){
   renderDayStats();
   const el=document.getElementById('f-title');
   if(el&&formTitle)el.value=formTitle;
+  const elNote=document.getElementById('f-note');
+  if(elNote&&formNote)elNote.value=formNote;
+  const elLink=document.getElementById('f-link');
+  if(elLink&&formLink)elLink.value=formLink;
+  const elLabel=document.getElementById('f-linklabel');
+  if(elLabel&&formLinkLabel)elLabel.value=formLinkLabel;
 }
 
 function renderDayStats(){
@@ -410,7 +416,7 @@ function buildCard(e,p){
     if(e.skipped&&e.skipped[f.id])return;
     const v=e.fields&&e.fields[f.id];if(!v)return;
     if(f.type==='number')fHTML+=`<span class="ec-field">· ${f.label}: <strong>${v}</strong></span>`;
-    else fHTML+=`<span class="ec-selval">${v}</span>`;
+    else{const tags=String(v).split(',').map(s=>s.trim()).filter(Boolean);fHTML+=tags.map(t=>`<span class="ec-selval">${t}</span>`).join('');}
   });
   const coins=calcCoins(e);
   card.innerHTML=`<div class="ec-inner">
@@ -432,7 +438,18 @@ function buildCard(e,p){
 function startEdit(id,key){
   const e=(entries[key]||[]).find(x=>x.id===id);if(!e)return;
   editingId=id;
-  editState={title:e.title,fields:{...e.fields},skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link)};
+  const p=proj(e.projId);
+  const editFields={};
+  Object.keys(e.fields||{}).forEach(k=>{
+    const f=p.fields&&p.fields.find(x=>x.id===k);
+    if(f&&f.type==='select'){
+      const v=e.fields[k];
+      editFields[k]=typeof v==='string'?v.split(',').map(s=>s.trim()).filter(Boolean):v;
+    } else {
+      editFields[k]=e.fields[k];
+    }
+  });
+  editState={title:e.title,fields:editFields,skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link)};
   openDropId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('edit-title');if(el)el.focus()},50);
 }
@@ -448,10 +465,18 @@ function buildEditForm(e,p){
         <div class="ie-var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<input type="number" id="edf-${f.id}" value="${curVal}" min="0" style="width:90px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.fields['${f.id}']=this.value">`}</div>
         <button class="ie-skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     } else {
+      const esArr=editState.fields[f.id]||[];
+      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):'选择…';
       varsHTML+=`<div class="ie-var-row"><span class="ie-var-label">${f.label}</span>
         <div class="ie-var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
-          <button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${curVal?'var(--dark)':'var(--mid)'}">${curVal||'选择…'}</span><span style="opacity:.4">▾</span></button>
-          ${isOpen?`<div class="sel-dropdown">${f.options.map(o=>`<div class="sd-opt${curVal===o?' sel':''}" onclick="pickEditOpt('${f.id}','${o}')">${o}${curVal===o?' ✓':''}</div>`).join('')}<div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div></div>`:''}</div>`}</div>
+          <button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'}">${esDisplay}</span><span style="opacity:.4">▾</span></button>
+          ${isOpen?`<div class="sel-dropdown">
+            ${f.options.map(o=>{const arr=editState.fields[f.id]||[];const isSel=Array.isArray(arr)?arr.includes(o):arr===o;return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickEditOpt('${f.id}','${o}')">
+              <span>${isSel?'✓ ':''} ${o}</span>
+              <span onclick="event.stopPropagation();deleteEditOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
+            </div>`;}).join('')}
+            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div>
+          </div>`:''}</div>`}</div>
         <button class="ie-skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     }
   });
@@ -476,13 +501,27 @@ function buildEditForm(e,p){
 
 function toggleEditSkip(fid){editState.skipped[fid]=!editState.skipped[fid];if(editState.skipped[fid])delete editState.fields[fid];openDropId=null;renderAll()}
 function toggleEditDrop(fid){openDropId=openDropId===('ed-'+fid)?null:('ed-'+fid);renderAll()}
-function pickEditOpt(fid,val){editState.fields[fid]=val;openDropId=null;renderAll()}
+function pickEditOpt(fid,val){
+  if(!editState.fields[fid])editState.fields[fid]=[];
+  const arr=editState.fields[fid];
+  const idx=arr.indexOf(val);
+  if(idx>=0)arr.splice(idx,1); else arr.push(val);
+  renderAll();
+}
 function addEditOpt(fid){
   const inp=document.getElementById('edsd-'+fid);if(!inp)return;
   const v=inp.value.trim();if(!v)return;
   const px=projects.find(pr=>pr.fields&&pr.fields.some(f=>f.id===fid));
   if(px){const f=px.fields.find(x=>x.id===fid);if(f&&!f.options.includes(v))f.options.push(v);}
-  editState.fields[fid]=v;openDropId=null;renderAll();
+  if(!editState.fields[fid])editState.fields[fid]=[];
+  if(!editState.fields[fid].includes(v))editState.fields[fid].push(v);
+  saveData();renderAll();
+}
+function deleteEditOpt(fid,val){
+  const px=projects.find(pr=>pr.fields&&pr.fields.some(f=>f.id===fid));
+  if(px){const f=px.fields.find(x=>x.id===fid);if(f)f.options=f.options.filter(o=>o!==val);}
+  if(editState.fields[fid])editState.fields[fid]=editState.fields[fid].filter(o=>o!==val);
+  saveData();renderAll();
 }
 function cancelEdit(){editingId=null;editState={};openDropId=null;renderAll()}
 function saveEdit(id,key){
@@ -516,10 +555,18 @@ function buildNewForm(){
           <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<input type="number" id="ff-${f.id}" placeholder="0" min="0" style="width:90px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none">`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       } else {
+        const selArr=(window._fv&&window._fv[f.id])||[];
+        const selDisplay=selArr.length?selArr.join(', '):'选择…';
         dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
           <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
-            <button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${curVal?'var(--dark)':'var(--mid)'}">${curVal||'选择…'}</span><span style="opacity:.4">▾</span></button>
-            ${isOpen?`<div class="sel-dropdown">${f.options.map(o=>`<div class="sd-opt${curVal===o?' sel':''}" onclick="pickNewOpt('${f.id}','${o}')">${o}${curVal===o?' ✓':''}</div>`).join('')}<div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div></div>`:''}</div>`}</div>
+            <button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4">▾</span></button>
+            ${isOpen?`<div class="sel-dropdown">
+              ${f.options.map(o=>{const isSel=selArr.includes(o);return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickNewOpt('${f.id}','${o}')">
+                <span>${isSel?'✓ ':''} ${o}</span>
+                <span onclick="event.stopPropagation();deleteNewOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
+              </div>`;}).join('')}
+              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div>
+            </div>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       }
     });
@@ -541,8 +588,8 @@ function buildNewForm(){
       <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')">🔗 链接</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="补充说明、心得…"></textarea>`:''}
-      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://…" style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none"><input type="text" id="f-linklabel" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none"></div>`:''}
+      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="补充说明、心得…" oninput="formNote=this.value"></textarea>`:''}
+      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://…" style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
     </div>
     <div class="coin-preview">🐾 预计获得 <strong id="coin-preview">${previewCoins}</strong> Cat Token</div>
     <div class="form-btns">
@@ -554,24 +601,47 @@ function buildNewForm(){
 
 function toggleSkip(fid){skippedFields[fid]=!skippedFields[fid];if(skippedFields[fid]&&window._fv)delete window._fv[fid];openDropId=null;renderAll()}
 function toggleNewDrop(fid){openDropId=openDropId===('new-'+fid)?null:('new-'+fid);renderAll()}
-function pickNewOpt(fid,val){if(!window._fv)window._fv={};window._fv[fid]=val;openDropId=null;renderAll()}
+function pickNewOpt(fid,val){
+  if(!window._fv)window._fv={};
+  if(!window._fv[fid])window._fv[fid]=[];
+  const arr=window._fv[fid];
+  const idx=arr.indexOf(val);
+  if(idx>=0)arr.splice(idx,1); else arr.push(val);
+  renderAll();
+}
 function addNewOpt(fid){
   const inp=document.getElementById('sdnew-'+fid);if(!inp)return;
   const v=inp.value.trim();if(!v)return;
   const px=proj(formProj);const f=px&&px.fields&&px.fields.find(x=>x.id===fid);
   if(f&&!f.options.includes(v))f.options.push(v);
-  if(!window._fv)window._fv={};window._fv[fid]=v;openDropId=null;renderAll();
+  if(!window._fv)window._fv={};
+  if(!window._fv[fid])window._fv[fid]=[];
+  if(!window._fv[fid].includes(v))window._fv[fid].push(v);
+  saveData();renderAll();
+}
+function deleteNewOpt(fid,val){
+  const px=proj(formProj);const f=px&&px.fields&&px.fields.find(x=>x.id===fid);
+  if(f){f.options=f.options.filter(o=>o!==val);}
+  if(window._fv&&window._fv[fid]){window._fv[fid]=window._fv[fid].filter(o=>o!==val);}
+  saveData();renderAll();
 }
 function toggleProjPicker(){showProjPicker=!showProjPicker;renderAll()}
-function selectProj(id){formProj=id;showProjPicker=false;window._fv={};skippedFields={};openDropId=null;renderAll();}
+function selectProj(id){
+  formProj=id;showProjPicker=false;
+  window._fv={};
+  // pre-init all select fields as empty arrays
+  const p=proj(id);
+  if(p&&p.fields)p.fields.forEach(f=>{if(f.type==='select')window._fv[f.id]=[];});
+  skippedFields={};openDropId=null;renderAll();
+}
 function toggleExtra(k){formExtras[k]=!formExtras[k];renderAll()}
 
 function openForm(){
   if(dk(selDate)!==todayKey)selDate=new Date(today);
-  formTitle='';showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
+  formTitle='';formNote='';formLink='';formLinkLabel='';showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
 }
-function cancelForm(){formTitle='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
+function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
 
 function saveEntry(){
   const titleEl=document.getElementById('f-title');
@@ -595,12 +665,15 @@ function saveEntry(){
       else{const v=window._fv&&window._fv[f.id];if(v)fields[f.id]=v;}
     });
   }
-  const note=formExtras.note?(document.getElementById('f-note')||{}).value?.trim()||'':'';
-  const link=formExtras.link?(document.getElementById('f-link')||{}).value?.trim()||'':'';
-  const linklabel=formExtras.link?(document.getElementById('f-linklabel')||{}).value?.trim()||'':'';
+  const noteEl=document.getElementById('f-note');
+  const note=formExtras.note?((noteEl?noteEl.value:'')||formNote).trim():'';
+  const linkEl=document.getElementById('f-link');
+  const link=formExtras.link?((linkEl?linkEl.value:'')||formLink).trim():'';
+  const labelEl=document.getElementById('f-linklabel');
+  const linklabel=formExtras.link?((labelEl?labelEl.value:'')||formLinkLabel).trim():'';
   if(!entries[todayKey])entries[todayKey]=[];
   entries[todayKey].push({id:Date.now(),projId:formProj||'',title:t,fields,skipped,note,link,linkLabel:linklabel});
-  formTitle='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;
+  formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;
   saveData();renderAll();
 }
 
@@ -620,7 +693,30 @@ function renderModal(){
     <div class="modal-lbl">颜色</div>
     <div class="swatches">${COLORS.map(c=>`<div class="swatch${m.color===c?' sel':''}" style="background:${c}" onclick="modal.color='${c}';renderModal()"></div>`).join('')}</div>
     <div class="modal-lbl">Variables（自定义栏位）</div>
-    <div>${m.fields.map((f,i)=>`<div class="mfl-item"><div style="width:6px;height:6px;border-radius:50%;background:${m.color}"></div><span>${f.label}</span><span style="font-size:10px;color:var(--mid);margin-left:3px">${f.type==='select'?'选项':'数字'}</span>${f.type==='select'&&f.options.length?`<span style="font-size:10px;color:var(--mid)"> · ${f.options.slice(0,3).join('、')}</span>`:''}<button class="mfl-del" onclick="removeField(${i})">✕</button></div>`).join('')}</div>
+    <div>${m.fields.map((f,i)=>{
+      let optHtml='';
+      if(f.type==='select'){
+        optHtml=`<div style="margin:4px 0 6px 14px;display:flex;flex-direction:column;gap:3px">
+          ${f.options.map((o,oi)=>`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mid)">
+            <input type="text" value="${o}" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onchange="renameOption(${i},${oi},this.value)">
+            <button style="background:none;border:none;color:var(--mid);cursor:pointer;font-size:13px;opacity:.5;padding:2px 4px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.5;this.style.color='var(--mid)'" onclick="removeOption(${i},${oi})">✕</button>
+          </div>`).join('')}
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <input type="text" id="modal-new-opt-${i}" placeholder="添加新子选项…" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()">
+            <button style="padding:3px 10px;border-radius:6px;border:0.5px solid rgba(123,104,238,0.25);background:rgba(123,104,238,0.08);color:var(--purple);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif" onclick="addOptionInModal(${i})">＋</button>
+          </div>
+        </div>`;
+      }
+      return`<div class="mfl-item" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div style="display:flex;align-items:center;gap:6px;width:100%">
+          <div style="width:6px;height:6px;border-radius:50%;background:${m.color}"></div>
+          <span>${f.label}</span>
+          <span style="font-size:10px;color:var(--mid);margin-left:2px">${f.type==='select'?'多选选项':'数字'}</span>
+          <button class="mfl-del" style="margin-left:auto" onclick="removeField(${i})">✕</button>
+        </div>
+        ${optHtml}
+      </div>`;
+    }).join('')}</div>
     <div class="ftype-row">
       <div class="ftype-btn${m.nft==='number'?' sel':''}" onclick="modal.nft='number';renderModal()">数字</div>
       <div class="ftype-btn${m.nft==='select'?' sel':''}" onclick="modal.nft='select';renderModal()">选项</div>
@@ -637,6 +733,17 @@ function renderModal(){
   </div></div>`;
 }
 function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[]});modal.nf='';renderModal()}
+function removeOption(fi,oi){if(modal&&modal.fields[fi])modal.fields[fi].options.splice(oi,1);renderModal()}
+function renameOption(fi,oi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].options[oi]=val.trim()}
+function addOptionInModal(fi){
+  const inp=document.getElementById('modal-new-opt-'+fi);
+  if(!inp)return;
+  const v=inp.value.trim();if(!v)return;
+  if(modal&&modal.fields[fi]&&!modal.fields[fi].options.includes(v)){
+    modal.fields[fi].options.push(v);
+    renderModal();
+  }
+}
 function removeField(i){modal.fields.splice(i,1);renderModal()}
 function saveProject(){
   if(!modal.name.trim())return;
