@@ -667,12 +667,39 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const pid=ch._cbPid;const s=getCBState(pid);
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
-  const colorSets=[CB_SWC,CB_AGC];
+  const palettes2={
+    warm:[
+      ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
+      ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
+      ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
+      ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
+      ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
+      ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
+    ],
+    cool:[
+      ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
+      ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
+      ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
+      ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
+      ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
+      ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
+    ]
+  };
+  const getDonutStops=(vi,n)=>{
+    const pal=palettes2[window._cbColorMode||'warm']||palettes2.warm;
+    const stops=pal[vi%pal.length];
+    if(n===1)return[stops[2]];
+    if(n===2)return[stops[1],stops[3]];
+    if(n===3)return[stops[1],stops[2],stops[3]];
+    if(n===4)return[stops[0],stops[1],stops[3],stops[4]];
+    return stops.slice(0,n);
+  };
+
+  // ── STEP 1: Collect ALL labels first (outside datasets loop) ──
+  const allItems=[];
   ch.data.datasets.forEach((ds,di)=>{
     const meta=ch.getDatasetMeta(di);
     const total=ds.data.reduce((a,b)=>a+b,0);
-    const colors=colorSets[di]||CB_ALL_C;
-    // Get correct labels per dataset: options for select, varInfo.label for number
     let dsLabels=[];
     if(s._varKeys&&s._varKeys[di]){
       const vk=s._varKeys[di];
@@ -681,13 +708,14 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         if(vd.type==='number'){const vi2=s._vars&&s._vars.find(v=>v.key===vk);dsLabels=[vi2?vi2.label:vk];}
         else dsLabels=vd.options||[];
       }
-    } 
+    }
+    const colorArr=getDonutStops(di,ds.data.length);
     meta.data.forEach((arc,i)=>{
       const v=ds.data[i];if(!v)return;
       const pct=Math.round(v/total*100);
       const angle=(arc.startAngle+arc.endAngle)/2;
       const span=arc.endAngle-arc.startAngle;
-      const col=colors[i%colors.length];
+      const col=colorArr[i%colorArr.length];
       if(mode==='direct'){
         if(span<0.3)return;
         const r=(arc.outerRadius+arc.innerRadius)/2;
@@ -696,28 +724,89 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         ctx.fillText(v+'次('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
       } else {
         if(span<0.12)return;
-        const midR=(arc.outerRadius+arc.innerRadius)/2;
-        const outerR=arc.outerRadius;
-        const isRight=Math.cos(angle)>=0;
-        const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
-        const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
-        const p2x=cx+Math.cos(angle)*(outerR+18),p2y=cy+Math.sin(angle)*(outerR+18);
-        const p3x=p2x+(isRight?22:-22),p3y=p2y;
-        const name=dsLabels[i]||'';
-        const str=name+'  '+v+'次('+pct+'%)';
-        ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1;
-        ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,p3y);ctx.stroke();
-        ctx.font='10px sans-serif';
-        const tw=ctx.measureText(str).width+8,th=13;
-        const bx=isRight?p3x+2:p3x-tw-2,by=p3y-th/2;
-        ctx.fillStyle='rgba(255,255,255,0.97)';
-        ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,th,4);else ctx.rect(bx,by,tw,th);
-        ctx.fill();ctx.strokeStyle=col+'55';ctx.lineWidth=.8;ctx.stroke();
-        ctx.fillStyle=col;ctx.font="500 10px 'Nunito',sans-serif";
-        ctx.textAlign=isRight?'left':'right';ctx.textBaseline='middle';
-        ctx.fillText(str,isRight?bx+4:bx+tw-4,p3y);ctx.restore();
+        allItems.push({arc,i,v,pct,col,name:dsLabels[i]||'',angle,span});
       }
     });
+  });
+
+  if(mode==='direct')return;
+
+  // ── STEP 2: Assign line lengths — start short, extend if overlap ──
+  ctx.font="10px 'Nunito',sans-serif";
+  const W=ch.chartArea.right-ch.chartArea.left;
+  const H=ch.chartArea.bottom-ch.chartArea.top;
+
+  // Build label list with positions
+  const labels=allItems.map(item=>{
+    const outerR=item.arc.outerRadius;
+    const isRight=Math.cos(item.angle)>=0;
+    // Start with short extension
+    const ext=28;
+    const p2x=cx+Math.cos(item.angle)*(outerR+ext);
+    const p2y=cy+Math.sin(item.angle)*(outerR+ext);
+    const hLen=28;
+    const p3x=p2x+(isRight?hLen:-hLen);
+    const str=item.name+'  '+item.v+'次('+item.pct+'%)';
+    const tw=ctx.measureText(str).width+8;
+    return{...item,isRight,ext,hLen,p3x,p3y:p2y,str,tw,th:13,outerR};
+  });
+
+  // ── STEP 3: Detect overlaps and extend offending labels ──────
+  // Repeat up to 15 passes
+  for(let pass=0;pass<15;pass++){
+    let anyOverlap=false;
+    for(let a=0;a<labels.length;a++){
+      for(let b=a+1;b<labels.length;b++){
+        const la=labels[a],lb=labels[b];
+        if(la.isRight!==lb.isRight)continue;
+        // Check if label boxes overlap
+        const axL=la.isRight?la.p3x+3:la.p3x-la.tw-3;
+        const axR=axL+la.tw;
+        const ayT=la.p3y-la.th/2;
+        const ayB=la.p3y+la.th/2;
+        const bxL=lb.isRight?lb.p3x+3:lb.p3x-lb.tw-3;
+        const bxR=bxL+lb.tw;
+        const byT=lb.p3y-lb.th/2;
+        const byB=lb.p3y+lb.th/2;
+        const xOk=axR<bxL||bxR<axL;
+        const yOk=ayB+2<byT||byB+2<ayT;
+        if(!xOk&&!yOk){
+          anyOverlap=true;
+          // Extend the one closer to centre angle π (more horizontal)
+          const absA=Math.abs(Math.sin(la.angle));
+          const absB=Math.abs(Math.sin(lb.angle));
+          const target=absA<absB?la:lb;
+          target.ext+=12;
+          target.hLen+=10;
+          // Recompute position
+          const p2x2=cx+Math.cos(target.angle)*(target.outerR+target.ext);
+          const p2y2=cy+Math.sin(target.angle)*(target.outerR+target.ext);
+          target.p3x=p2x2+(target.isRight?target.hLen:-target.hLen);
+          target.p3y=p2y2;
+        }
+      }
+    }
+    if(!anyOverlap)break;
+  }
+
+  // ── STEP 4: Draw all labels ───────────────────────────────────
+  labels.forEach(item=>{
+    const{arc,angle,v,pct,col,name,isRight,ext,hLen,str,tw,th,outerR,p3x,p3y}=item;
+    const midR=(arc.outerRadius+arc.innerRadius)/2;
+    const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
+    const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
+    const p2x=cx+Math.cos(angle)*(outerR+ext),p2y=cy+Math.sin(angle)*(outerR+ext);
+    const bx=isRight?p3x+3:p3x-tw-3,by=p3y-th/2;
+    ctx.save();
+    ctx.strokeStyle=col;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,p3y);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.97)';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,th,3);else ctx.rect(bx,by,tw,th);
+    ctx.fill();ctx.strokeStyle=col+'55';ctx.lineWidth=.5;ctx.stroke();
+    ctx.fillStyle=col;ctx.font="500 10px 'Nunito',sans-serif";
+    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='middle';
+    ctx.fillText(str,isRight?bx+4:bx+tw-4,p3y);
+    ctx.restore();
   });
 }};
 
@@ -753,6 +842,11 @@ function buildChartBuilderHTML(pid){
   return `
     <div class="cb-step-lbl">选择要统计的 variable（可多选）</div>
     <div class="cb-var-row" id="cb-vars-${pid}"></div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:6px;margin-bottom:2px">
+      <span style="font-size:10px;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;font-weight:600">色调</span>
+      <button class="cb-type-btn on" id="cb-cm-warm-${pid}" onclick="cbSetColorMode('${pid}','warm')">亮色系</button>
+      <button class="cb-type-btn" id="cb-cm-cool-${pid}" onclick="cbSetColorMode('${pid}','cool')">冷色系</button>
+    </div>
     <div class="cb-step-lbl" style="margin-top:10px">图表类型</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
       <button class="cb-type-btn on" id="cb-t-stacked-${pid}" onclick="cbSetType('${pid}','stacked')">堆叠柱状</button>
@@ -867,6 +961,21 @@ function initChartBuilder(pid,p,pe){
     };
     varRow.appendChild(chip);
   });
+  // Default: select all variables
+  if(!s.varKeys.length){
+    vars.forEach(v=>{
+      s.varKeys.push(v.key);
+      const chip=varRow.querySelector('[data-key="'+v.key+'"]');
+      if(chip)chip.classList.add('on');
+    });
+  }
+  cbRenderFull(pid);
+}
+
+function cbSetColorMode(pid,m){
+  window._cbColorMode=m;
+  document.getElementById('cb-cm-warm-'+pid)?.classList.toggle('on',m==='warm');
+  document.getElementById('cb-cm-cool-'+pid)?.classList.toggle('on',m==='cool');
   cbRenderFull(pid);
 }
 
@@ -898,15 +1007,29 @@ function cbRenderBar(pid){
   const type=s.chartType;
 
   // Palette: 12 distinct colors for sub-options
-  const PALETTE=['#7B68EE','#D85A30','#1D9E75','#EF9F27','#D4537E','#378ADD',
-    '#993C1D','#534AB7','#0F6E56','#BA7517','#99354C','#185FA5',
-    '#F0997B','#9B94E8','#5DCAA5','#FAC775','#ED93B1','#85B7EB'];
-  // For unlimited vars: cycle through palette using offset per var
+  // Warm/cool palettes — same hue families, different tone
+  const CB_PALETTES={
+    warm:[
+      ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
+      ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
+      ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
+      ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
+      ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
+      ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
+    ],
+    cool:[
+      ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
+      ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
+      ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
+      ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
+      ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
+      ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
+    ]
+  };
+  const _cbColorMode=window._cbColorMode||'warm';
   const getGroupColors=(vi)=>{
-    const offset=(vi*3)%PALETTE.length;
-    const colors=[];
-    for(let i=0;i<9;i++)colors.push(PALETTE[(offset+i)%PALETTE.length]);
-    return colors;
+    const pal=CB_PALETTES[_cbColorMode]||CB_PALETTES.warm;
+    return pal[vi%pal.length];
   };
 
   const ds=[];
@@ -917,26 +1040,35 @@ function cbRenderBar(pid){
     const varInfo=s._vars.find(v=>v.key===vk);
     const vdata=s._varData[vk];
     if(!vdata)return;
-    const groupColors=getGroupColors(vi);
+    const rawStops=getGroupColors(vi);
+    // Pick evenly spaced stops based on count
+    const getStops=(stops,n)=>{
+      if(n===1)return[stops[2]];
+      if(n===2)return[stops[1],stops[3]];
+      if(n===3)return[stops[1],stops[2],stops[3]];
+      if(n===4)return[stops[0],stops[1],stops[3],stops[4]];
+      return stops.slice(0,n);
+    };
 
     if(vdata.type==='number'){
       // Number field: one bar per date showing the value
       const vals=s._dates.map(dk=>vdata.perDate[dk]||0);
-      const col=groupColors[0];
+      const col=rawStops[2];
       ds.push({label:varInfo.label,data:vals,
         backgroundColor:col+'CC',borderColor:col,borderWidth:1,
         stack:type==='stacked'?'v'+vi:'v'+vi+'_0',borderRadius:2});
-      lgGroups.push({label:varInfo.label,items:[{name:varInfo.label,color:col}],vi});
+      lgGroups.push({label:varInfo.label,items:[{name:varInfo.label,color:rawStops[2]}],vi});
       const total=vals.reduce((a,b)=>a+b,0);
       spGroups.push({label:varInfo.label,vi,items:[{name:varInfo.label,color:col,cnt:total,pct:100}]});
     } else {
       // Select field: one bar per option per date
       const opts=vdata.options;
       const total=opts.reduce((s,o)=>s+(vdata.totals[o]||0),0);
-      lgGroups.push({label:varInfo.label,items:opts.map((o,i)=>({name:o,color:groupColors[i%groupColors.length]})),vi});
+      const optColors=getStops(rawStops,Math.min(opts.length,5));
+      lgGroups.push({label:varInfo.label,items:opts.map((o,i)=>({name:o,color:optColors[i%optColors.length]})),vi});
       const spItems=[];
       opts.forEach((opt,i)=>{
-        const col=groupColors[i%groupColors.length];
+        const col=optColors[i%optColors.length];
         const vals=s._dates.map(dk=>vdata.perOption[opt]?vdata.perOption[opt][dk]||0:0);
         ds.push({label:opt,data:vals,
           backgroundColor:col+'CC',borderColor:col,borderWidth:1,
@@ -952,10 +1084,9 @@ function cbRenderBar(pid){
   if(lgEl){
     let h='';
     lgGroups.forEach(g=>{
-      const isSW=g.vi===0;
-      const titleStyle=isSW
-        ?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35)'
-        :'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35)';
+      // Use the mid color of this group's palette for the title badge
+      const midCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:getGroupColors(g.vi)[2];
+      const titleStyle=`background:${midCol}22;color:${midCol};border:.5px solid ${midCol}66`;
       h+=`<div style="margin-bottom:6px">
         <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:4px;${titleStyle}">${g.label}</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:2px">
@@ -971,10 +1102,8 @@ function cbRenderBar(pid){
   if(spEl){
     let h='<div style="font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;margin-bottom:10px">数据统计</div>';
     spGroups.forEach(g=>{
-      const isSW=g.vi===0;
-      const titleStyle=isSW
-        ?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35)'
-        :'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35)';
+      const midSpCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:getGroupColors(g.vi)[2];
+      const titleStyle=`background:${midSpCol}22;color:${midSpCol};border:.5px solid ${midSpCol}66`;
       h+=`<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;${titleStyle}">${g.label}</div>`;
       g.items.forEach(it=>{
         h+=`<div style="display:flex;align-items:center;padding:5px 0;border-bottom:.5px solid #f0f0f0">
@@ -1026,14 +1155,27 @@ function cbRenderDonut(pid){
   const canvas=document.getElementById('cb-canvas-'+pid);if(!canvas)return;
   if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
 
-  const PALETTE=['#7B68EE','#D85A30','#1D9E75','#EF9F27','#D4537E','#378ADD',
-    '#993C1D','#534AB7','#0F6E56','#BA7517','#99354C','#185FA5',
-    '#F0997B','#9B94E8','#5DCAA5','#FAC775','#ED93B1','#85B7EB'];
+  const CB_PALETTES2={
+    warm:[
+      ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
+      ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
+      ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
+      ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
+      ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
+      ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
+    ],
+    cool:[
+      ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
+      ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
+      ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
+      ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
+      ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
+      ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
+    ]
+  };
   const getGroupColors=(vi)=>{
-    const offset=(vi*3)%PALETTE.length;
-    const colors=[];
-    for(let i=0;i<9;i++)colors.push(PALETTE[(offset+i)%PALETTE.length]);
-    return colors;
+    const pal=CB_PALETTES2[window._cbColorMode||'warm']||CB_PALETTES2.warm;
+    return pal[vi%pal.length];
   };
 
   const ds=[];const allLabels=[];
@@ -1052,7 +1194,10 @@ function cbRenderDonut(pid){
       labels=vdata.options;
       vals=labels.map(o=>vdata.totals[o]||0);
     }
-    ds.push({data:vals,backgroundColor:groupColorsA.slice(0,labels.length),borderColor:groupColors.slice(0,labels.length),borderWidth:2});
+    const getStopsD=(stops,n)=>{if(n===1)return[stops[2]];if(n===2)return[stops[1],stops[3]];if(n===3)return[stops[1],stops[2],stops[3]];if(n===4)return[stops[0],stops[1],stops[3],stops[4]];return stops.slice(0,n);};
+    const pickedColors=getStopsD(groupColors,labels.length);
+    const pickedA=pickedColors.map(c=>c+'CC');
+    ds.push({data:vals,backgroundColor:pickedA,borderColor:pickedColors,borderWidth:2});
     labels.forEach(l=>allLabels.push(l));
     s._varKeys[vi]=vk;
   });
@@ -1065,15 +1210,17 @@ function cbRenderDonut(pid){
       const lbl=varInfo?varInfo.label:vk;
       const vdata=s._varData[vk];if(!vdata)return;
       const groupColors=getGroupColors(vi);
-      const items=vdata.type==='number'?[lbl]:vdata.options;
+      const rawOpts=vdata.type==='number'?[lbl]:vdata.options;
+      const getStopsLg=(stops,n)=>{if(n===1)return[stops[2]];if(n===2)return[stops[1],stops[3]];if(n===3)return[stops[1],stops[2],stops[3]];if(n===4)return[stops[0],stops[1],stops[3],stops[4]];return stops.slice(0,n);};
+      const optColorsLg=getStopsLg(groupColors,Math.min(rawOpts.length,5));
+      const items=rawOpts;
       const ringLabel=s.varKeys.length>1?(vi===0?'外圈':'内圈'):'';
-      const titleSt=vi===0
-        ?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35)'
-        :'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35)';
+      const midDonutCol=optColorsLg[Math.floor(optColorsLg.length/2)]||optColorsLg[0];
+      const titleSt=`background:${midDonutCol}22;color:${midDonutCol};border:.5px solid ${midDonutCol}66`;
       h+=`<div style="margin-bottom:6px">
         <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:4px;${titleSt}">${lbl}${ringLabel?' ('+ringLabel+')':''}</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:2px">
-          ${items.map((n,i)=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${groupColors[i%groupColors.length]}"></span>${n}</span>`).join('')}
+          ${items.map((n,i)=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${optColorsLg[i%optColorsLg.length]}"></span>${n}</span>`).join('')}
         </div>
       </div>`;
     });
