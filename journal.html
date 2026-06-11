@@ -65,8 +65,12 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .day-item.active .day-name { color:#633806; font-weight:700; }
 .day-cnt { font-size:10px; color:var(--mid); }
 .sb-divider { border:none; border-top:0.5px solid rgba(123,104,238,0.15); margin:12px 0; }
-.proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; }
+.proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; transition:background .1s; user-select:none; }
 .proj-item:hover { background:rgba(123,104,238,0.08); }
+.proj-item.dragging { opacity:.35; }
+.proj-item.drag-over { background:rgba(123,104,238,0.15); box-shadow:0 -2px 0 var(--purple); }
+.proj-drag-handle { font-size:13px; color:var(--mid); opacity:.3; cursor:grab; flex-shrink:0; padding:0 1px; line-height:1; }
+.proj-drag-handle:hover { opacity:.7; }
 .proj-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .proj-name { font-size:12px; color:var(--mid); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .proj-item { position:relative; }
@@ -460,16 +464,28 @@ function renderSidebar(){
     const key=dk(d),isSel=key===dk(selDate),isT=key===todayKey,isFut=d>today,cnt=(entries[key]||[]).length;
     const div=document.createElement('div');div.className='day-item'+(isSel?' active':'');div.style.opacity=isFut?.4:1;
     if(!isFut)div.onclick=()=>{selDate=new Date(d);view='journal';editingId=null;renderAll()};
-    div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${DAYS[d.getDay()]}${isT?' · 今天':''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
+    const dm=(d.getMonth()+1)+'/'+d.getDate();
+    div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${DAYS[d.getDay()]} <span style="font-size:10px;opacity:.6">${dm}</span>${isT?' · 今天':''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
     dl.appendChild(div);
   }
   const pl=document.getElementById('proj-list');pl.innerHTML='';
-  projects.forEach(p=>{
-    const cnt=Object.values(entries).flat().filter(e=>e.projId===p.id).length;
-    const div=document.createElement('div');div.className='proj-item';
-    div.title=p.name;
-    div.innerHTML=`<div class="proj-dot" style="background:${p.color}"></div><span class="proj-name">${p.name}</span>${p.name.length>14?`<span class="proj-tooltip">${p.name}</span>`:''}`;
-    div.onclick=()=>openEditProject(p.id);pl.appendChild(div);
+  projects.forEach((p,idx)=>{
+    const div=document.createElement('div');
+    div.className='proj-item';div.draggable=true;div.dataset.idx=idx;div.title=p.name;
+    div.innerHTML=`<span class="proj-drag-handle" title="拖动排序">⠿</span><div class="proj-dot" style="background:${p.color}"></div><span class="proj-name">${p.name}</span>${p.name.length>14?`<span class="proj-tooltip">${p.name}</span>`:''}`;
+    div.onclick=(e)=>{if(!div._dragged)openEditProject(p.id);div._dragged=false;};
+    div.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(idx));setTimeout(()=>div.classList.add('dragging'),0);});
+    div.addEventListener('dragend',()=>{div.classList.remove('dragging');document.querySelectorAll('.proj-item').forEach(el=>el.classList.remove('drag-over'));div._dragged=true;});
+    div.addEventListener('dragover',e=>{e.preventDefault();document.querySelectorAll('.proj-item').forEach(el=>el.classList.remove('drag-over'));div.classList.add('drag-over');});
+    div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
+    div.addEventListener('drop',e=>{
+      e.preventDefault();div.classList.remove('drag-over');
+      const from=parseInt(e.dataTransfer.getData('text/plain'));const to=idx;
+      if(from===to)return;
+      const moved=projects.splice(from,1)[0];projects.splice(to,0,moved);
+      saveData();renderAll();
+    });
+    pl.appendChild(div);
   });
 }
 
@@ -785,7 +801,7 @@ function renderModal(){
             <span style="font-size:11px;font-weight:600;color:var(--purple);font-family:'Nunito',sans-serif">More Colors</span>
           </button>
         </div>
-        <div id="cp-badge-preview" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:999px;border:1.5px solid rgba(123,104,238,0.5);background:rgba(123,104,238,0.1);font-size:12px;font-weight:700;color:var(--purple);font-family:'Nunito',sans-serif;white-space:nowrap;word-break:break-all;flex-wrap:wrap;max-width:100%">Project</div>
+        <div id="cp-badge-preview" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:999px;border:1.5px solid rgba(123,104,238,0.5);background:rgba(123,104,238,0.1);font-size:12px;font-weight:700;color:var(--purple);font-family:'Nunito',sans-serif;white-space:nowrap;word-break:break-all;flex-wrap:wrap;max-width:100%">Project / Task</div>
       </div>
       <div class="cp-picker-panel" id="cp-picker-panel">
         <div class="cp-canvas-wrap" id="cp-cv-wrap"><canvas class="cp-sat-canvas" id="cp-sat"></canvas><div class="cp-dot" id="cp-dot"></div></div>
@@ -1146,7 +1162,7 @@ function cpUpdateUI(skipHexInput=false){
   // Update badge preview
   const badge=document.getElementById('cp-badge-preview');
   if(badge){
-    const name=modal&&modal.name?modal.name:'Project';
+    const name=modal&&modal.name?modal.name:'Project / Task';
     badge.textContent=name||'Project';
     badge.style.color=hex;
     badge.style.borderColor=hex+'80';
