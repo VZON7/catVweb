@@ -6,6 +6,7 @@
 <title>项目日记 — catVweb</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/docx@9.0.0/build/index.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -207,6 +208,36 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .m-delete { padding:6px 12px; border-radius:999px; border:0.5px solid rgba(255,63,108,0.35); background:none; color:var(--pink); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; }
 
 .empty-hint { text-align:center; padding:2.5rem 0; color:var(--mid); font-size:13px; }
+.proj-status { font-size:9px; font-weight:700; letter-spacing:.05em; padding:2px 6px; border-radius:999px; flex-shrink:0; text-transform:uppercase; }
+.proj-status.active { background:rgba(29,158,117,0.12); color:#1D9E75; border:0.5px solid rgba(29,158,117,0.3); }
+.proj-status.done { background:rgba(123,104,238,0.1); color:var(--purple); border:0.5px solid rgba(123,104,238,0.25); }
+.proj-status.archived { background:rgba(90,88,112,0.08); color:var(--mid); border:0.5px solid rgba(90,88,112,0.2); }
+.undo-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--dark); color:#fff; font-size:13px; font-weight:500; padding:10px 20px; border-radius:999px; display:flex; align-items:center; gap:12px; z-index:500; box-shadow:0 4px 20px rgba(0,0,0,.2); font-family:'Nunito',sans-serif; }
+.undo-btn { font-size:12px; font-weight:700; color:#B0A8FF; cursor:pointer; border:none; background:none; font-family:'Nunito',sans-serif; padding:0; }
+.undo-btn:hover { color:#fff; }
+.tracker-proj-card { background:rgba(255,255,255,0.65); border:0.5px solid rgba(123,104,238,0.18); border-radius:14px; margin-bottom:12px; overflow:hidden; }
+.tracker-proj-header { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; }
+.tracker-proj-header:hover { background:rgba(123,104,238,0.04); }
+.tracker-proj-chevron { font-size:12px; color:var(--mid); transition:transform .2s; flex-shrink:0; }
+.tracker-proj-chevron.open { transform:rotate(90deg); }
+.tracker-proj-name { font-size:14px; font-weight:700; color:var(--dark); flex:1; }
+.tracker-proj-meta { font-size:11px; color:var(--mid); display:flex; gap:10px; }
+.tracker-proj-body { padding:0 16px 12px; border-top:0.5px solid rgba(123,104,238,0.1); }
+.tracker-entry-row { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:0.5px solid rgba(123,104,238,0.07); }
+.tracker-entry-row:last-child { border:none; }
+.tracker-date { font-size:11px; color:var(--mid); min-width:44px; flex-shrink:0; margin-top:2px; }
+.tracker-entry-content { flex:1; min-width:0; }
+.tracker-entry-title { font-size:12px; font-weight:600; color:var(--dark); }
+.tracker-entry-fields { display:flex; gap:5px; flex-wrap:wrap; margin-top:3px; }
+.tracker-field-tag { font-size:10px; padding:1px 7px; border-radius:999px; background:rgba(123,104,238,0.1); color:var(--purple); }
+.tracker-entry-note { font-size:11px; color:var(--mid); margin-top:3px; font-style:italic; }
+.tracker-export-row { display:flex; gap:8px; padding:10px 16px 12px; }
+.tracker-export-btn { display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.3); background:rgba(123,104,238,0.08); color:var(--purple); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; }
+.tracker-export-btn:hover { background:rgba(123,104,238,0.16); }
+.tracker-tabs { display:flex; gap:6px; margin-bottom:16px; }
+.tracker-tab { padding:7px 16px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.25); background:rgba(255,255,255,0.6); color:var(--mid); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; }
+.tracker-tab.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+.tracker-empty { text-align:center; padding:2rem; color:var(--mid); font-size:13px; }
 
 /* Calendar picker */
 .cal-picker-wrap { position:relative; display:inline-block; }
@@ -347,6 +378,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
       <button class="add-proj-btn" id="add-proj-btn">＋ 自定义</button>
       <hr class="sb-divider">
       <button class="sb-nav-btn" id="stats-nav-btn">📊 周报告</button>
+    <button class="sb-nav-btn" id="tracker-nav-btn">📁 项目追踪</button>
     </div>
     <div class="main-area" id="main-area"></div>
   </div>
@@ -394,6 +426,9 @@ function saveData(){
 
 let {projects,entries,totalCoins}=loadData();
 
+// Load saved palette from localStorage
+let cpMyPalette=JSON.parse(localStorage.getItem('cj_mypalette')||'[]');
+
 function syncNav(){
   document.getElementById('nav-coins').textContent=totalCoins;
   document.getElementById('st-total-coins').textContent=totalCoins;
@@ -431,10 +466,142 @@ function getWeekStart(){
 }
 
 // RENDER
+function showTracker(){view='tracker';showForm=false;renderAll();}
+
+function renderTracker(){
+  document.getElementById('page-date').textContent='项目追踪';
+  const mhSub=document.getElementById('mh-sub');if(mhSub)mhSub.textContent='全部记录按项目整理';
+  const area=document.getElementById('main-area');area.innerHTML='';
+  const currentTab=window._trackerTab||'all';
+  const tabs=['all','active','done','archived'];
+  const tabLabels={all:'全部',active:'进行中',done:'已完成',archived:'已归档'};
+  const tabRow=document.createElement('div');tabRow.className='tracker-tabs';
+  tabs.forEach(t=>{
+    const btn=document.createElement('button');btn.className='tracker-tab'+(currentTab===t?' active':'');
+    btn.textContent=tabLabels[t];btn.onclick=()=>{window._trackerTab=t;renderTracker();};
+    tabRow.appendChild(btn);
+  });
+  area.appendChild(tabRow);
+  const filtered=projects.filter(p=>currentTab==='all'||(p.status||'active')===currentTab);
+  if(!filtered.length){const em=document.createElement('div');em.className='tracker-empty';em.textContent='这个分类还没有项目';area.appendChild(em);return;}
+  filtered.forEach(p=>{
+    const pe=[];
+    Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===p.id)pe.push({...e,dateKey:dk2});}));
+    pe.sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
+    const totalC=pe.reduce((s,e)=>s+calcCoins(e,e.dateKey),0);
+    const days=new Set(pe.map(e=>e.dateKey)).size;
+    const card=document.createElement('div');card.className='tracker-proj-card';
+    const isOpen=window._trackerOpen&&window._trackerOpen[p.id];
+    const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
+    const hdr=document.createElement('div');hdr.className='tracker-proj-header';
+    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+statusLabel[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div><span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+    hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
+    card.appendChild(hdr);
+    if(isOpen){
+      const body=document.createElement('div');body.className='tracker-proj-body';
+      if(!pe.length){body.innerHTML='<div class="tracker-empty" style="padding:1rem 0">还没有任何记录</div>';}
+      else{pe.forEach(e=>{
+        const row=document.createElement('div');row.className='tracker-entry-row';
+        const parts=e.dateKey.split('-');const m2=parts[1],d2=parts[2];
+        let fHTML='';
+        (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;fHTML+='<span class="tracker-field-tag">'+f.label+': '+v+'</span>';});
+        row.innerHTML='<span class="tracker-date">'+m2+'/'+d2+'</span><div class="tracker-entry-content"><div class="tracker-entry-title">'+(e.title||'—')+'</div>'+(fHTML?'<div class="tracker-entry-fields">'+fHTML+'</div>':'')+(e.note?'<div class="tracker-entry-note">'+e.note+'</div>':'')+'</div><span style="font-size:10px;color:#854F0B;background:#FAEEDA;border-radius:999px;padding:2px 7px;flex-shrink:0">🐾 +'+calcCoins(e,e.dateKey)+'</span>';
+        body.appendChild(row);
+      });}
+      card.appendChild(body);
+      const exp=document.createElement('div');exp.className='tracker-export-row';
+      exp.innerHTML='<button class="tracker-export-btn" onclick="exportTracker(&quot;'+p.id+'&quot;,&quot;docx&quot;)">⬇ 导出 DOCX</button><button class="tracker-export-btn" onclick="exportTracker(&quot;'+p.id+'&quot;,&quot;pdf&quot;)">🖨 打印 / PDF</button>';
+      card.appendChild(exp);
+    }
+    area.appendChild(card);
+  });
+}
+
+function exportTracker(pid,type){
+  const p=proj(pid);
+  const pe=[];
+  Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===pid)pe.push({...e,dateKey:dk2});}));
+  pe.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
+  if(type==='docx'){
+    // Generate DOCX using docx.js
+    try{
+      const {Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle}=docx;
+      const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
+      const children=[];
+      // Title
+      children.push(new Paragraph({children:[new TextRun({text:p.name+' — 项目追踪报告',bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
+      // Meta
+      children.push(new Paragraph({children:[new TextRun({text:'状态: '+statusLabel[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+      // Entries
+      pe.forEach(e=>{
+        const parts=e.dateKey.split('-');
+        const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
+        children.push(new Paragraph({children:[new TextRun({text:'📅 '+dateStr,bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
+        children.push(new Paragraph({children:[new TextRun({text:(e.title||'—'),bold:true,size:22,color:DARK,font:'Arial'})],spacing:{before:0,after:20},indent:{left:240}}));
+        (p.fields||[]).forEach(f=>{
+          if(e.skipped&&e.skipped[f.id])return;
+          const v=e.fields&&e.fields[f.id];if(!v)return;
+          children.push(new Paragraph({children:[new TextRun({text:f.label+': '+v,size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        });
+        if(e.note)children.push(new Paragraph({children:[new TextRun({text:'备注: '+e.note,size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
+      });
+      const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
+      Packer.toBase64String(doc).then(b64=>{
+        const a=document.createElement('a');
+        a.href='data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64;
+        a.download=p.name+'_tracker.docx';
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+      }).catch(err=>{alert('DOCX 生成失败: '+err.message);});
+    }catch(err){alert('请稍候再试，docx 库加载中: '+err.message);}
+  } else if(type==='txt'){
+    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+statusLabel[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');
+      txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n  '+(e.title||'—')+'\n';
+      (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;txt+='  '+f.label+': '+v+'\n';});
+      if(e.note)txt+='  备注: '+e.note+'\n';txt+='\n';
+    });
+    try{
+      const a=document.createElement('a');
+      a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
+      a.download=p.name+'_tracker.txt';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+    }catch(err){
+      const w=window.open('','_blank');
+      if(w){w.document.write('<pre>'+txt.replace(/</g,'&lt;')+'</pre>');w.document.close();}
+      else{alert('请允许弹窗，或复制以下内容：\n\n'+txt);}
+    }
+  } else {
+    // Build printable HTML
+    let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}@media print{body{padding:20px}}</style></head><body>';
+    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+statusLabel[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');let f='';
+      (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+v+'</span>';});
+      html+='<div class="entry"><div class="date">'+parts[0]+'年'+parts[1]+'月'+parts[2]+'日</div><div class="title">'+(e.title||'—')+'</div>'+(f?'<div>'+f+'</div>':'')+(e.note?'<div class="note">'+e.note+'</div>':'')+'</div>';
+    });
+    html+='<script>window.onload=function(){window.print();}<\/script></body></html>';
+    // Use data URI to avoid popup blocker
+    try{
+      const a=document.createElement('a');
+      a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
+      a.download=p.name+'_tracker.html';
+      document.body.appendChild(a);a.click();document.body.removeChild(a);
+    }catch(err){
+      const w=window.open('about:blank','_blank');
+      if(w){w.document.open();w.document.write(html);w.document.close();}
+      else{alert('请允许浏览器弹窗以打印报告');}
+    }
+  }
+}
+
 function renderAll(){
   recalcTotalCoins();syncNav();
   renderSidebar();
   if(view==='stats')renderStats();
+  else if(view==='tracker')renderTracker();
   else renderJournal();
   renderDayStats();
   const el=document.getElementById('f-title');
@@ -779,8 +946,8 @@ function saveEntry(){
 }
 
 // PROJECTS MODAL
-function openAddProject(){modal={mode:'add',name:'',color:COLORS[0],fields:[],nf:'',nft:'number'};renderModal()}
-function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,fields:p.fields.map(f=>({...f,options:[...(f.options||[])]})),nf:'',nft:'number'};renderModal()}
+function openAddProject(){modal={mode:'add',name:'',color:COLORS[0],status:'active',fields:[],nf:'',nft:'number'};renderModal()}
+function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,options:[...(f.options||[])]})),nf:'',nft:'number'};renderModal()}
 
 function renderModal(){
   const mc=document.getElementById('modal-container');
@@ -836,6 +1003,10 @@ function renderModal(){
           <div id="cp-closest-list"></div>
         </div>
       </div>
+    </div>
+    <div class="modal-lbl">状态</div>
+    <div style="display:flex;gap:6px;margin-bottom:4px">
+      ${['active','done','archived'].map(s=>{const lbl=s==='active'?'进行中':s==='done'?'已完成':'已归档';return`<div onclick="modal.status='${s}';renderModal()" style="padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;border:0.5px solid ${(m.status||'active')===s?'var(--purple)':'rgba(123,104,238,0.2)'};background:${(m.status||'active')===s?'rgba(123,104,238,0.12)':'rgba(255,255,255,0.5)'};color:${(m.status||'active')===s?'var(--purple)':'var(--mid)'}">${lbl}</div>`;}).join('')}
     </div>
     <div class="modal-lbl">Variables（自定义栏位）</div>
     <div>${m.fields.map((f,i)=>{
@@ -893,15 +1064,39 @@ function addOptionInModal(fi){
 function removeField(i){modal.fields.splice(i,1);renderModal()}
 function saveProject(){
   if(!modal.name.trim())return;
-  if(modal.mode==='add')projects.push({id:'p'+Date.now(),name:modal.name,color:modal.color,fields:modal.fields});
-  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.fields=modal.fields;}}
+  const status=modal.status||'active';
+  if(modal.mode==='add')projects.push({id:'p'+Date.now(),name:modal.name,color:modal.color,status,fields:modal.fields});
+  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;}}
   modal=null;renderModal();saveData();renderAll();
 }
-function deleteProject(id){projects=projects.filter(p=>p.id!==id);modal=null;renderModal();saveData();renderAll()}
+let _deletedProj=null,_delTimer=null;
+function deleteProject(id){
+  const p=projects.find(x=>x.id===id),idx=projects.indexOf(p);
+  _deletedProj={p,idx};
+  projects=projects.filter(x=>x.id!==id);
+  modal=null;renderModal();saveData();renderAll();
+  showUndoToast('已删除「'+p.name+'」');
+}
+function showUndoToast(msg){
+  clearTimeout(_delTimer);
+  let t=document.getElementById('undo-toast');
+  if(!t){t=document.createElement('div');t.id='undo-toast';t.className='undo-toast';document.body.appendChild(t);}
+  t.innerHTML=msg+' <button class="undo-btn" onclick="undoDelete()">撤销 (Ctrl+Z)</button>';
+  t.style.display='flex';
+  _delTimer=setTimeout(()=>{t.style.display='none';_deletedProj=null;},5000);
+}
+function undoDelete(){
+  clearTimeout(_delTimer);
+  if(!_deletedProj)return;
+  projects.splice(_deletedProj.idx,0,_deletedProj.p);
+  saveData();renderAll();_deletedProj=null;
+  const t=document.getElementById('undo-toast');if(t)t.style.display='none';
+}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'&&_deletedProj)undoDelete();});
 
 // STATS
 function renderStats(){
-  document.getElementById('page-date').textContent='周报告';
+  const _pd=document.getElementById('page-date');if(_pd)_pd.textContent='周报告';
   const area=document.getElementById('main-area');area.innerHTML='';
   const ws=getWeekStart();
   const perDay=[];let totalE=0,totalC=0;const projStats={};
@@ -1134,7 +1329,6 @@ function cpDrawSatVal(){
   ctx.fillStyle=gV;ctx.fillRect(0,0,w,h);
 }
 
-let cpMyPalette=[];
 let cpPopupOpen=false;
 
 function cpUpdateUI(skipHexInput=false){
@@ -1185,7 +1379,7 @@ function cpTogglePalettePopup(e){
 }
 function cpClosePalettePopup(){cpPopupOpen=false;const p=document.getElementById('cp-palette-popup');if(p)p.classList.remove('open');}
 
-function cpRemoveColor(hex){cpMyPalette=cpMyPalette.filter(c=>c!==hex);cpRenderMyPalette();}
+function cpRemoveColor(hex){cpMyPalette=cpMyPalette.filter(c=>c!==hex);localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));cpRenderMyPalette();}
 function cpRenderMyPalette(){
   const el=document.getElementById('cp-my-swatches');if(!el)return;
   const curHex=(modal&&modal.color?modal.color:'').toUpperCase();
@@ -1195,7 +1389,9 @@ function cpRenderMyPalette(){
 function cpSaveColor(){
   const hex=(modal&&modal.color?modal.color:'').toUpperCase();
   if(!hex||cpMyPalette.includes(hex))return;
-  cpMyPalette.push(hex);cpRenderMyPalette();
+  cpMyPalette.push(hex);
+  localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));
+  cpRenderMyPalette();
 }
 
 function cpPickClosest(hex){cpSelectedClosest=hex;cpSetFromHex(hex,true);}
@@ -1280,6 +1476,7 @@ document.addEventListener('touchend',()=>{cpDraggingSat=false;cpDraggingHue=fals
 document.getElementById('new-entry-btn').onclick=openForm;
 document.getElementById('stats-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
 document.getElementById('stats-nav-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
+document.getElementById('tracker-nav-btn').onclick=()=>showTracker();
 document.getElementById('add-proj-btn').onclick=openAddProject;
 document.getElementById('prev-week').onclick=()=>{weekOffset--;renderAll()};
 document.getElementById('next-week').onclick=()=>{if(weekOffset<0){weekOffset++;renderAll()}};
