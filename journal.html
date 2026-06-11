@@ -596,7 +596,7 @@ if(window.Chart){
 }
 function getCBState(pid){
   if(!_cbState[pid])_cbState[pid]={
-    chartType:'stacked',varKeys:[],showNums:true,showTitles:true,showPanel:true,
+    chartType:'stacked',varKeys:[],showNums:true,showTitles:true,showPanel:false,
     showDonutNums:true,donutMode:'direct',
     displayTitles:{},selected:[],charts:{}
   };
@@ -672,7 +672,16 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
     const meta=ch.getDatasetMeta(di);
     const total=ds.data.reduce((a,b)=>a+b,0);
     const colors=colorSets[di]||CB_ALL_C;
-    const dsLabels=s._varKeys&&s._varKeys[di]?Object.keys(s._varData&&s._varData[s._varKeys[di]]||{}):[]; 
+    // Get correct labels per dataset: options for select, varInfo.label for number
+    let dsLabels=[];
+    if(s._varKeys&&s._varKeys[di]){
+      const vk=s._varKeys[di];
+      const vd=s._varData&&s._varData[vk];
+      if(vd){
+        if(vd.type==='number'){const vi2=s._vars&&s._vars.find(v=>v.key===vk);dsLabels=[vi2?vi2.label:vk];}
+        else dsLabels=vd.options||[];
+      }
+    } 
     meta.data.forEach((arc,i)=>{
       const v=ds.data[i];if(!v)return;
       const pct=Math.round(v/total*100);
@@ -742,7 +751,7 @@ function cbGetVarData(pid,varKey,pe,p){
 // ── Build HTML for chart builder ──────────────────────────────────
 function buildChartBuilderHTML(pid){
   return `
-    <div class="cb-step-lbl">选择要统计的 variable（可多选，最多2个用于复合图）</div>
+    <div class="cb-step-lbl">选择要统计的 variable（可多选）</div>
     <div class="cb-var-row" id="cb-vars-${pid}"></div>
     <div class="cb-step-lbl" style="margin-top:10px">图表类型</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
@@ -750,34 +759,30 @@ function buildChartBuilderHTML(pid){
       <button class="cb-type-btn" id="cb-t-grouped-${pid}" onclick="cbSetType('${pid}','grouped')">并排柱状</button>
       <button class="cb-type-btn" id="cb-t-donut-${pid}" onclick="cbSetType('${pid}','donut')">嵌套环形</button>
     </div>
-    <div class="cb-controls" id="cb-ctrl-bar-${pid}" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+    <div id="cb-ctrl-bar-${pid}" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
       <button class="cb-tog on" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')">🔢 数字</button>
       <button class="cb-tog on" id="cb-titles-${pid}" onclick="cbTogTitles('${pid}')">✅ 标题</button>
-      <button class="cb-tog on" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')">📊 统计</button>
+      <button class="cb-tog" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')">统计</button>
     </div>
-    <div class="cb-controls" id="cb-ctrl-donut-${pid}" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+    <div id="cb-ctrl-donut-${pid}" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px">
       <button class="cb-tog on" id="cb-dnums-${pid}" onclick="cbTogDNums('${pid}')">🔢 显示数字</button>
       <div style="display:flex;gap:2px;padding:3px 5px;background:#f0f0f0;border-radius:999px;border:.5px solid rgba(0,0,0,0.08)" id="cb-dmode-${pid}">
         <button class="cb-sub on" id="cb-ddirect-${pid}" onclick="cbSetDonutMode('${pid}','direct')">直接显示</button>
         <button class="cb-sub" id="cb-dline-${pid}" onclick="cbSetDonutMode('${pid}','line')">连接线</button>
       </div>
-      <button class="cb-tog on" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')">📊 统计</button>
+      <button class="cb-tog" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')">统计</button>
     </div>
-    <div id="cb-legend-${pid}" style="margin-bottom:6px"></div>
-    <div style="display:flex;gap:10px;align-items:flex-start">
-      <div style="flex:1;min-width:0;position:relative">
+    <div id="cb-legend-${pid}" style="margin-bottom:8px;max-height:120px;overflow-y:auto"></div>
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="flex:1;min-width:0">
         <div id="cb-chart-wrap-${pid}" style="position:relative">
           <div style="position:relative;width:100%;height:260px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="项目统计图"></canvas></div>
         </div>
       </div>
-      <div id="cb-panel-${pid}" class="cb-side-panel show"></div>
+      <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
     </div>
-    <div class="cb-step-lbl" style="margin-top:10px">已选图表</div>
-    <div id="cb-selected-${pid}" style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
-      <div style="font-size:11px;color:var(--mid);font-style:italic">还没有选择图表</div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button class="cb-tog on" id="cb-addbtn-${pid}" onclick="cbToggleAdd('${pid}')">＋ 加入导出</button>
+    <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <button class="cb-tog" id="cb-addbtn-${pid}" onclick="cbToggleAdd('${pid}')">＋ 加入导出</button>
       <button class="tracker-export-btn" onclick="cbExport('${pid}','docx')">⬇ 导出 DOCX</button>
       <button class="tracker-export-btn" onclick="cbExport('${pid}','pdf')">🖨 打印/PDF</button>
     </div>`;
@@ -785,24 +790,79 @@ function buildChartBuilderHTML(pid){
 
 function initChartBuilder(pid,p,pe){
   const s=getCBState(pid);
-  const vars=[{key:'_date',label:'活跃天数'}];
+  // Only show actual project fields (no _date, no _title in selector)
+  const vars=[];
   (p.fields||[]).forEach(f=>vars.push({key:f.id,label:f.label,field:f}));
-  vars.push({key:'_title',label:'记录标题'});
   s._vars=vars;s._pe=pe;s._p=p;
+  // X axis = sorted dates
   s._dates=[...new Set(pe.map(e=>e.dateKey))].sort();
-  s._titles=s._dates.map(dk=>{const e=pe.find(x=>x.dateKey===dk);return e&&e.title?e.title.trim():'';});
+  // titles per date (first entry of that day)
+  s._titles=s._dates.map(dk=>{
+    const dayEntries=(entries[dk]||[]).filter(e=>e.projId===p.id);
+    const t=dayEntries.find(e=>e.title&&e.title.trim());
+    return t?t.title.trim():'';
+  });
+  // Precompute per-field data
   s._varData={};
-  vars.forEach(v=>{s._varData[v.key]=cbGetVarData(pid,v.key,pe,p);});
+  vars.forEach(v=>{
+    const f=v.field;
+    if(f&&f.type==='number'){
+      // number: sum per date
+      const perDate={};
+      s._dates.forEach(dk=>{
+        const dayEntries=(entries[dk]||[]).filter(e=>e.projId===p.id);
+        let total=0;
+        dayEntries.forEach(e=>{
+          if(e.skipped&&e.skipped[f.id])return;
+          const val=e.fields&&e.fields[f.id];
+          if(val!==undefined&&val!=='')total+=parseFloat(val)||0;
+        });
+        perDate[dk]=total;
+      });
+      s._varData[v.key]={type:'number',perDate};
+    } else {
+      // select: count each option per date
+      const options=new Set();
+      pe.forEach(e=>{
+        if(e.skipped&&e.skipped[v.key])return;
+        const val=e.fields&&e.fields[v.key];if(!val)return;
+        String(val).split(',').map(x=>x.trim()).filter(Boolean).forEach(o=>options.add(o));
+      });
+      const perOption={};
+      options.forEach(opt=>{
+        const perDate={};
+        s._dates.forEach(dk=>{
+          const dayEntries=(entries[dk]||[]).filter(e=>e.projId===p.id);
+          let n=0;
+          dayEntries.forEach(e=>{
+            if(e.skipped&&e.skipped[v.key])return;
+            const val=e.fields&&e.fields[v.key];if(!val)return;
+            if(String(val).split(',').map(x=>x.trim()).includes(opt))n++;
+          });
+          perDate[dk]=n;
+        });
+        perOption[opt]=perDate;
+      });
+      // total per option across all dates
+      const totals={};
+      options.forEach(opt=>{totals[opt]=Object.values(perOption[opt]).reduce((a,b)=>a+b,0);});
+      s._varData[v.key]={type:'select',options:[...options],perOption,totals};
+    }
+  });
 
   const varRow=document.getElementById('cb-vars-'+pid);if(!varRow)return;
   varRow.innerHTML='';
+  if(!vars.length){
+    varRow.innerHTML='<span style="font-size:11px;color:var(--mid);font-style:italic">这个项目还没有自定义栏位</span>';
+    return;
+  }
   vars.forEach(v=>{
     const chip=document.createElement('button');
     chip.className='cb-var-chip';chip.textContent=v.label;chip.dataset.key=v.key;
     chip.onclick=()=>{
       const idx=s.varKeys.indexOf(v.key);
       if(idx>=0){s.varKeys.splice(idx,1);chip.classList.remove('on');}
-      else if(s.varKeys.length<2){s.varKeys.push(v.key);chip.classList.add('on');}
+      else{s.varKeys.push(v.key);chip.classList.add('on');}
       cbRenderFull(pid);
     };
     varRow.appendChild(chip);
@@ -837,68 +897,91 @@ function cbRenderBar(pid){
   if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
   const type=s.chartType;
 
-  // Build datasets from selected vars
+  // Palette: 12 distinct colors for sub-options
+  const PALETTE=['#7B68EE','#D85A30','#1D9E75','#EF9F27','#D4537E','#378ADD',
+    '#993C1D','#534AB7','#0F6E56','#BA7517','#99354C','#185FA5',
+    '#F0997B','#9B94E8','#5DCAA5','#FAC775','#ED93B1','#85B7EB'];
+  // For unlimited vars: cycle through palette using offset per var
+  const getGroupColors=(vi)=>{
+    const offset=(vi*3)%PALETTE.length;
+    const colors=[];
+    for(let i=0;i<9;i++)colors.push(PALETTE[(offset+i)%PALETTE.length]);
+    return colors;
+  };
+
   const ds=[];
   const lgGroups=[];
+  const spGroups=[];
+
   s.varKeys.forEach((vk,vi)=>{
-    const data=s._varData[vk]||{};
-    const labels=Object.keys(data);
-    const isSW=vi===0;
-    const colors=isSW?CB_SWC:CB_AGC;
-    const colorsA=isSW?CB_SWA:CB_AGA;
     const varInfo=s._vars.find(v=>v.key===vk);
-    lgGroups.push({label:varInfo?varInfo.label:vk,items:labels.map((l,i)=>({name:l,color:colors[i%colors.length]})),isSW});
-    labels.forEach((lbl,i)=>{
-      const vals=s._dates.map(dk=>{
-        const count=Object.entries(s._varData[vk]).find(([k])=>k===lbl);
-        // recount per date
-        const dayEntries=(entries[dk]||[]);
-        let n=0;
-        dayEntries.forEach(e=>{
-          if(e.projId!==s._p.id)return;
-          if(vk==='_date'){n++;}
-          else if(vk==='_title'){if(e.title&&e.title.trim()===lbl)n++;}
-          else{
-            if(e.skipped&&e.skipped[vk])return;
-            const v=e.fields&&e.fields[vk];if(!v)return;
-            if(String(v).split(',').map(x=>x.trim()).includes(lbl))n++;
-          }
-        });
-        return n;
+    const vdata=s._varData[vk];
+    if(!vdata)return;
+    const groupColors=getGroupColors(vi);
+
+    if(vdata.type==='number'){
+      // Number field: one bar per date showing the value
+      const vals=s._dates.map(dk=>vdata.perDate[dk]||0);
+      const col=groupColors[0];
+      ds.push({label:varInfo.label,data:vals,
+        backgroundColor:col+'CC',borderColor:col,borderWidth:1,
+        stack:type==='stacked'?'v'+vi:'v'+vi+'_0',borderRadius:2});
+      lgGroups.push({label:varInfo.label,items:[{name:varInfo.label,color:col}],vi});
+      const total=vals.reduce((a,b)=>a+b,0);
+      spGroups.push({label:varInfo.label,vi,items:[{name:varInfo.label,color:col,cnt:total,pct:100}]});
+    } else {
+      // Select field: one bar per option per date
+      const opts=vdata.options;
+      const total=opts.reduce((s,o)=>s+(vdata.totals[o]||0),0);
+      lgGroups.push({label:varInfo.label,items:opts.map((o,i)=>({name:o,color:groupColors[i%groupColors.length]})),vi});
+      const spItems=[];
+      opts.forEach((opt,i)=>{
+        const col=groupColors[i%groupColors.length];
+        const vals=s._dates.map(dk=>vdata.perOption[opt]?vdata.perOption[opt][dk]||0:0);
+        ds.push({label:opt,data:vals,
+          backgroundColor:col+'CC',borderColor:col,borderWidth:1,
+          stack:type==='stacked'?'v'+vi:'v'+vi+'_'+i,borderRadius:2});
+        spItems.push({name:opt,color:col,cnt:vdata.totals[opt]||0,pct:total?Math.round((vdata.totals[opt]||0)/total*100):0});
       });
-      ds.push({label:lbl,data:vals,backgroundColor:colorsA[i%colorsA.length],borderColor:colors[i%colors.length],borderWidth:1,stack:type==='stacked'?'v'+vi:'v'+vi+'_'+i,borderRadius:2});
-    });
+      spGroups.push({label:varInfo.label,vi,items:spItems});
+    }
   });
 
-  // Update legend
+  // ── Legend ────────────────────────────────────────────────────
   const lgEl=document.getElementById('cb-legend-'+pid);
   if(lgEl){
-    let h='<div style="margin-bottom:6px">';
+    let h='';
     lgGroups.forEach(g=>{
-      const cls=g.isSW?'lg-sw-title':'lg-ag-title';
-      h+=`<div style="margin-bottom:3px"><span style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:1px 7px;border-radius:3px;display:inline-block;margin-bottom:3px;${g.isSW?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35);font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.07em':'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35);font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.07em'}">${g.label}</span><div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:4px">${g.items.map(it=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--mid)"><span style="width:8px;height:8px;border-radius:2px;background:${it.color};flex-shrink:0"></span>${it.name}</span>`).join('')}</div></div>`;
+      const isSW=g.vi===0;
+      const titleStyle=isSW
+        ?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35)'
+        :'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35)';
+      h+=`<div style="margin-bottom:6px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:4px;${titleStyle}">${g.label}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:2px">
+          ${g.items.map(it=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${it.color}"></span>${it.name}</span>`).join('')}
+        </div>
+      </div>`;
     });
-    h+='</div>';lgEl.innerHTML=h;
+    lgEl.innerHTML=h;
   }
 
-  // Update side panel
-  const spEl=document.getElementById('cb-panel-'+pid);
+  // ── Side panel (image style: color dot + name + bold count + pct) ──
+  const spEl=document.getElementById('cb-statpanel-'+pid);
   if(spEl){
-    let h='<div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#999;margin-bottom:10px">数据统计</div>';
-    lgGroups.forEach(g=>{
-      const isSW=g.isSW;const clrs=isSW?CB_SWC:CB_AGC;
-      const vk=s.varKeys[isSW?0:1];
-      const vdata=Object.entries(s._varData[vk]||{});
-      const vtotal=vdata.reduce((sum,[,n])=>sum+n,0);
-      h+=`<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;${isSW?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35)':'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35)'}">${g.label}</div>`;
-      g.items.forEach((it,i)=>{
-        const entry=vdata.find(([k])=>k===it.name);
-        const cnt=entry?entry[1]:0;
-        h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:.5px solid #f0f0f0;font-size:12px">
-          <span style="display:flex;align-items:center;gap:5px;color:#555;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">
-            <span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${clrs[i%clrs.length]}"></span>${it.name}
-          </span>
-          <span style="font-size:11px;color:#999;flex-shrink:0;margin-left:4px"><b style="color:#333;font-weight:700">${cnt}</b>&nbsp;·&nbsp;${vtotal?Math.round(cnt/vtotal*100):0}%</span>
+    let h='<div style="font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;margin-bottom:10px">数据统计</div>';
+    spGroups.forEach(g=>{
+      const isSW=g.vi===0;
+      const titleStyle=isSW
+        ?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35)'
+        :'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35)';
+      h+=`<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;${titleStyle}">${g.label}</div>`;
+      g.items.forEach(it=>{
+        h+=`<div style="display:flex;align-items:center;padding:5px 0;border-bottom:.5px solid #f0f0f0">
+          <span style="width:9px;height:9px;border-radius:2px;flex-shrink:0;background:${it.color};margin-right:7px"></span>
+          <span style="flex:1;font-size:12px;color:#444;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</span>
+          <span style="font-size:12px;font-weight:700;color:#222;margin-left:6px">${it.cnt}</span>
+          <span style="font-size:11px;color:#aaa;margin-left:4px">${it.pct}%</span>
         </div>`;
       });
       h+='<div style="height:8px"></div>';
@@ -906,25 +989,28 @@ function cbRenderBar(pid){
     spEl.innerHTML=h;
   }
 
-  // Y max with buffer
+  // ── Y max with buffer for title labels ────────────────────────
   const allSums=s._dates.map((_,i)=>{
     const stacks={};
     ds.forEach(d=>{stacks[d.stack]=(stacks[d.stack]||0)+(d.data[i]||0);});
     return Math.max(...Object.values(stacks),0);
   });
   const dataMax=Math.max(...allSums,1);
-  const yMax=s.showTitles?Math.ceil(dataMax+Math.max(3,dataMax*0.3)):undefined;
+  const yMax=s.showTitles?Math.ceil(dataMax+Math.max(3,dataMax*0.35)):undefined;
 
-  const dateLabels=s._dates.map(dk=>{const p=dk.split('-');return p[1]+'/'+p[2]+'/'+p[0];});
+  const dateLabels=s._dates.map(dk=>{const pts=dk.split('-');return pts[1]+'/'+pts[2]+'/'+pts[0];});
 
   if(!window.charts)window.charts={};
   window.charts[pid]=new Chart(canvas,{
     type:'bar',data:{labels:dateLabels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>dateLabels[ctx[0]?.dataIndex],label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+' 次'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:ctx=>dateLabels[ctx[0]?.dataIndex],
+        label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+(s._varData[s.varKeys[0]]?.type==='number'?'':' 次')
+      }}},
       scales:{
         x:{stacked:type==='stacked',grid:{display:false},ticks:{font:{size:10,family:"'Nunito',sans-serif"},color:'#999',maxRotation:30}},
-        y:{stacked:type==='stacked',max:yMax,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10,family:"'Nunito',sans-serif"},color:'#999',stepSize:2}}
+        y:{stacked:type==='stacked',max:yMax,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10,family:"'Nunito',sans-serif"},color:'#999',stepSize:1}}
       }},plugins:[CB_NumPlugin,CB_TitlePlugin]
   });
   window.charts[pid]._cbNums=s.showNums;
@@ -932,8 +1018,6 @@ function cbRenderBar(pid){
   window.charts[pid]._cbPid=pid;
   window.charts[pid]._dates=dateLabels;
   window.charts[pid]._titles=s._titles;
-
-  // bind click for title edit
   canvas.onclick=(e)=>{cbOnCanvasClick(e,pid);};
 }
 
@@ -941,29 +1025,59 @@ function cbRenderDonut(pid){
   const s=getCBState(pid);
   const canvas=document.getElementById('cb-canvas-'+pid);if(!canvas)return;
   if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
+
+  const PALETTE=['#7B68EE','#D85A30','#1D9E75','#EF9F27','#D4537E','#378ADD',
+    '#993C1D','#534AB7','#0F6E56','#BA7517','#99354C','#185FA5',
+    '#F0997B','#9B94E8','#5DCAA5','#FAC775','#ED93B1','#85B7EB'];
+  const getGroupColors=(vi)=>{
+    const offset=(vi*3)%PALETTE.length;
+    const colors=[];
+    for(let i=0;i<9;i++)colors.push(PALETTE[(offset+i)%PALETTE.length]);
+    return colors;
+  };
+
   const ds=[];const allLabels=[];
-  s._varKeys=[];s._varData2=[];
+  s._varKeys=[];
   s.varKeys.forEach((vk,vi)=>{
-    const data=s._varData[vk]||{};
-    const labels=Object.keys(data);const vals=Object.values(data);
-    const colorsA=vi===0?CB_SWA:CB_AGA;
-    const colorsC=vi===0?CB_SWC:CB_AGC;
-    ds.push({data:vals,backgroundColor:colorsA,borderColor:colorsC,borderWidth:2});
+    const vdata=s._varData[vk];if(!vdata)return;
+    const groupColors=getGroupColors(vi);
+    const groupColorsA=groupColors.map(c=>c+'CC');
+    let labels=[];let vals=[];
+    if(vdata.type==='number'){
+      // number: show total as single segment
+      const total=Object.values(vdata.perDate).reduce((a,b)=>a+b,0);
+      const varInfo=s._vars.find(v=>v.key===vk);
+      labels=[varInfo?varInfo.label:vk];vals=[total];
+    } else {
+      labels=vdata.options;
+      vals=labels.map(o=>vdata.totals[o]||0);
+    }
+    ds.push({data:vals,backgroundColor:groupColorsA.slice(0,labels.length),borderColor:groupColors.slice(0,labels.length),borderWidth:2});
     labels.forEach(l=>allLabels.push(l));
     s._varKeys[vi]=vk;
   });
-  // legend
+  // legend using PALETTE
   const lgEl=document.getElementById('cb-legend-'+pid);
   if(lgEl){
-    let h='<div style="margin-bottom:6px">';
+    let h='';
     s.varKeys.forEach((vk,vi)=>{
       const varInfo=s._vars.find(v=>v.key===vk);
       const lbl=varInfo?varInfo.label:vk;
-      const isSW=vi===0;const clrs=isSW?CB_SWC:CB_AGC;
-      const items=Object.keys(s._varData[vk]||{});
-      h+=`<div style="margin-bottom:3px"><span style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:1px 7px;border-radius:3px;display:inline-block;margin-bottom:3px;${isSW?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35);font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.07em':'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35);font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.07em'}">${lbl}（${vi===0?'外圈':'内圈'}）</span><div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:4px">${items.map((n,i)=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:var(--mid)"><span style="width:8px;height:8px;border-radius:2px;background:${clrs[i%clrs.length]}"></span>${n}</span>`).join('')}</div></div>`;
+      const vdata=s._varData[vk];if(!vdata)return;
+      const groupColors=getGroupColors(vi);
+      const items=vdata.type==='number'?[lbl]:vdata.options;
+      const ringLabel=s.varKeys.length>1?(vi===0?'外圈':'内圈'):'';
+      const titleSt=vi===0
+        ?'background:rgba(216,90,48,.12);color:#993C1D;border:.5px solid rgba(216,90,48,.35)'
+        :'background:rgba(83,74,183,.12);color:#3C3489;border:.5px solid rgba(83,74,183,.35)';
+      h+=`<div style="margin-bottom:6px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:4px;${titleSt}">${lbl}${ringLabel?' ('+ringLabel+')':''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:2px">
+          ${items.map((n,i)=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${groupColors[i%groupColors.length]}"></span>${n}</span>`).join('')}
+        </div>
+      </div>`;
     });
-    h+='</div>';lgEl.innerHTML=h;
+    lgEl.innerHTML=h;
   }
   const pad=(s.showDonutNums&&s.donutMode==='line')?65:10;
   if(!window.charts)window.charts={};
@@ -1020,7 +1134,17 @@ function cbTogNum(pid){const s=getCBState(pid);s.showNums=!s.showNums;document.g
 function cbTogTitles(pid){const s=getCBState(pid);s.showTitles=!s.showTitles;document.getElementById('cb-titles-'+pid)?.classList.toggle('on',s.showTitles);cbRenderFull(pid);}
 function cbTogDNums(pid){const s=getCBState(pid);s.showDonutNums=!s.showDonutNums;document.getElementById('cb-dnums-'+pid)?.classList.toggle('on',s.showDonutNums);const dm=document.getElementById('cb-dmode-'+pid);if(dm)dm.style.opacity=s.showDonutNums?1:.35;cbRenderDonut(pid);}
 function cbSetDonutMode(pid,m){const s=getCBState(pid);s.donutMode=m;document.getElementById('cb-ddirect-'+pid)?.classList.toggle('on',m==='direct');document.getElementById('cb-dline-'+pid)?.classList.toggle('on',m==='line');cbRenderDonut(pid);}
-function cbTogPanel(pid){const s=getCBState(pid);s.showPanel=!s.showPanel;const el=document.getElementById('cb-panel-'+pid);if(el)el.classList.toggle('show',s.showPanel);const b=document.getElementById('cb-panel-'+pid+'-btn')||document.querySelectorAll('[onclick*="cbTogPanel"]').item(0);document.getElementById('cb-panel-'+pid)?.classList.toggle('show',s.showPanel);}
+function cbTogPanel(pid){
+  const s=getCBState(pid);s.showPanel=!s.showPanel;
+  // update panel div
+  const el=document.getElementById('cb-statpanel-'+pid);
+  if(el)el.classList.toggle('show',s.showPanel);
+  // sync both bar and donut panel buttons
+  ['cb-panel-'+pid,'cb-dpanel-'+pid].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn)btn.classList.toggle('on',s.showPanel);
+  });
+}
 
 function cbToggleAdd(pid){
   const s=getCBState(pid);const type=s.chartType;
