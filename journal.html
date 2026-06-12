@@ -259,7 +259,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .proj-status { font-size:9px; font-weight:700; letter-spacing:.05em; padding:2px 6px; border-radius:999px; flex-shrink:0; text-transform:uppercase; }
 .proj-status.active { background:rgba(29,158,117,0.12); color:#1D9E75; border:0.5px solid rgba(29,158,117,0.3); }
 .proj-status.done { background:rgba(123,104,238,0.1); color:var(--purple); border:0.5px solid rgba(123,104,238,0.25); }
-.proj-status.archived { background:rgba(90,88,112,0.08); color:var(--mid); border:0.5px solid rgba(90,88,112,0.2); }
+.proj-status.archived { color:#A32D2D; background:transparent; border:1.5px solid #A32D2D; border-radius:3px; letter-spacing:.1em; opacity:.75; transform:rotate(-7deg); }
 .undo-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--dark); color:#fff; font-size:13px; font-weight:500; padding:10px 20px; border-radius:999px; display:flex; align-items:center; gap:12px; z-index:500; box-shadow:0 4px 20px rgba(0,0,0,.2); font-family:'Nunito',sans-serif; }
 .undo-btn { font-size:12px; font-weight:700; color:#B0A8FF; cursor:pointer; border:none; background:none; font-family:'Nunito',sans-serif; padding:0; }
 .undo-btn:hover { color:#fff; }
@@ -554,7 +554,7 @@ function renderTracker(){
     const isArchived=(p.status||'active')==='archived';
     const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
     const hdr=document.createElement('div');hdr.className='tracker-proj-header';
-    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+statusLabel[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ 复原</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+statusLabel[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ 复原</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 永久删除</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
     hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
     card.appendChild(hdr);
     if(isOpen){
@@ -1462,6 +1462,7 @@ function renderJournal(){
 
 function buildCard(e,p){
   const card=document.createElement('div');card.className='entry-card';
+  const isArchived=(p.status||'active')==='archived';
   let fHTML='';
   (p.fields||[]).forEach(f=>{
     if(e.skipped&&e.skipped[f.id])return;
@@ -1471,7 +1472,10 @@ function buildCard(e,p){
   });
   const coins=calcCoins(e, dk(selDate));
   card.innerHTML=`<div class="ec-inner">
-    <div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.12);color:${p.color};border:0.5px solid rgba(${hexRgb(p.color)},.3)">${p.name}</div>
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:1px">
+      ${isArchived?`<span style="font-size:12px;font-weight:500;color:#A32D2D;background:transparent;border:1.5px solid #A32D2D;border-radius:3px;padding:2px 7px;white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;opacity:.75;transform:rotate(-7deg);display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px">已归档</span>`:''}
+      <div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.12);color:${p.color};border:0.5px solid rgba(${hexRgb(p.color)},.3)">${p.name}</div>
+    </div>
     <div class="ec-body">
       ${e.title&&e.title.trim()?`<div class="ec-title">${e.title}</div>`:''}
       <div class="ec-meta">${fHTML}${e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">↗ ${e.linkLabel||'链接'}</a>`:''}</div>
@@ -1950,6 +1954,34 @@ function restoreProject(id){
   const p=projects.find(x=>x.id===id);if(!p)return;
   p.status='active';
   saveData();renderAll();
+}
+
+function confirmPermDelete(id,name){
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  <div class="modal" style="max-width:300px">
+    <div class="modal-title" style="color:var(--pink)">永久删除</div>
+    <p style="font-size:13px;color:var(--mid);margin-bottom:6px;line-height:1.6">
+      确定要永久删除「<strong style="color:var(--dark)">${name}</strong>」吗？
+    </p>
+    <p style="font-size:12px;color:var(--pink);margin-bottom:16px;line-height:1.5">
+      ⚠️ 此操作无法撤销，project 和所有记录将被彻底移除。
+    </p>
+    <div class="modal-btns" style="border-top:0.5px solid rgba(123,104,238,0.15);padding-top:12px;margin-top:0">
+      <button class="m-cancel" onclick="_closeDelConfirm()">取消</button>
+      <button class="m-save" style="background:var(--pink)" onclick="_permDeleteProject('${id}')">确认永久删除</button>
+    </div>
+  </div></div>`;
+}
+
+function _permDeleteProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  const entryCount=Object.values(entries).reduce((s,arr)=>s+arr.filter(e=>e.projId===id).length,0);
+  Object.keys(entries).forEach(dk2=>{entries[dk2]=entries[dk2].filter(e=>e.projId!==id);});
+  projects=projects.filter(x=>x.id!==id);
+  _closeDelConfirm();
+  saveData();renderAll();
+  showUndoToast('已永久删除「'+p.name+'」'+(entryCount?' 及 '+entryCount+' 条记录':''));
 }
 
 function showUndoToast(msg){
