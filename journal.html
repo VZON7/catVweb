@@ -271,9 +271,6 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .tracker-tab { padding:7px 16px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.25); background:rgba(255,255,255,0.6); color:var(--mid); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; }
 .tracker-tab.active { background:var(--purple); color:#fff; border-color:var(--purple); }
 .tracker-empty { text-align:center; padding:2rem; color:var(--mid); font-size:13px; }
-.cb-step-lbl { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--mid); margin-bottom:5px; margin-top:8px; }
-.cb-var-chip { padding:4px 10px; border-radius:999px; border:.5px solid rgba(123,104,238,.25); background:rgba(255,255,255,.6); color:var(--mid); font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .15s; }
-.cb-var-chip.on { background:rgba(123,104,238,.12); border-color:var(--purple); color:var(--purple); font-weight:700; }
 .cb-type-btn { padding:5px 13px; border-radius:999px; border:.5px solid rgba(0,0,0,0.12); background:#f5f4f9; color:#666; font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .15s; }
 .cb-type-btn:hover { background:#eeedf4; color:var(--dark); }
 .cb-type-btn.on { background:var(--purple); border-color:var(--purple); color:#fff; font-weight:600; }
@@ -539,9 +536,8 @@ function renderTracker(){
     const days=new Set(pe.map(e=>e.dateKey)).size;
     const card=document.createElement('div');card.className='tracker-proj-card';
     const isOpen=window._trackerOpen&&window._trackerOpen[p.id];
-    const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
     const hdr=document.createElement('div');hdr.className='tracker-proj-header';
-    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+statusLabel[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div><span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+STATUS_LABELS[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div><span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
     hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
     card.appendChild(hdr);
     if(isOpen){
@@ -571,12 +567,53 @@ function renderTracker(){
 // ════════════════════════════════════════════════════════
 // CHART BUILDER v2 — stacked/grouped bar + nested donut
 // ════════════════════════════════════════════════════════
-const CB_SWC=['#F0997B','#D85A30','#993C1D'];
-const CB_SWA=['rgba(240,153,123,.85)','rgba(216,90,48,.85)','rgba(153,60,29,.85)'];
-const CB_AGC=['#9B94E8','#7B68EE','#534AB7'];
-const CB_AGA=['rgba(155,148,232,.85)','rgba(123,104,238,.85)','rgba(83,74,183,.85)'];
-const CB_ALL_C=[...CB_SWC,...CB_AGC,'#5DCAA5','#EF9F27','#D4537E'];
-const CB_ALL_A=[...CB_SWA,...CB_AGA,'rgba(93,202,165,.8)','rgba(239,159,39,.8)','rgba(212,83,126,.8)'];
+
+// ── 顶层常量（唯一来源）─────────────────────────────────
+// 颜色 palette — 禁止在任何函数内部重新定义
+const CB_PALETTES={
+  warm:[
+    ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
+    ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
+    ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
+    ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
+    ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
+    ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
+  ],
+  cool:[
+    ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
+    ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
+    ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
+    ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
+    ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
+    ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
+  ]
+};
+// 取当前色调下某个 variable index 的颜色组
+function cbGetGroupColors(vi){
+  const pal=CB_PALETTES[window._cbColorMode||'warm']||CB_PALETTES.warm;
+  return pal[vi%pal.length];
+}
+// 根据选项数量取均匀分布的 stop — 禁止在函数内部重新定义变体
+function cbGetStops(stops,n){
+  if(n===1)return[stops[2]];
+  if(n===2)return[stops[1],stops[3]];
+  if(n===3)return[stops[1],stops[2],stops[3]];
+  if(n===4)return[stops[0],stops[1],stops[3],stops[4]];
+  return stops.slice(0,n);
+}
+
+// ── Project 状态标签（唯一来源）─────────────────────────
+// 禁止在 renderTracker / cbExportDocx / exportTracker 内部重新定义
+const STATUS_LABELS={active:'进行中',done:'已完成',archived:'已归档'};
+
+// ── 下载触发器（唯一来源）───────────────────────────────
+// 所有导出函数统一用此函数，禁止手写 createElement('a') 下载逻辑
+function triggerDownload(href,filename){
+  const a=document.createElement('a');
+  a.href=href;a.download=filename;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+}
 
 let _cbState={};
 if(!window.charts)window.charts={};
@@ -667,34 +704,6 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const pid=ch._cbPid;const s=getCBState(pid);
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
-  const palettes2={
-    warm:[
-      ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
-      ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
-      ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
-      ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
-      ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
-      ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
-    ],
-    cool:[
-      ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
-      ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
-      ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
-      ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
-      ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
-      ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
-    ]
-  };
-  const getDonutStops=(vi,n)=>{
-    const pal=palettes2[window._cbColorMode||'warm']||palettes2.warm;
-    const stops=pal[vi%pal.length];
-    if(n===1)return[stops[2]];
-    if(n===2)return[stops[1],stops[3]];
-    if(n===3)return[stops[1],stops[2],stops[3]];
-    if(n===4)return[stops[0],stops[1],stops[3],stops[4]];
-    return stops.slice(0,n);
-  };
-
   // ── STEP 1: Collect ALL labels first (outside datasets loop) ──
   const allItems=[];
   ch.data.datasets.forEach((ds,di)=>{
@@ -709,7 +718,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         else dsLabels=vd.options||[];
       }
     }
-    const colorArr=getDonutStops(di,ds.data.length);
+    const colorArr=cbGetStops(cbGetGroupColors(di),ds.data.length);
     meta.data.forEach((arc,i)=>{
       const v=ds.data[i];if(!v)return;
       const pct=Math.round(v/total*100);
@@ -1006,32 +1015,6 @@ function cbRenderBar(pid){
   if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
   const type=s.chartType;
 
-  // Palette: 12 distinct colors for sub-options
-  // Warm/cool palettes — same hue families, different tone
-  const CB_PALETTES={
-    warm:[
-      ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
-      ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
-      ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
-      ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
-      ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
-      ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
-    ],
-    cool:[
-      ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
-      ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
-      ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
-      ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
-      ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
-      ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
-    ]
-  };
-  const _cbColorMode=window._cbColorMode||'warm';
-  const getGroupColors=(vi)=>{
-    const pal=CB_PALETTES[_cbColorMode]||CB_PALETTES.warm;
-    return pal[vi%pal.length];
-  };
-
   const ds=[];
   const lgGroups=[];
   const spGroups=[];
@@ -1040,15 +1023,7 @@ function cbRenderBar(pid){
     const varInfo=s._vars.find(v=>v.key===vk);
     const vdata=s._varData[vk];
     if(!vdata)return;
-    const rawStops=getGroupColors(vi);
-    // Pick evenly spaced stops based on count
-    const getStops=(stops,n)=>{
-      if(n===1)return[stops[2]];
-      if(n===2)return[stops[1],stops[3]];
-      if(n===3)return[stops[1],stops[2],stops[3]];
-      if(n===4)return[stops[0],stops[1],stops[3],stops[4]];
-      return stops.slice(0,n);
-    };
+    const rawStops=cbGetGroupColors(vi);
 
     if(vdata.type==='number'){
       // Number field: one bar per date showing the value
@@ -1064,7 +1039,7 @@ function cbRenderBar(pid){
       // Select field: one bar per option per date
       const opts=vdata.options;
       const total=opts.reduce((s,o)=>s+(vdata.totals[o]||0),0);
-      const optColors=getStops(rawStops,Math.min(opts.length,5));
+      const optColors=cbGetStops(rawStops,Math.min(opts.length,5));
       lgGroups.push({label:varInfo.label,items:opts.map((o,i)=>({name:o,color:optColors[i%optColors.length]})),vi});
       const spItems=[];
       opts.forEach((opt,i)=>{
@@ -1155,34 +1130,11 @@ function cbRenderDonut(pid){
   const canvas=document.getElementById('cb-canvas-'+pid);if(!canvas)return;
   if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
 
-  const CB_PALETTES2={
-    warm:[
-      ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
-      ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
-      ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
-      ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
-      ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
-      ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
-    ],
-    cool:[
-      ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
-      ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
-      ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
-      ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
-      ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
-      ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
-    ]
-  };
-  const getGroupColors=(vi)=>{
-    const pal=CB_PALETTES2[window._cbColorMode||'warm']||CB_PALETTES2.warm;
-    return pal[vi%pal.length];
-  };
-
   const ds=[];const allLabels=[];
   s._varKeys=[];
   s.varKeys.forEach((vk,vi)=>{
     const vdata=s._varData[vk];if(!vdata)return;
-    const groupColors=getGroupColors(vi);
+    const groupColors=cbGetGroupColors(vi);
     const groupColorsA=groupColors.map(c=>c+'CC');
     let labels=[];let vals=[];
     if(vdata.type==='number'){
@@ -1194,8 +1146,7 @@ function cbRenderDonut(pid){
       labels=vdata.options;
       vals=labels.map(o=>vdata.totals[o]||0);
     }
-    const getStopsD=(stops,n)=>{if(n===1)return[stops[2]];if(n===2)return[stops[1],stops[3]];if(n===3)return[stops[1],stops[2],stops[3]];if(n===4)return[stops[0],stops[1],stops[3],stops[4]];return stops.slice(0,n);};
-    const pickedColors=getStopsD(groupColors,labels.length);
+    const pickedColors=cbGetStops(groupColors,labels.length);
     const pickedA=pickedColors.map(c=>c+'CC');
     ds.push({data:vals,backgroundColor:pickedA,borderColor:pickedColors,borderWidth:2});
     labels.forEach(l=>allLabels.push(l));
@@ -1209,10 +1160,9 @@ function cbRenderDonut(pid){
       const varInfo=s._vars.find(v=>v.key===vk);
       const lbl=varInfo?varInfo.label:vk;
       const vdata=s._varData[vk];if(!vdata)return;
-      const groupColors=getGroupColors(vi);
+      const groupColors=cbGetGroupColors(vi);
       const rawOpts=vdata.type==='number'?[lbl]:vdata.options;
-      const getStopsLg=(stops,n)=>{if(n===1)return[stops[2]];if(n===2)return[stops[1],stops[3]];if(n===3)return[stops[1],stops[2],stops[3]];if(n===4)return[stops[0],stops[1],stops[3],stops[4]];return stops.slice(0,n);};
-      const optColorsLg=getStopsLg(groupColors,Math.min(rawOpts.length,5));
+      const optColorsLg=cbGetStops(groupColors,Math.min(rawOpts.length,5));
       const items=rawOpts;
       const ringLabel=s.varKeys.length>1?(vi===0?'外圈':'内圈'):'';
       const midDonutCol=optColorsLg[Math.floor(optColorsLg.length/2)]||optColorsLg[0];
@@ -1325,10 +1275,9 @@ function cbExportDocx(pid){
   if(!docxLib){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
   const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
   const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
-  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   const children=[];
   children.push(new Paragraph({children:[new TextRun({text:p.name+' — 项目追踪报告',bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-  children.push(new Paragraph({children:[new TextRun({text:'状态: '+statusLabel[p.status||'active']+'   总记录: '+(s._pe||[]).length+' 条   导出: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+  children.push(new Paragraph({children:[new TextRun({text:'状态: '+STATUS_LABELS[p.status||'active']+'   总记录: '+(s._pe||[]).length+' 条   导出: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
   const canvas=document.getElementById('cb-canvas-'+pid);
   if(canvas){
     try{
@@ -1340,20 +1289,17 @@ function cbExportDocx(pid){
   }
   const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
   Packer.toBase64String(doc).then(b64=>{
-    const a=document.createElement('a');
-    a.href='data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64;
-    a.download=p.name+'_tracker.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);
+    triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
   }).catch(err=>alert('DOCX 导出失败: '+err.message));
 }
 
 function cbExportPdf(pid){
   const s=getCBState(pid);const p=s._p;
   const canvas=document.getElementById('cb-canvas-'+pid);
-  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   let imgTag='';
   if(canvas){try{imgTag=`<img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px">`;}catch(e){}}
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}@media print{body{padding:20px}}</style></head><body><h1>${p.name}</h1><p style="color:#888;font-size:13px">状态: ${statusLabel[p.status||'active']} | 导出: ${new Date().toLocaleDateString('zh-CN')}</p>${imgTag}<script>window.onload=function(){window.print()}<\/script></body></html>`;
-  const a=document.createElement('a');a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);a.download=p.name+'_chart.html';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}@media print{body{padding:20px}}</style></head><body><h1>${p.name}</h1><p style="color:#888;font-size:13px">状态: ${STATUS_LABELS[p.status||'active']} | 导出: ${new Date().toLocaleDateString('zh-CN')}</p>${imgTag}<script>window.onload=function(){window.print()}<\/script></body></html>`;
+  triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_chart.html');
 }
 
 function exportTracker(pid,type){
@@ -1361,19 +1307,14 @@ function exportTracker(pid,type){
   const pe=[];
   Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===pid)pe.push({...e,dateKey:dk2});}));
   pe.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   if(type==='docx'){
-    // Generate DOCX using docx.js
     try{
-      const docxLib=window.docx||window.docx;if(!docxLib){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
+      const docxLib=window.docx;if(!docxLib){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
       const {Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle}=docxLib;
       const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
       const children=[];
-      // Title
       children.push(new Paragraph({children:[new TextRun({text:p.name+' — 项目追踪报告',bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-      // Meta
-      children.push(new Paragraph({children:[new TextRun({text:'状态: '+statusLabel[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
-      // Entries
+      children.push(new Paragraph({children:[new TextRun({text:'状态: '+STATUS_LABELS[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
       pe.forEach(e=>{
         const parts=e.dateKey.split('-');
         const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
@@ -1389,14 +1330,11 @@ function exportTracker(pid,type){
       });
       const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
       Packer.toBase64String(doc).then(b64=>{
-        const a=document.createElement('a');
-        a.href='data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64;
-        a.download=p.name+'_tracker.docx';
-        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
       }).catch(err=>{alert('DOCX 生成失败: '+err.message);});
     }catch(err){alert('请稍候再试，docx 库加载中: '+err.message);}
   } else if(type==='txt'){
-    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+statusLabel[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
+    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+STATUS_LABELS[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
@@ -1404,31 +1342,23 @@ function exportTracker(pid,type){
       if(e.note)txt+='  备注: '+e.note+'\n';txt+='\n';
     });
     try{
-      const a=document.createElement('a');
-      a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);
-      a.download=p.name+'_tracker.txt';
-      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      triggerDownload('data:text/plain;charset=utf-8,'+encodeURIComponent(txt),p.name+'_tracker.txt');
     }catch(err){
       const w=window.open('','_blank');
       if(w){w.document.write('<pre>'+txt.replace(/</g,'&lt;')+'</pre>');w.document.close();}
       else{alert('请允许弹窗，或复制以下内容：\n\n'+txt);}
     }
   } else {
-    // Build printable HTML
     let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}@media print{body{padding:20px}}</style></head><body>';
-    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+statusLabel[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
+    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+STATUS_LABELS[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');let f='';
       (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+v+'</span>';});
       html+='<div class="entry"><div class="date">'+parts[0]+'年'+parts[1]+'月'+parts[2]+'日</div>'+(e.title&&e.title.trim()?'<div class="title">'+e.title.trim()+'</div>':'')+(f?'<div>'+f+'</div>':'')+(e.note?'<div class="note">'+e.note+'</div>':'')+'</div>';
     });
     html+='<script>window.onload=function(){window.print();}<\/script></body></html>';
-    // Use data URI to avoid popup blocker
     try{
-      const a=document.createElement('a');
-      a.href='data:text/html;charset=utf-8,'+encodeURIComponent(html);
-      a.download=p.name+'_tracker.html';
-      document.body.appendChild(a);a.click();document.body.removeChild(a);
+      triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_tracker.html');
     }catch(err){
       const w=window.open('about:blank','_blank');
       if(w){w.document.open();w.document.write(html);w.document.close();}
