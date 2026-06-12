@@ -1067,7 +1067,7 @@ function cbRenderBar(pid){
     let h='';
     lgGroups.forEach(g=>{
       // Use the mid color of this group's palette for the title badge
-      const midCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:getGroupColors(g.vi)[2];
+      const midCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:cbGetGroupColors(g.vi)[2];
       const titleStyle=`background:${midCol}22;color:${midCol};border:.5px solid ${midCol}66`;
       h+=`<div style="margin-bottom:6px">
         <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:4px;${titleStyle}">${g.label}</div>
@@ -1084,7 +1084,7 @@ function cbRenderBar(pid){
   if(spEl){
     let h='<div style="font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;margin-bottom:10px">数据统计</div>';
     spGroups.forEach(g=>{
-      const midSpCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:getGroupColors(g.vi)[2];
+      const midSpCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:cbGetGroupColors(g.vi)[2];
       const titleStyle=`background:${midSpCol}22;color:${midSpCol};border:.5px solid ${midSpCol}66`;
       h+=`<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;${titleStyle}">${g.label}</div>`;
       g.items.forEach(it=>{
@@ -1414,7 +1414,7 @@ function renderSidebar(){
     dl.appendChild(div);
   }
   const pl=document.getElementById('proj-list');pl.innerHTML='';
-  projects.forEach((p,idx)=>{
+  projects.filter(p=>(p.status||'active')!=='archived').forEach((p,idx)=>{
     const div=document.createElement('div');
     div.className='proj-item';div.draggable=true;div.dataset.idx=idx;div.title=p.name;
     div.innerHTML=`<span class="proj-drag-handle" title="拖动排序">⠿</span><div class="proj-dot" style="background:${p.color}"></div><span class="proj-name">${p.name}</span>${p.name.length>14?`<span class="proj-tooltip">${p.name}</span>`:''}`;
