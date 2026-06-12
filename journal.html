@@ -621,6 +621,10 @@ function triggerDownload(href,filename){
   document.body.appendChild(a);a.click();
   document.body.removeChild(a);
 }
+// 移除所有 emoji，避免 docx.js TextRun 报错（唯一来源）
+function stripEmoji(str){
+  return String(str||'').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{FE00}-\u{FEFF}\u{1F300}-\u{1F9FF}]/gu,'').trim();
+}
 
 let _cbState={};
 if(!window.charts)window.charts={};
@@ -1281,9 +1285,14 @@ function cbExportDocx(pid){
   const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
   const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
   const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
+  const pe=[...(s._pe||[])].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
   const children=[];
-  children.push(new Paragraph({children:[new TextRun({text:p.name+' — 项目追踪报告',bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-  children.push(new Paragraph({children:[new TextRun({text:'状态: '+statusLabel[p.status||'active']+'   总记录: '+(s._pe||[]).length+' 条   导出: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+
+  // ── 标题 ──
+  children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — 项目追踪报告'),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
+  children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+statusLabel[p.status||'active']+'   总记录: '+pe.length+' 条   导出: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+
+  // ── 统计图表 ──
   const canvas=document.getElementById('cb-canvas-'+pid);
   if(canvas){
     try{
@@ -1293,6 +1302,26 @@ function cbExportDocx(pid){
       children.push(new Paragraph({children:[new ImageRun({data:Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transformation:{width:480,height:220}})],spacing:{before:0,after:80}}));
     }catch(e){}
   }
+
+  // ── 文字记录 ──
+  if(pe.length){
+    children.push(new Paragraph({children:[new TextRun({text:'详细记录',bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:160,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');
+      const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
+      children.push(new Paragraph({children:[new TextRun({text:dateStr,bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
+      if(e.title&&e.title.trim())children.push(new Paragraph({children:[new TextRun({text:stripEmoji(e.title.trim()),bold:true,size:22,color:DARK,font:'Arial'})],spacing:{before:0,after:20},indent:{left:240}}));
+      (p.fields||[]).forEach(f=>{
+        if(e.skipped&&e.skipped[f.id])return;
+        const v=e.fields&&e.fields[f.id];if(!v)return;
+        const display=Array.isArray(v)?v.join(', '):String(v);
+        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+display),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+      });
+      if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji('备注: '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+      children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
+    });
+  }
+
   const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
   Packer.toBase64String(doc).then(b64=>{
     triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
@@ -1303,9 +1332,50 @@ function cbExportPdf(pid){
   const s=getCBState(pid);const p=s._p;
   const canvas=document.getElementById('cb-canvas-'+pid);
   const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
+  const pe=[...(s._pe||[])].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
   let imgTag='';
-  if(canvas){try{imgTag=`<img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px">`;}catch(e){}}
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}@media print{body{padding:20px}}</style></head><body><h1>${p.name}</h1><p style="color:#888;font-size:13px">状态: ${statusLabel[p.status||'active']} | 导出: ${new Date().toLocaleDateString('zh-CN')}</p>${imgTag}<script>window.onload=function(){window.print()}<\/script></body></html>`;
+  if(canvas){try{imgTag=`<img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:24px">`;}catch(e){}}
+
+  // ── 文字记录 HTML ──
+  let entriesHtml='';
+  if(pe.length){
+    entriesHtml='<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">详细记录</h2>';
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');
+      let fieldsHtml='';
+      (p.fields||[]).forEach(f=>{
+        if(e.skipped&&e.skipped[f.id])return;
+        const v=e.fields&&e.fields[f.id];if(!v)return;
+        const display=Array.isArray(v)?v.join(', '):String(v);
+        fieldsHtml+=`<span class="tag">${f.label}: ${display}</span>`;
+      });
+      entriesHtml+=`<div class="entry">
+        <div class="date">${parts[0]}年${parts[1]}月${parts[2]}日</div>
+        ${e.title&&e.title.trim()?`<div class="title">${e.title.trim()}</div>`:''}
+        ${fieldsHtml?`<div style="margin-top:4px">${fieldsHtml}</div>`:''}
+        ${e.note?`<div class="note">备注：${e.note}</div>`:''}
+        <div style="font-size:11px;color:#854F0B;margin-top:4px">Cat Token +${calcCoins(e,e.dateKey)}</div>
+      </div>`;
+    });
+  }
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}
+    h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px;margin-bottom:4px}
+    .meta{font-size:12px;color:#888;margin-bottom:20px}
+    .entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:8px 0;background:#f9f9ff;border-radius:0 8px 8px 0}
+    .date{color:#7B68EE;font-weight:700;font-size:12px}
+    .title{font-size:14px;font-weight:600;margin:3px 0}
+    .tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
+    .note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}
+    @media print{body{padding:20px}img{max-width:100%!important}}
+  </style></head><body>
+    <h1>${p.name}</h1>
+    <div class="meta">状态: ${statusLabel[p.status||'active']} | 总记录: ${pe.length} 条 | 导出: ${new Date().toLocaleDateString('zh-CN')}</div>
+    ${imgTag}
+    ${entriesHtml}
+    <script>window.onload=function(){window.print()}<\/script>
+  </body></html>`;
   triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_chart.html');
 }
 
@@ -1321,19 +1391,19 @@ function exportTracker(pid,type){
       const {Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle}=docxLib;
       const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
       const children=[];
-      children.push(new Paragraph({children:[new TextRun({text:p.name+' — 项目追踪报告',bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-      children.push(new Paragraph({children:[new TextRun({text:'状态: '+statusLabel[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+      children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — 项目追踪报告'),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
+      children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+statusLabel[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
       pe.forEach(e=>{
         const parts=e.dateKey.split('-');
         const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
-        children.push(new Paragraph({children:[new TextRun({text:'📅 '+dateStr,bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
-        if(e.title&&e.title.trim())children.push(new Paragraph({children:[new TextRun({text:e.title.trim(),bold:true,size:22,color:DARK,font:'Arial'})],spacing:{before:0,after:20},indent:{left:240}}));
+        children.push(new Paragraph({children:[new TextRun({text:dateStr,bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
+        if(e.title&&e.title.trim())children.push(new Paragraph({children:[new TextRun({text:stripEmoji(e.title.trim()),bold:true,size:22,color:DARK,font:'Arial'})],spacing:{before:0,after:20},indent:{left:240}}));
         (p.fields||[]).forEach(f=>{
           if(e.skipped&&e.skipped[f.id])return;
           const v=e.fields&&e.fields[f.id];if(!v)return;
-          children.push(new Paragraph({children:[new TextRun({text:f.label+': '+v,size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+          children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+v),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
         });
-        if(e.note)children.push(new Paragraph({children:[new TextRun({text:'备注: '+e.note,size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji('备注: '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
         children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
       });
       const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
