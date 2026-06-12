@@ -6,22 +6,17 @@
 <title>项目日记 — catVweb</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="https://unpkg.com/docx@8.5.0/build/index.min.js"></script>
+<script type="module">
+import * as docxModule from 'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js';
+window.docx = docxModule;
+</script>
 <script>
-// 统一 docx 库的全局变量到 window.docx
-window.addEventListener('load',function(){
-  if(!window.docx){
-    var candidates=['docx','docxjs','DocX','DOCX'];
-    for(var i=0;i<candidates.length;i++){
-      if(window[candidates[i]]&&window[candidates[i]].Packer){
-        window.docx=window[candidates[i]];break;
-      }
-    }
-    // 如果 Packer 直接挂在 window 上
-    if(!window.docx&&window.Packer&&window.Document){
-      window.docx=window;
-    }
-  }
+// fallback: wait for module to load
+window._docxReady = new Promise(resolve => {
+  const check = setInterval(() => {
+    if (window.docx && window.docx.Packer) { clearInterval(check); resolve(); }
+  }, 100);
+  setTimeout(() => { clearInterval(check); resolve(); }, 8000);
 });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -1296,9 +1291,10 @@ function cbExport(pid,type){
 }
 
 function cbExportDocx(pid){
+  (window._docxReady||Promise.resolve()).then(()=>{
   const s=getCBState(pid);const p=s._p;
   const docxLib=window.docx;
-  if(!docxLib){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
+  if(!docxLib||!docxLib.Packer){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
   const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
   const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
   const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
@@ -1340,9 +1336,10 @@ function cbExportDocx(pid){
   }
 
   const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
-  Packer.toBase64String(doc).then(b64=>{
+  docxLib.Packer.toBase64String(doc).then(b64=>{
     triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
   }).catch(err=>alert('DOCX 导出失败: '+err.message));
+  });
 }
 
 function cbExportPdf(pid){
@@ -1403,8 +1400,9 @@ function exportTracker(pid,type){
   pe.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
   const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   if(type==='docx'){
+    (window._docxReady||Promise.resolve()).then(()=>{
     try{
-      const docxLib=window.docx;if(!docxLib){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
+      const docxLib=window.docx;if(!docxLib||!docxLib.Packer){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
       const {Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle}=docxLib;
       const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
       const children=[];
@@ -1428,7 +1426,7 @@ function exportTracker(pid,type){
         triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
       }).catch(err=>{alert('DOCX 生成失败: '+err.message);});
     }catch(err){alert('请稍候再试，docx 库加载中: '+err.message);}
-  } else if(type==='txt'){
+    });  } else if(type==='txt'){
     let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+statusLabel[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
