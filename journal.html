@@ -209,6 +209,21 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .m-delete { padding:6px 12px; border-radius:999px; border:0.5px solid rgba(255,63,108,0.35); background:none; color:var(--pink); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; }
 
 .empty-hint { text-align:center; padding:2.5rem 0; color:var(--mid); font-size:13px; }
+
+/* ── project 未选时的抖动提示 ── */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-5px)}
+  40%{transform:translateX(5px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.proj-sel-btn.error {
+  border-color:var(--pink)!important;
+  background:rgba(255,63,108,0.08)!important;
+  color:var(--pink)!important;
+  animation:shake .35s ease;
+}
 .cb-wrap { background:#fff; border:0.5px solid rgba(0,0,0,0.08); border-radius:14px; padding:16px; margin-bottom:12px; box-shadow:0 1px 6px rgba(0,0,0,0.05); }
 .cb-step-lbl { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--mid); margin-bottom:6px; margin-top:10px; }
 .cb-step-lbl:first-child { margin-top:0; }
@@ -536,8 +551,10 @@ function renderTracker(){
     const days=new Set(pe.map(e=>e.dateKey)).size;
     const card=document.createElement('div');card.className='tracker-proj-card';
     const isOpen=window._trackerOpen&&window._trackerOpen[p.id];
+    const isArchived=(p.status||'active')==='archived';
+    const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
     const hdr=document.createElement('div');hdr.className='tracker-proj-header';
-    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+STATUS_LABELS[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div><span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+statusLabel[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ 复原</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
     hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
     card.appendChild(hdr);
     if(isOpen){
@@ -569,7 +586,6 @@ function renderTracker(){
 // ════════════════════════════════════════════════════════
 
 // ── 顶层常量（唯一来源）─────────────────────────────────
-// 颜色 palette — 禁止在任何函数内部重新定义
 const CB_PALETTES={
   warm:[
     ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
@@ -588,12 +604,10 @@ const CB_PALETTES={
     ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
   ]
 };
-// 取当前色调下某个 variable index 的颜色组
 function cbGetGroupColors(vi){
   const pal=CB_PALETTES[window._cbColorMode||'warm']||CB_PALETTES.warm;
   return pal[vi%pal.length];
 }
-// 根据选项数量取均匀分布的 stop — 禁止在函数内部重新定义变体
 function cbGetStops(stops,n){
   if(n===1)return[stops[2]];
   if(n===2)return[stops[1],stops[3]];
@@ -601,13 +615,6 @@ function cbGetStops(stops,n){
   if(n===4)return[stops[0],stops[1],stops[3],stops[4]];
   return stops.slice(0,n);
 }
-
-// ── Project 状态标签（唯一来源）─────────────────────────
-// 禁止在 renderTracker / cbExportDocx / exportTracker 内部重新定义
-const STATUS_LABELS={active:'进行中',done:'已完成',archived:'已归档'};
-
-// ── 下载触发器（唯一来源）───────────────────────────────
-// 所有导出函数统一用此函数，禁止手写 createElement('a') 下载逻辑
 function triggerDownload(href,filename){
   const a=document.createElement('a');
   a.href=href;a.download=filename;
@@ -1138,7 +1145,6 @@ function cbRenderDonut(pid){
     const groupColorsA=groupColors.map(c=>c+'CC');
     let labels=[];let vals=[];
     if(vdata.type==='number'){
-      // number: show total as single segment
       const total=Object.values(vdata.perDate).reduce((a,b)=>a+b,0);
       const varInfo=s._vars.find(v=>v.key===vk);
       labels=[varInfo?varInfo.label:vk];vals=[total];
@@ -1152,7 +1158,6 @@ function cbRenderDonut(pid){
     labels.forEach(l=>allLabels.push(l));
     s._varKeys[vi]=vk;
   });
-  // legend using PALETTE
   const lgEl=document.getElementById('cb-legend-'+pid);
   if(lgEl){
     let h='';
@@ -1275,9 +1280,10 @@ function cbExportDocx(pid){
   if(!docxLib){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
   const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
   const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
+  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   const children=[];
   children.push(new Paragraph({children:[new TextRun({text:p.name+' — 项目追踪报告',bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-  children.push(new Paragraph({children:[new TextRun({text:'状态: '+STATUS_LABELS[p.status||'active']+'   总记录: '+(s._pe||[]).length+' 条   导出: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+  children.push(new Paragraph({children:[new TextRun({text:'状态: '+statusLabel[p.status||'active']+'   总记录: '+(s._pe||[]).length+' 条   导出: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
   const canvas=document.getElementById('cb-canvas-'+pid);
   if(canvas){
     try{
@@ -1296,9 +1302,10 @@ function cbExportDocx(pid){
 function cbExportPdf(pid){
   const s=getCBState(pid);const p=s._p;
   const canvas=document.getElementById('cb-canvas-'+pid);
+  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   let imgTag='';
   if(canvas){try{imgTag=`<img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px">`;}catch(e){}}
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}@media print{body{padding:20px}}</style></head><body><h1>${p.name}</h1><p style="color:#888;font-size:13px">状态: ${STATUS_LABELS[p.status||'active']} | 导出: ${new Date().toLocaleDateString('zh-CN')}</p>${imgTag}<script>window.onload=function(){window.print()}<\/script></body></html>`;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}@media print{body{padding:20px}}</style></head><body><h1>${p.name}</h1><p style="color:#888;font-size:13px">状态: ${statusLabel[p.status||'active']} | 导出: ${new Date().toLocaleDateString('zh-CN')}</p>${imgTag}<script>window.onload=function(){window.print()}<\/script></body></html>`;
   triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_chart.html');
 }
 
@@ -1307,6 +1314,7 @@ function exportTracker(pid,type){
   const pe=[];
   Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===pid)pe.push({...e,dateKey:dk2});}));
   pe.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   if(type==='docx'){
     try{
       const docxLib=window.docx;if(!docxLib){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
@@ -1314,7 +1322,7 @@ function exportTracker(pid,type){
       const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
       const children=[];
       children.push(new Paragraph({children:[new TextRun({text:p.name+' — 项目追踪报告',bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-      children.push(new Paragraph({children:[new TextRun({text:'状态: '+STATUS_LABELS[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+      children.push(new Paragraph({children:[new TextRun({text:'状态: '+statusLabel[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN'),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
       pe.forEach(e=>{
         const parts=e.dateKey.split('-');
         const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
@@ -1334,7 +1342,7 @@ function exportTracker(pid,type){
       }).catch(err=>{alert('DOCX 生成失败: '+err.message);});
     }catch(err){alert('请稍候再试，docx 库加载中: '+err.message);}
   } else if(type==='txt'){
-    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+STATUS_LABELS[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
+    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+statusLabel[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
@@ -1350,7 +1358,7 @@ function exportTracker(pid,type){
     }
   } else {
     let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}@media print{body{padding:20px}}</style></head><body>';
-    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+STATUS_LABELS[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
+    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+statusLabel[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');let f='';
       (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+v+'</span>';});
@@ -1492,21 +1500,28 @@ function startEdit(id,key){
       editFields[k]=e.fields[k];
     }
   });
-  editState={title:e.title,fields:editFields,skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link)};
+  editState={title:e.title,projId:e.projId||'',fields:editFields,skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link),showProjPicker:false};
   openDropId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('edit-title');if(el)el.focus()},50);
 }
 
 function buildEditForm(e,p){
-  // Reuse same card style as new-entry form
   const wrap=document.createElement('div');wrap.className='form-card';
   const es=editState;
+  const isMissingProj=!es.projId||es.projId==='';
+  let editPpHTML='';
+  if(isMissingProj&&es.showProjPicker){
+    editPpHTML=`<div class="proj-picker" style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:800;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">重新选择 Project / Task</div>
+      <div>${projects.filter(pr=>(pr.status||'active')!=='archived').map(pr=>`<div class="pp-item${es.projId===pr.id?' sel':''}" onclick="editState.projId='${pr.id}';editState.showProjPicker=false;renderAll()"><div style="width:8px;height:8px;border-radius:50%;background:${pr.color};flex-shrink:0"></div>${pr.name}</div>`).join('')}</div>
+    </div>`;
+  }
   let varsHTML='';
   (p.fields||[]).forEach(f=>{
     const isSkip=es.skipped[f.id],curVal=es.fields[f.id]||'',isOpen=openDropId===('ed-'+f.id);
     if(f.type==='number'){
       varsHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-        <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<input type="number" id="edf-${f.id}" value="${curVal}" min="0" style="width:90px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.fields['${f.id}']=this.value">`}</div>
+        <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div style="display:flex;align-items:center;gap:5px"><input type="number" id="edf-${f.id}" value="${curVal}" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.fields['${f.id}']=this.value">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     } else {
       const esArr=editState.fields[f.id]||[];
@@ -1519,16 +1534,18 @@ function buildEditForm(e,p){
               <span>${isSel?'✓ ':''} ${o}</span>
               <span onclick="event.stopPropagation();deleteEditOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
             </div>`;}).join('')}
-            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div>
+            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div>
           </div>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     }
   });
+  const projBadge=isMissingProj
+    ?`<button class="proj-sel-btn error" onclick="editState.showProjPicker=!editState.showProjPicker;renderAll()" style="animation:none">⚠ 未选择 project <span style="opacity:.5">▾</span></button>`
+    :`<div class="proj-sel-btn" style="cursor:default;opacity:.7"><div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}</div>`;
   wrap.innerHTML=`
+    ${editPpHTML}
     <div class="form-row">
-      <div class="proj-sel-btn" style="cursor:default;opacity:.7">
-        <div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}
-      </div>
+      ${projBadge}
       <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="今天做了什么…" style="font-weight:700" oninput="editState.title=this.value">
     </div>
     ${varsHTML.length?`<div class="var-rows">${varsHTML}</div>`:''}
@@ -1575,6 +1592,7 @@ function cancelEdit(){editingId=null;editState={};openDropId=null;renderAll()}
 function saveEdit(id,key){
   const e=(entries[key]||[]).find(x=>x.id===id);if(!e)return;
   e.title=editState.title||e.title;
+  if(editState.projId&&editState.projId!==e.projId)e.projId=editState.projId;
   e.fields={...editState.fields};e.skipped={...editState.skipped};
   e.note=editState.note||'';e.link=editState.link||'';e.linkLabel=editState.linkLabel||'';
   editingId=null;editState={};openDropId=null;saveData();renderAll();
@@ -1591,7 +1609,7 @@ function buildNewForm(){
   let ppHTML='';
   if(showProjPicker){
     ppHTML=`<div class="proj-picker"><div style="font-size:10px;font-weight:800;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Choose Project / Task</div>
-    <div>${projects.map(pr=>`<div class="pp-item${formProj===pr.id?' sel':''}" onclick="selectProj('${pr.id}')"><div style="width:8px;height:8px;border-radius:50%;background:${pr.color};flex-shrink:0"></div>${pr.name}</div>`).join('')}</div></div>`;
+    <div>${projects.filter(pr=>(pr.status||'active')!=='archived').map(pr=>`<div class="pp-item${formProj===pr.id?' sel':''}" onclick="selectProj('${pr.id}')"><div style="width:8px;height:8px;border-radius:50%;background:${pr.color};flex-shrink:0"></div>${pr.name}</div>`).join('')}</div></div>`;
   }
   let dynHTML='';
   if(p&&p.fields&&p.fields.length){
@@ -1600,7 +1618,7 @@ function buildNewForm(){
       const isSkip=skippedFields[f.id],curVal=window._fv&&window._fv[f.id]||'',isOpen=openDropId===('new-'+f.id);
       if(f.type==='number'){
         dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-          <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<input type="number" id="ff-${f.id}" placeholder="0" min="0" style="width:90px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none">`}</div>
+          <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div style="display:flex;align-items:center;gap:5px"><input type="number" id="ff-${f.id}" placeholder="0" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       } else {
         const selArr=(window._fv&&window._fv[f.id])||[];
@@ -1613,7 +1631,7 @@ function buildNewForm(){
                 <span>${isSel?'✓ ':''} ${o}</span>
                 <span onclick="event.stopPropagation();deleteNewOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
               </div>`;}).join('')}
-              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div>
+              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div>
             </div>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       }
@@ -1685,12 +1703,18 @@ function selectProj(id){
 function toggleExtra(k){formExtras[k]=!formExtras[k];renderAll()}
 
 function openForm(){
-  formTitle='';formNote='';formLink='';formLinkLabel='';showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
+  formTitle='';formNote='';formLink='';formLinkLabel='';formProj=null;showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
 }
 function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
 
 function saveEntry(){
+  // 没选 project 不允许保存
+  if(!formProj){
+    const btn=document.querySelector('.proj-sel-btn');
+    if(btn){btn.classList.remove('error');void btn.offsetWidth;btn.classList.add('error');setTimeout(()=>btn.classList.remove('error'),600);}
+    return;
+  }
   const titleEl=document.getElementById('f-title');
   const t=(titleEl?titleEl.value.trim():'')||formTitle.trim();
   const p=formProj?proj(formProj):null;
@@ -1788,17 +1812,31 @@ function renderModal(){
             <button style="background:none;border:none;color:var(--mid);cursor:pointer;font-size:13px;opacity:.5;padding:2px 4px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.5;this.style.color='var(--mid)'" onclick="removeOption(${i},${oi})">✕</button>
           </div>`).join('')}
           <div style="display:flex;gap:6px;margin-top:4px">
-            <input type="text" id="modal-new-opt-${i}" placeholder="添加新子选项…" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()">
+            <input type="text" id="modal-new-opt-${i}" placeholder="添加新子选项…" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
             <button style="padding:3px 10px;border-radius:6px;border:0.5px solid rgba(123,104,238,0.25);background:rgba(123,104,238,0.08);color:var(--purple);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif" onclick="addOptionInModal(${i})">＋</button>
           </div>
+        </div>`;
+      } else {
+        optHtml=`<div style="margin:4px 0 4px 14px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--mid);flex-shrink:0">单位</span>
+          <input type="text" value="${f.unit||''}" placeholder="如 min、km、次…"
+            style="width:100px;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none"
+            oninput="if(modal&&modal.fields[${i}])modal.fields[${i}].unit=this.value.trim()"
+            onfocus="this.style.borderColor='var(--purple)'"
+            onblur="this.style.borderColor='rgba(123,104,238,0.2)'">
+          <span style="font-size:10px;color:var(--mid);font-style:italic">${f.unit?'显示为「数字 '+f.unit+'」':''}</span>
         </div>`;
       }
       return`<div class="mfl-item" style="flex-direction:column;align-items:flex-start;gap:2px">
         <div style="display:flex;align-items:center;gap:6px;width:100%">
-          <div style="width:6px;height:6px;border-radius:50%;background:${m.color}"></div>
-          <span>${f.label}</span>
-          <span style="font-size:10px;color:var(--mid);margin-left:2px">${f.type==='select'?'多选选项':'数字'}</span>
-          <button class="mfl-del" style="margin-left:auto" onclick="removeField(${i})">✕</button>
+          <div style="width:6px;height:6px;border-radius:50%;background:${m.color};flex-shrink:0"></div>
+          <input type="text" value="${f.label}" placeholder="栏位名称"
+            style="flex:1;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none;min-width:0"
+            onchange="renameField(${i},this.value)"
+            onfocus="this.style.borderColor='var(--purple)'"
+            onblur="this.style.borderColor='rgba(123,104,238,0.2)'">
+          <span style="font-size:10px;color:var(--mid);flex-shrink:0">${f.type==='select'?'多选':'数字'}</span>
+          <button class="mfl-del" onclick="removeField(${i})">✕</button>
         </div>
         ${optHtml}
       </div>`;
@@ -1819,7 +1857,8 @@ function renderModal(){
   </div></div>`;
   setTimeout(()=>cpInitPicker(modal?modal.color:'#7B68EE'),0);
 }
-function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[]});modal.nf='';renderModal()}
+function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[],unit:''});modal.nf='';renderModal()}
+function renameField(fi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].label=val.trim()}
 function removeOption(fi,oi){if(modal&&modal.fields[fi])modal.fields[fi].options.splice(oi,1);renderModal()}
 function renameOption(fi,oi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].options[oi]=val.trim()}
 function addOptionInModal(fi){
@@ -1839,14 +1878,80 @@ function saveProject(){
   else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;}}
   modal=null;renderModal();saveData();renderAll();
 }
+function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',options:[...(f.options||[])]})),nf:'',nft:'number'};renderModal()}
 let _deletedProj=null,_delTimer=null;
+
 function deleteProject(id){
-  const p=projects.find(x=>x.id===id),idx=projects.indexOf(p);
-  _deletedProj={p,idx};
-  projects=projects.filter(x=>x.id!==id);
-  modal=null;renderModal();saveData();renderAll();
-  showUndoToast('已删除「'+p.name+'」');
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  let entryCount=0;
+  Object.values(entries).forEach(arr=>arr.forEach(e=>{if(e.projId===id)entryCount++;}));
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-title" style="color:var(--pink)">删除「${p.name}」</div>
+    <p style="font-size:13px;color:var(--mid);margin-bottom:16px;line-height:1.6">
+      ${entryCount?`此 project 有 <strong style="color:var(--dark)">${entryCount} 条</strong>记录，请选择处理方式：`:'请选择处理方式：'}
+    </p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <button onclick="_doDeleteProject('${id}','archive')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(123,104,238,0.3);background:rgba(123,104,238,0.06);cursor:pointer;font-family:'Nunito',sans-serif;text-align:left;width:100%">
+        <span style="font-size:18px;flex-shrink:0">📦</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px">保留历史记录，先归档</div>
+          <div style="font-size:11px;color:var(--mid)">Project 和所有记录完整保留，可在「已归档」里复原</div>
+        </div>
+      </button>
+      <button onclick="_doDeleteProject('${id}','delete')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(255,63,108,0.3);background:rgba(255,63,108,0.05);cursor:pointer;font-family:'Nunito',sans-serif;text-align:left;width:100%">
+        <span style="font-size:18px;flex-shrink:0">🗑</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--pink);margin-bottom:2px">一并删除所有记录</div>
+          <div style="font-size:11px;color:var(--mid)">${entryCount?`Project 和 ${entryCount} 条记录将永久移除`:'Project 将永久移除'}</div>
+        </div>
+      </button>
+    </div>
+    <div class="modal-btns" style="border-top:0.5px solid rgba(123,104,238,0.15);padding-top:12px;margin-top:0">
+      <button class="m-cancel" onclick="_closeDelConfirm()">取消</button>
+    </div>
+  </div></div>`;
 }
+
+function _closeDelConfirm(){
+  document.getElementById('modal-container').innerHTML='';
+  modal=null;
+}
+
+function _doDeleteProject(id,action){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  const idx=projects.indexOf(p);
+  if(action==='archive'){
+    p.status='archived';
+    _deletedProj={p,idx,action};
+    _closeDelConfirm();
+    saveData();renderAll();
+    showUndoToast('已归档「'+p.name+'」');
+  } else {
+    const affectedEntries={};
+    Object.entries(entries).forEach(([dk2,arr])=>{
+      const hits=arr.filter(e=>e.projId===id);
+      if(hits.length)affectedEntries[dk2]=hits.map(e=>({...e}));
+    });
+    Object.keys(entries).forEach(dk2=>{
+      entries[dk2]=entries[dk2].filter(e=>e.projId!==id);
+    });
+    projects=projects.filter(x=>x.id!==id);
+    _deletedProj={p,idx,action,affectedEntries};
+    _closeDelConfirm();
+    saveData();renderAll();
+    const total=Object.values(affectedEntries).flat().length;
+    showUndoToast('已删除「'+p.name+'」'+(total?' 及 '+total+' 条记录':''));
+  }
+}
+
+function restoreProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  p.status='active';
+  saveData();renderAll();
+}
+
 function showUndoToast(msg){
   clearTimeout(_delTimer);
   let t=document.getElementById('undo-toast');
@@ -1855,10 +1960,21 @@ function showUndoToast(msg){
   t.style.display='flex';
   _delTimer=setTimeout(()=>{t.style.display='none';_deletedProj=null;},5000);
 }
+
 function undoDelete(){
   clearTimeout(_delTimer);
   if(!_deletedProj)return;
-  projects.splice(_deletedProj.idx,0,_deletedProj.p);
+  const{p,idx,action,affectedEntries}=_deletedProj;
+  if(action==='archive'){
+    const found=projects.find(x=>x.id===p.id);
+    if(found)found.status='active';
+  } else {
+    projects.splice(idx,0,p);
+    Object.entries(affectedEntries||{}).forEach(([dk2,arr])=>{
+      if(!entries[dk2])entries[dk2]=[];
+      arr.forEach(e=>{if(!entries[dk2].find(x=>x.id===e.id))entries[dk2].push(e);});
+    });
+  }
   saveData();renderAll();_deletedProj=null;
   const t=document.getElementById('undo-toast');if(t)t.style.display='none';
 }
