@@ -724,7 +724,36 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const pid=ch._cbPid;const s=getCBState(pid);
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
-  // 收集所有 label 数据
+  const CW=ch.canvas.width,CH=ch.canvas.height;
+  const PAD=8,LINE_H=13,HLEN=24;
+
+  function measureW(t){ctx.font="10px 'Nunito',sans-serif";return ctx.measureText(t).width;}
+
+  // \u6839\u636e\u89d2\u5ea6\u548c\u5f53\u524d ext \u8ba1\u7b97\u6587\u5b57\u6846\u53ef\u7528\u6700\u5927\u5bbd\u5ea6
+  function maxBoxW(angle,outerR,ext){
+    const isRight=Math.cos(angle)>=0;
+    const tipX=cx+Math.cos(angle)*(outerR+ext);
+    if(isRight)return Math.max(55,CW-PAD-tipX-HLEN-6);
+    else return Math.max(55,tipX-HLEN-6-PAD);
+  }
+
+  function wrapText(text,maxW){
+    const words=text.split(/\s+/);
+    if(words.length<=1){
+      if(measureW(text)<=maxW)return[text];
+      let cut=text.length;
+      while(cut>1&&measureW(text.slice(0,cut))>maxW)cut--;
+      return[text.slice(0,cut)];
+    }
+    const lines=[];let line='';
+    words.forEach(w=>{
+      const test=line?line+' '+w:w;
+      if(measureW(test)>maxW&&line){lines.push(line);line=w;}else line=test;
+    });
+    if(line)lines.push(line);
+    return lines;
+  }
+
   const allItems=[];
   ch.data.datasets.forEach((ds,di)=>{
     const meta=ch.getDatasetMeta(di);
@@ -750,82 +779,94 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         const r=(arc.outerRadius+arc.innerRadius)/2;
         ctx.save();ctx.font='500 10px sans-serif';
         ctx.fillStyle='rgba(255,255,255,.65)';ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(v+'次('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
+        ctx.fillText(v+'\u6b21('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
       } else {
         if(span<0.12)return;
-        allItems.push({arc,i,v,pct,col,name:dsLabels[i]||'',angle,span});
+        const name=dsLabels[i]||'';
+        const isRight=Math.cos(angle)>=0;
+        const outerR=arc.outerRadius;
+        const initMaxW=maxBoxW(angle,outerR,28);
+        const nameLines=wrapText(name,initMaxW);
+        const pctLine=v+'\u6b21 ('+pct+'%)';
+        const allLines=[...nameLines,pctLine];
+        const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
+        const boxH=allLines.length*LINE_H+4;
+        allItems.push({arc,v,pct,col,name,angle,span,outerR,
+          isRight,allLines,boxW,boxH,ext:28});
       }
     });
   });
-
   if(mode==='direct')return;
 
-  // 构建 label 列表，初始 ext
-  ctx.font="10px 'Nunito',sans-serif";
-  const labels=allItems.map(item=>{
-    const outerR=item.arc.outerRadius;
-    const isRight=Math.cos(item.angle)>=0;
-    const ext=28;
-    const p2x=cx+Math.cos(item.angle)*(outerR+ext);
-    const p2y=cy+Math.sin(item.angle)*(outerR+ext);
-    const hLen=28;
-    const p3x=p2x+(isRight?hLen:-hLen);
-    const str=item.name+'  '+item.v+'次('+item.pct+'%)';
-    const tw=ctx.measureText(str).width+8;
-    return{...item,isRight,ext,hLen,p3x,p3y:p2y,str,tw,th:13,outerR};
-  });
-
-  // 碰撞检测，拉长线条，最多 15 次
-  for(let pass=0;pass<15;pass++){
-    let anyOverlap=false;
-    for(let a=0;a<labels.length;a++){
-      for(let b=a+1;b<labels.length;b++){
-        const la=labels[a],lb=labels[b];
-        if(la.isRight!==lb.isRight)continue;
-        const axL=la.isRight?la.p3x+3:la.p3x-la.tw-3;
-        const axR=axL+la.tw;
-        const ayT=la.p3y-la.th/2;
-        const ayB=la.p3y+la.th/2;
-        const bxL=lb.isRight?lb.p3x+3:lb.p3x-lb.tw-3;
-        const bxR=bxL+lb.tw;
-        const byT=lb.p3y-lb.th/2;
-        const byB=lb.p3y+lb.th/2;
-        const xOk=axR<bxL||bxR<axL;
-        const yOk=ayB+2<byT||byB+2<ayT;
-        if(!xOk&&!yOk){
-          anyOverlap=true;
-          const absA=Math.abs(Math.sin(la.angle));
-          const absB=Math.abs(Math.sin(lb.angle));
-          const target=absA<absB?la:lb;
-          target.ext+=12;
-          target.hLen+=10;
-          const p2x2=cx+Math.cos(target.angle)*(target.outerR+target.ext);
-          const p2y2=cy+Math.sin(target.angle)*(target.outerR+target.ext);
-          target.p3x=p2x2+(target.isRight?target.hLen:-target.hLen);
-          target.p3y=p2y2;
-        }
-      }
-    }
-    if(!anyOverlap)break;
+  function getPos(it){
+    const tipX=cx+Math.cos(it.angle)*(it.outerR+it.ext);
+    const tipY=cy+Math.sin(it.angle)*(it.outerR+it.ext);
+    const endX=tipX+(it.isRight?HLEN:-HLEN);
+    const bx=it.isRight?endX+3:endX-it.boxW-3;
+    const by=tipY-it.boxH/2;
+    return{tipX,tipY,endX,bx,by};
   }
 
-  // 绘制
-  labels.forEach(item=>{
-    const{arc,angle,v,pct,col,name,isRight,ext,hLen,str,tw,th,outerR,p3x,p3y}=item;
-    const midR=(arc.outerRadius+arc.innerRadius)/2;
+  function wouldExceed(it,addExt){
+    const p=getPos({...it,ext:it.ext+addExt});
+    if(it.isRight&&p.bx+it.boxW>CW-PAD)return true;
+    if(!it.isRight&&p.bx<PAD)return true;
+    if(p.by<PAD||p.by+it.boxH>CH-PAD)return true;
+    return false;
+  }
+
+  function overlaps(a,b){
+    const pa=getPos(a),pb=getPos(b);
+    const M=3;
+    return!(pa.bx>pb.bx+b.boxW+M||pa.bx+a.boxW+M<pb.bx||
+            pa.by>pb.by+b.boxH+M||pa.by+a.boxH+M<pb.by);
+  }
+
+  for(let pass=0;pass<15;pass++){
+    let any=false;
+    for(let a=0;a<allItems.length;a++){
+      for(let b=a+1;b<allItems.length;b++){
+        if(!overlaps(allItems[a],allItems[b]))continue;
+        any=true;
+        const ta=allItems[a],tb=allItems[b];
+        if(ta.ext<=tb.ext&&!wouldExceed(ta,12))ta.ext+=12;
+        else if(!wouldExceed(tb,12))tb.ext+=12;
+        else if(!wouldExceed(ta,12))ta.ext+=12;
+      }
+    }
+    if(!any)break;
+  }
+
+  // \u6bcf\u6b21\u7ed8\u5236\u524d\u91cd\u65b0\u6839\u636e\u5b9e\u9645 ext \u8ba1\u7b97\u6362\u884c\uff08\u4fdd\u8bc1\u6587\u5b57\u4e0d\u8d85\u51fa\u8fb9\u754c\uff09
+  allItems.forEach(it=>{
+    const mxW=maxBoxW(it.angle,it.outerR,it.ext);
+    const nameLines=wrapText(it.name,mxW);
+    const pctLine=it.v+'\u6b21 ('+it.pct+'%)';
+    it.allLines=[...nameLines,pctLine];
+    it.boxW=Math.max(...it.allLines.map(l=>measureW(l)))+10;
+    it.boxH=it.allLines.length*LINE_H+4;
+  });
+
+  allItems.forEach(it=>{
+    const{arc,angle,col,isRight,allLines,boxW,boxH,outerR}=it;
+    const{tipX,tipY,endX,bx,by}=getPos(it);
+    const midR=(outerR+arc.innerRadius)/2;
     const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
     const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
-    const p2x=cx+Math.cos(angle)*(outerR+ext),p2y=cy+Math.sin(angle)*(outerR+ext);
-    const bx=isRight?p3x+3:p3x-tw-3,by=p3y-th/2;
     ctx.save();
     ctx.strokeStyle=col;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,p3y);ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.97)';
-    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,th,3);else ctx.rect(bx,by,tw,th);
-    ctx.fill();ctx.strokeStyle=col+'55';ctx.lineWidth=.5;ctx.stroke();
-    ctx.fillStyle=col;ctx.font="500 10px 'Nunito',sans-serif";
-    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='middle';
-    ctx.fillText(str,isRight?bx+4:bx+tw-4,p3y);
+    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(tipX,tipY);ctx.lineTo(endX,tipY);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.96)';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,boxW,boxH,3);else ctx.rect(bx,by,boxW,boxH);
+    ctx.fill();ctx.strokeStyle=col+'44';ctx.lineWidth=0.5;ctx.stroke();
+    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='top';
+    const tx=isRight?bx+4:bx+boxW-4;
+    allLines.forEach((line,li)=>{
+      const isLast=li===allLines.length-1;
+      ctx.font=isLast?"500 10px 'Nunito',sans-serif":"10px 'Nunito',sans-serif";
+      ctx.fillStyle=isLast?'#999':col;
+      ctx.fillText(line,tx,by+2+li*LINE_H);
+    });
     ctx.restore();
   });
 }}
