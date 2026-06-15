@@ -1298,8 +1298,8 @@ function cbTogExportContent(pid,type){
 function cbExport(pid,type){
   const s=getCBState(pid);
   if(!s._exportContent)s._exportContent={text:true,chart:false};
-  // 如果要导出图表但没有选图表数据，提示
-  if(s._exportContent.chart&&!s.selected.length){
+  // 如果要导出图表但没有选图表变量，提示
+  if(s._exportContent.chart&&!s.varKeys.length){
     alert('已选择「加入图表」但尚未选择任何图表变量，请取消图表选项或先选择变量');return;
   }
   if(type==='docx')cbExportDocx(pid);else cbExportPdf(pid);
