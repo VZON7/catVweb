@@ -903,7 +903,10 @@ function buildChartBuilderHTML(pid){
       <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
     </div>
     <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <button class="cb-tog" id="cb-addbtn-${pid}" onclick="cbToggleAdd('${pid}')">＋ 加入导出</button>
+      <span style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0">导出内容：</span>
+      <button id="cb-tog-text-${pid}" class="cb-tog on" onclick="cbTogExportContent('${pid}','text')">📝 文字记录</button>
+      <button id="cb-tog-chart-${pid}" class="cb-tog" onclick="cbTogExportContent('${pid}','chart')">＋ 加入图表</button>
+      <div style="width:1px;height:18px;background:rgba(123,104,238,0.2);margin:0 2px;flex-shrink:0"></div>
       <button class="tracker-export-btn" onclick="cbExport('${pid}','docx')">⬇ 导出 DOCX</button>
       <button class="tracker-export-btn" onclick="cbExport('${pid}','pdf')">🖨 打印/PDF</button>
     </div>`;
@@ -1279,9 +1282,26 @@ function cbRenderSelectedList(pid){
 
 function cbRemoveSel(pid,key){const s=getCBState(pid);s.selected=s.selected.filter(x=>x.key!==key);cbRenderSelectedList(pid);}
 
+function cbTogExportContent(pid,type){
+  const s=getCBState(pid);
+  if(!s._exportContent)s._exportContent={text:true,chart:false};
+  s._exportContent[type]=!s._exportContent[type];
+  // 至少保留一个
+  if(!s._exportContent.text&&!s._exportContent.chart)s._exportContent[type]=true;
+  // 更新按钮样式
+  const tb=document.getElementById('cb-tog-text-'+pid);
+  const cb=document.getElementById('cb-tog-chart-'+pid);
+  if(tb){tb.classList.toggle('on',s._exportContent.text);tb.textContent=s._exportContent.text?'✓ 文字记录':'📝 文字记录';}
+  if(cb){cb.classList.toggle('on',s._exportContent.chart);cb.textContent=s._exportContent.chart?'✓ 已加入图表':'＋ 加入图表';}
+}
+
 function cbExport(pid,type){
   const s=getCBState(pid);
-  if(!s.selected.length){alert('请先点「＋ 加入导出」选择至少一个图表');return;}
+  if(!s._exportContent)s._exportContent={text:true,chart:false};
+  // 如果要导出图表但没有选图表数据，提示
+  if(s._exportContent.chart&&!s.selected.length){
+    alert('已选择「加入图表」但尚未选择任何图表变量，请取消图表选项或先选择变量');return;
+  }
   if(type==='docx')cbExportDocx(pid);else cbExportPdf(pid);
 }
 
@@ -1289,6 +1309,7 @@ function cbExportDocx(pid){
   const docxLib=window.docx;
   if(!docxLib||!docxLib.Packer){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
   const s=getCBState(pid);const p=s._p;
+  const ec=s._exportContent||{text:true,chart:false};
   const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
   const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
   const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
@@ -1299,34 +1320,32 @@ function cbExportDocx(pid){
   children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — 项目追踪报告'),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
   children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+statusLabel[p.status||'active']+'   总记录: '+pe.length+' 条   导出: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
 
-  // ── 统计图表 ──
-  const canvas=document.getElementById('cb-canvas-'+pid);
-  if(canvas){
-    try{
-      const dataUrl=canvas.toDataURL('image/png');
-      const base64=dataUrl.split(',')[1];
-      children.push(new Paragraph({children:[new TextRun({text:'统计图表',bold:true,size:22,color:PURPLE,font:'Arial'})],spacing:{before:100,after:40}}));
-      children.push(new Paragraph({children:[new ImageRun({data:Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transformation:{width:480,height:220}})],spacing:{before:0,after:80}}));
-    }catch(e){}
-  }
-
-  // ── 文字记录 ──
-  if(pe.length){
-    children.push(new Paragraph({children:[new TextRun({text:'详细记录',bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:160,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
+  // ── 文字记录（上方）──
+  if(ec.text&&pe.length){
+    children.push(new Paragraph({children:[new TextRun({text:'详细记录',bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:60,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
-      const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
-      children.push(new Paragraph({children:[new TextRun({text:dateStr,bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
+      children.push(new Paragraph({children:[new TextRun({text:parts[0]+'年'+parts[1]+'月'+parts[2]+'日',bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
       if(e.title&&e.title.trim())children.push(new Paragraph({children:[new TextRun({text:stripEmoji(e.title.trim()),bold:true,size:22,color:DARK,font:'Arial'})],spacing:{before:0,after:20},indent:{left:240}}));
       (p.fields||[]).forEach(f=>{
         if(e.skipped&&e.skipped[f.id])return;
         const v=e.fields&&e.fields[f.id];if(!v)return;
         const display=Array.isArray(v)?v.join(', '):String(v);
-        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+display),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+display+(f.unit?' '+f.unit:'')),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
       });
       if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji('备注: '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
       children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
     });
+  }
+
+  // ── 统计图表（下方）──
+  if(ec.chart){
+    const canvas=document.getElementById('cb-canvas-'+pid);
+    if(canvas){try{
+      const base64=canvas.toDataURL('image/png').split(',')[1];
+      children.push(new Paragraph({children:[new TextRun({text:'统计图表',bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:160,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
+      children.push(new Paragraph({children:[new ImageRun({data:Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transformation:{width:480,height:220},type:'png'})],spacing:{before:0,after:80}}));
+    }catch(e){}}
   }
 
   const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
@@ -1337,15 +1356,14 @@ function cbExportDocx(pid){
 
 function cbExportPdf(pid){
   const s=getCBState(pid);const p=s._p;
+  const ec=s._exportContent||{text:true,chart:false};
   const canvas=document.getElementById('cb-canvas-'+pid);
   const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   const pe=[...(s._pe||[])].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-  let imgTag='';
-  if(canvas){try{imgTag=`<img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:24px">`;}catch(e){}}
 
-  // ── 文字记录 HTML ──
+  // ── 文字记录 HTML（上方）──
   let entriesHtml='';
-  if(pe.length){
+  if(ec.text&&pe.length){
     entriesHtml='<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">详细记录</h2>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
@@ -1354,7 +1372,7 @@ function cbExportPdf(pid){
         if(e.skipped&&e.skipped[f.id])return;
         const v=e.fields&&e.fields[f.id];if(!v)return;
         const display=Array.isArray(v)?v.join(', '):String(v);
-        fieldsHtml+=`<span class="tag">${f.label}: ${display}</span>`;
+        fieldsHtml+=`<span class="tag">${f.label}: ${display}${f.unit?' '+f.unit:''}</span>`;
       });
       entriesHtml+=`<div class="entry">
         <div class="date">${parts[0]}年${parts[1]}月${parts[2]}日</div>
@@ -1364,6 +1382,12 @@ function cbExportPdf(pid){
         <div style="font-size:11px;color:#854F0B;margin-top:4px">Cat Token +${calcCoins(e,e.dateKey)}</div>
       </div>`;
     });
+  }
+
+  // ── 统计图表 HTML（下方）──
+  let imgTag='';
+  if(ec.chart&&canvas){
+    try{imgTag=`<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">统计图表</h2><img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:24px">`;}catch(e){}
   }
 
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
@@ -1379,11 +1403,11 @@ function cbExportPdf(pid){
   </style></head><body>
     <h1>${p.name}</h1>
     <div class="meta">状态: ${statusLabel[p.status||'active']} | 总记录: ${pe.length} 条 | 导出: ${new Date().toLocaleDateString('zh-CN')}</div>
-    ${imgTag}
     ${entriesHtml}
+    ${imgTag}
     <script>window.onload=function(){window.print()}<\/script>
   </body></html>`;
-  triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_chart.html');
+  triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_report.html');
 }
 
 function exportTracker(pid,type){
