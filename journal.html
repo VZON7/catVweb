@@ -560,9 +560,8 @@ function renderTracker(){
     const card=document.createElement('div');card.className='tracker-proj-card';
     const isOpen=window._trackerOpen&&window._trackerOpen[p.id];
     const isArchived=(p.status||'active')==='archived';
-    const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
-    const hdr=document.createElement('div');hdr.className='tracker-proj-header';
-    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+statusLabel[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ 复原</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 永久删除</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+      const hdr=document.createElement('div');hdr.className='tracker-proj-header';
+    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+STATUS_LABELS[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ 复原</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 永久删除</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
     hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
     card.appendChild(hdr);
     if(isOpen){
@@ -629,6 +628,8 @@ function triggerDownload(href,filename){
   document.body.appendChild(a);a.click();
   document.body.removeChild(a);
 }
+// Project 状态标签（唯一来源）— 禁止在函数内重复定义
+const STATUS_LABELS={active:'进行中',done:'已完成',archived:'已归档'};
 // 移除所有 emoji，避免 docx.js TextRun 报错（唯一来源）
 function stripEmoji(str){
   return String(str||'').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{FE00}-\u{FEFF}\u{1F300}-\u{1F9FF}]/gu,'').trim();
@@ -723,38 +724,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const pid=ch._cbPid;const s=getCBState(pid);
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
-  const W=ch.canvas.width,H=ch.canvas.height;
-  const PAD=6,LINE_H=13,HLEN=20,BASE_EXT=28,MAX_LINE_W=W*0.28;
-
-  function measureW(t){ctx.font="10px 'Nunito',sans-serif";return ctx.measureText(t).width;}
-
-  function wrapText(text,maxW){
-    const words=text.split(/\s+/);
-    if(words.length<=1){
-      if(measureW(text)<=maxW)return[text];
-      const cut=Math.max(1,Math.floor(text.length*(maxW/measureW(text)))-1);
-      return[text.slice(0,cut)+"..."];
-    }
-    const lines=[];let line='';
-    words.forEach(w=>{
-      const test=line?line+' '+w:w;
-      if(measureW(test)>maxW&&line){lines.push(line);line=w;}else line=test;
-    });
-    if(line)lines.push(line);
-    return lines;
-  }
-
-  function calcMaxExt(angle,boxW,boxH){
-    const isRight=Math.cos(angle)>=0;
-    const cosA=Math.cos(angle),sinA=Math.sin(angle);
-    const maxTipX=isRight?(W-PAD-boxW-HLEN-3):(PAD+boxW+HLEN+3);
-    let maxE=9999;
-    if(Math.abs(cosA)>0.01){const e=(maxTipX-cx)/cosA;if(e>0)maxE=Math.min(maxE,e);}
-    if(sinA>0.01){const e=(H-PAD-boxH/2-cy)/sinA;if(e>0)maxE=Math.min(maxE,e);}
-    if(sinA<-0.01){const e=(PAD+boxH/2-cy)/sinA;if(e>0)maxE=Math.min(maxE,e);}
-    return Math.max(BASE_EXT,Math.min(maxE-2,W*0.45));
-  }
-
+  // 收集所有 label 数据
   const allItems=[];
   ch.data.datasets.forEach((ds,di)=>{
     const meta=ch.getDatasetMeta(di);
@@ -783,77 +753,82 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         ctx.fillText(v+'次('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
       } else {
         if(span<0.12)return;
-        const name=dsLabels[i]||'';
-        const nameLines=wrapText(name,MAX_LINE_W);
-        const pctLine=v+'次 ('+pct+'%)';
-        const allLines=[...nameLines,pctLine];
-        const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
-        const boxH=allLines.length*LINE_H+4;
-        const isRight=Math.cos(angle)>=0;
-        const maxExt=calcMaxExt(angle,boxW,boxH);
-        allItems.push({arc,v,pct,col,name,angle,span,outerR:arc.outerRadius,
-          isRight,nameLines,pctLine,allLines,boxW,boxH,ext:BASE_EXT,maxExt});
+        allItems.push({arc,i,v,pct,col,name:dsLabels[i]||'',angle,span});
       }
     });
   });
+
   if(mode==='direct')return;
 
-  function getBox(item){
-    const{angle,outerR,isRight,boxW,boxH,ext}=item;
-    const tipX=cx+Math.cos(angle)*(outerR+ext);
-    const tipY=cy+Math.sin(angle)*(outerR+ext);
-    const endX=tipX+(isRight?HLEN:-HLEN);
-    const bx=isRight?endX+3:endX-boxW-3;
-    const by=tipY-boxH/2;
-    return{bx,by,tipX,tipY,endX,endY:tipY};
-  }
+  // 构建 label 列表，初始 ext
+  ctx.font="10px 'Nunito',sans-serif";
+  const labels=allItems.map(item=>{
+    const outerR=item.arc.outerRadius;
+    const isRight=Math.cos(item.angle)>=0;
+    const ext=28;
+    const p2x=cx+Math.cos(item.angle)*(outerR+ext);
+    const p2y=cy+Math.sin(item.angle)*(outerR+ext);
+    const hLen=28;
+    const p3x=p2x+(isRight?hLen:-hLen);
+    const str=item.name+'  '+item.v+'次('+item.pct+'%)';
+    const tw=ctx.measureText(str).width+8;
+    return{...item,isRight,ext,hLen,p3x,p3y:p2y,str,tw,th:13,outerR};
+  });
 
-  function overlaps(a,b){
-    const ba=getBox(a),bb=getBox(b);
-    const M=3;
-    return!(ba.bx>bb.bx+b.boxW+M||ba.bx+a.boxW+M<bb.bx||
-            ba.by>bb.by+b.boxH+M||ba.by+a.boxH+M<bb.by);
-  }
-  for(let pass=0;pass<30;pass++){
-    let any=false;
-    for(let a=0;a<allItems.length;a++){
-      for(let b=a+1;b<allItems.length;b++){
-        if(!overlaps(allItems[a],allItems[b]))continue;
-        any=true;
-        const ta=allItems[a],tb=allItems[b];
-        if(ta.ext<tb.ext&&ta.ext<ta.maxExt)ta.ext+=8;
-        else if(tb.ext<tb.maxExt)tb.ext+=8;
-        else if(ta.ext<ta.maxExt)ta.ext+=8;
+  // 碰撞检测，拉长线条，最多 15 次
+  for(let pass=0;pass<15;pass++){
+    let anyOverlap=false;
+    for(let a=0;a<labels.length;a++){
+      for(let b=a+1;b<labels.length;b++){
+        const la=labels[a],lb=labels[b];
+        if(la.isRight!==lb.isRight)continue;
+        const axL=la.isRight?la.p3x+3:la.p3x-la.tw-3;
+        const axR=axL+la.tw;
+        const ayT=la.p3y-la.th/2;
+        const ayB=la.p3y+la.th/2;
+        const bxL=lb.isRight?lb.p3x+3:lb.p3x-lb.tw-3;
+        const bxR=bxL+lb.tw;
+        const byT=lb.p3y-lb.th/2;
+        const byB=lb.p3y+lb.th/2;
+        const xOk=axR<bxL||bxR<axL;
+        const yOk=ayB+2<byT||byB+2<ayT;
+        if(!xOk&&!yOk){
+          anyOverlap=true;
+          const absA=Math.abs(Math.sin(la.angle));
+          const absB=Math.abs(Math.sin(lb.angle));
+          const target=absA<absB?la:lb;
+          target.ext+=12;
+          target.hLen+=10;
+          const p2x2=cx+Math.cos(target.angle)*(target.outerR+target.ext);
+          const p2y2=cy+Math.sin(target.angle)*(target.outerR+target.ext);
+          target.p3x=p2x2+(target.isRight?target.hLen:-target.hLen);
+          target.p3y=p2y2;
+        }
       }
     }
-    if(!any)break;
+    if(!anyOverlap)break;
   }
 
-  allItems.forEach(item=>{
-    const{arc,angle,col,isRight,allLines,boxW,boxH,outerR}=item;
-    const{bx,by,tipX,tipY,endX,endY}=getBox(item);
+  // 绘制
+  labels.forEach(item=>{
+    const{arc,angle,v,pct,col,name,isRight,ext,hLen,str,tw,th,outerR,p3x,p3y}=item;
     const midR=(arc.outerRadius+arc.innerRadius)/2;
     const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
     const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
+    const p2x=cx+Math.cos(angle)*(outerR+ext),p2y=cy+Math.sin(angle)*(outerR+ext);
+    const bx=isRight?p3x+3:p3x-tw-3,by=p3y-th/2;
     ctx.save();
-    ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([]);
-    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(tipX,tipY);ctx.lineTo(endX,endY);ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,0.96)';
-    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,boxW,boxH,3);else ctx.rect(bx,by,boxW,boxH);
-    ctx.fill();ctx.strokeStyle=col+'44';ctx.lineWidth=0.5;ctx.stroke();
-    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='top';
-    const tx=isRight?bx+4:bx+boxW-4;
-    allLines.forEach((line,li)=>{
-      const isLast=li===allLines.length-1;
-      ctx.font=isLast?"500 10px 'Nunito',sans-serif":"10px 'Nunito',sans-serif";
-      ctx.fillStyle=isLast?'#999':col;
-      ctx.fillText(line,tx,by+2+li*LINE_H);
-    });
+    ctx.strokeStyle=col;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,p3y);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.97)';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,th,3);else ctx.rect(bx,by,tw,th);
+    ctx.fill();ctx.strokeStyle=col+'55';ctx.lineWidth=.5;ctx.stroke();
+    ctx.fillStyle=col;ctx.font="500 10px 'Nunito',sans-serif";
+    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='middle';
+    ctx.fillText(str,isRight?bx+4:bx+tw-4,p3y);
     ctx.restore();
   });
 }}
-
-// Chart background plugin - white
 const CB_BgPlugin={id:'cbBg',beforeDraw(ch){
   const ctx=ch.ctx;ctx.save();
   ctx.fillStyle='#fff';
@@ -1327,13 +1302,12 @@ function cbExportDocx(pid){
   const ec=s._exportContent||{text:true,chart:false};
   const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
   const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
-  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   const pe=[...(s._pe||[])].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
   const children=[];
 
   // ── 标题 ──
   children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — 项目追踪报告'),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-  children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+statusLabel[p.status||'active']+'   总记录: '+pe.length+' 条   导出: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+  children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+STATUS_LABELS[p.status||'active']+'   总记录: '+pe.length+' 条   导出: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
 
   // ── 文字记录（上方）──
   if(ec.text&&pe.length){
@@ -1394,7 +1368,6 @@ function cbExportPdf(pid){
   const s=getCBState(pid);const p=s._p;
   const ec=s._exportContent||{text:true,chart:false};
   const canvas=document.getElementById('cb-canvas-'+pid);
-  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   const pe=[...(s._pe||[])].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
 
   // ── 文字记录 HTML（上方）──
@@ -1463,7 +1436,7 @@ function cbExportPdf(pid){
     @media print{body{padding:20px}img{max-width:100%!important}}
   </style></head><body>
     <h1>${p.name}</h1>
-    <div class="meta">状态: ${statusLabel[p.status||'active']} | 总记录: ${pe.length} 条 | 导出: ${new Date().toLocaleDateString('zh-CN')}</div>
+    <div class="meta">状态: ${STATUS_LABELS[p.status||'active']} | 总记录: ${pe.length} 条 | 导出: ${new Date().toLocaleDateString('zh-CN')}</div>
     ${entriesHtml}
     ${imgTag}
     <script>window.onload=function(){window.print()}<\/script>
@@ -1476,7 +1449,6 @@ function exportTracker(pid,type){
   const pe=[];
   Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===pid)pe.push({...e,dateKey:dk2});}));
   pe.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-  const statusLabel={active:'进行中',done:'已完成',archived:'已归档'};
   if(type==='docx'){
     try{
       const docxLib=window.docx;if(!docxLib||!docxLib.Packer){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
@@ -1484,7 +1456,7 @@ function exportTracker(pid,type){
       const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
       const children=[];
       children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — 项目追踪报告'),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-      children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+statusLabel[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+      children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+STATUS_LABELS[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
       pe.forEach(e=>{
         const parts=e.dateKey.split('-');
         const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
@@ -1504,7 +1476,7 @@ function exportTracker(pid,type){
       }).catch(err=>{alert('DOCX 生成失败: '+err.message);});
     }catch(err){alert('请稍候再试，docx 库加载中: '+err.message);}
   } else if(type==='txt'){
-    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+statusLabel[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
+    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+STATUS_LABELS[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
@@ -1520,7 +1492,7 @@ function exportTracker(pid,type){
     }
   } else {
     let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}@media print{body{padding:20px}}</style></head><body>';
-    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+statusLabel[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
+    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+STATUS_LABELS[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');let f='';
       (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+v+'</span>';});
