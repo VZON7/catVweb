@@ -724,7 +724,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
   const W=ch.canvas.width,H=ch.canvas.height;
-  const PAD=6,LINE_H=13,MAX_LINE_W=W*0.3;
+  const PAD=8,LINE_H=13,MAX_LINE_W=W*0.28;
 
   // ── 收集所有 label 数据 ──────────────────────────────────────────
   const allItems=[];
@@ -761,103 +761,106 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   });
   if(mode==='direct')return;
 
-  // ── fallback：选项太多只显示百分比 ─────────────────────────────
-  if(allItems.length>99){
-    allItems.forEach(item=>{
-      const{arc,angle,v,pct,col}=item;
-      const span=arc.endAngle-arc.startAngle;
-      if(span<0.3)return;
-      const r=(arc.outerRadius+arc.innerRadius)/2;
-      ctx.save();ctx.font='bold 11px sans-serif';
-      ctx.fillStyle='rgba(255,255,255,0.9)';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(pct+'%',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);
-      ctx.restore();
-    });
-    return;
-  }
+  // ── 工具：单行文字宽度 ──────────────────────────────────────────
+  ctx.font="10px 'Nunito',sans-serif";
+  function measureW(t){return ctx.measureText(t).width;}
 
-  // ── 工具函数：文字换行 ───────────────────────────────────────────
+  // ── 工具：文字换行（只按空格断行）──────────────────────────────
   function wrapText(text,maxW){
-    ctx.font="10px 'Nunito',sans-serif";
     const words=text.split(/\s+/);
     if(words.length<=1){
-      return ctx.measureText(text).width>maxW?[text.slice(0,Math.floor(text.length*maxW/ctx.measureText(text).width))+'…']:[text];
+      if(measureW(text)<=maxW)return[text];
+      const cut=Math.max(1,Math.floor(text.length*(maxW/measureW(text)))-1);
+      return[text.slice(0,cut)+'…'];
     }
     const lines=[];let line='';
     words.forEach(w=>{
       const test=line?line+' '+w:w;
-      if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}else line=test;
+      if(measureW(test)>maxW&&line){lines.push(line);line=w;}else line=test;
     });
     if(line)lines.push(line);
     return lines;
   }
 
-  // ── 构建 label boxes ─────────────────────────────────────────────
-  const EXT=32,HLEN=26;
-  const boxes=allItems.map(item=>{
+  // ── 构建每个 label 的初始数据（固定角度，初始 ext）──────────────
+  const BASE_EXT=30;
+  const HLEN=22;
+  const items=allItems.map(item=>{
     const{angle,outerR,v,pct,col,name}=item;
     const isRight=Math.cos(angle)>=0;
-    const p2x=cx+Math.cos(angle)*(outerR+EXT);
-    const p2y=cy+Math.sin(angle)*(outerR+EXT);
-    const p3x=p2x+(isRight?HLEN:-HLEN);
-
-    ctx.font="10px 'Nunito',sans-serif";
     const nameLines=wrapText(name,MAX_LINE_W);
     const pctLine=v+'次 ('+pct+'%)';
     const allLines=[...nameLines,pctLine];
-    const boxW=Math.max(...allLines.map(l=>ctx.measureText(l).width))+10;
+    const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
     const boxH=allLines.length*LINE_H+4;
-
-    let bx=isRight?p3x+3:p3x-boxW-3;
-    let by=p2y-boxH/2;
-    bx=Math.max(PAD,Math.min(W-boxW-PAD,bx));
-    by=Math.max(PAD,Math.min(H-boxH-PAD,by));
-
-    return{...item,isRight,p2x,p2y,p3x,p3y:p2y,bx,by,boxW,boxH,allLines,pctLine};
+    return{...item,isRight,nameLines,pctLine,allLines,boxW,boxH,ext:BASE_EXT};
   });
 
-  // ── 碰撞检测 + 垂直推移（最多 20 次）───────────────────────────
-  function overlaps(a,b){
-    return!(a.bx>b.bx+b.boxW||a.bx+a.boxW<b.bx||a.by>b.by+b.boxH||a.by+b.boxH<b.by);
+  // ── 计算 label 位置（角度固定，只改 ext）──────────────────────
+  function calcPos(item){
+    const{angle,outerR,isRight,boxW,boxH,ext}=item;
+    const tipX=cx+Math.cos(angle)*(outerR+ext);
+    const tipY=cy+Math.sin(angle)*(outerR+ext);
+    const endX=tipX+(isRight?HLEN:-HLEN);
+    const endY=tipY; // Y 不变，保持角度一致
+    // 文字框 anchor 在 endX/endY 中心
+    let bx=isRight?endX+3:endX-boxW-3;
+    let by=endY-boxH/2;
+    // 检测1：边界 clamp
+    bx=Math.max(PAD,Math.min(W-boxW-PAD,bx));
+    by=Math.max(PAD,Math.min(H-boxH-PAD,by));
+    return{tipX,tipY,endX,endY,bx,by};
   }
-  for(let pass=0;pass<20;pass++){
+
+  // ── 检测2+3：碰撞检测，只拉长 ext（不改角度/Y）─────────────────
+  function overlaps(a,b){
+    const ap=calcPos(a),bp=calcPos(b);
+    const MARGIN=3;
+    return!(ap.bx>bp.bx+b.boxW+MARGIN||ap.bx+a.boxW+MARGIN<bp.bx||
+            ap.by>bp.by+b.boxH+MARGIN||ap.by+a.boxH+MARGIN<bp.by);
+  }
+
+  for(let pass=0;pass<30;pass++){
     let anyOverlap=false;
-    for(let a=0;a<boxes.length;a++){
-      for(let b=a+1;b<boxes.length;b++){
-        if(!overlaps(boxes[a],boxes[b]))continue;
+    for(let a=0;a<items.length;a++){
+      for(let b=a+1;b<items.length;b++){
+        if(!overlaps(items[a],items[b]))continue;
         anyOverlap=true;
-        // 把 by 较大的那个往下推
-        const target=boxes[a].by>=boxes[b].by?boxes[a]:boxes[b];
-        target.by+=LINE_H*0.85;
-        target.by=Math.max(PAD,Math.min(H-target.boxH-PAD,target.by));
+        // 拉长 ext 较小的那个（或两个都拉）
+        const ta=items[a],tb=items[b];
+        if(ta.ext<=tb.ext)ta.ext+=10;
+        else tb.ext+=10;
       }
     }
     if(!anyOverlap)break;
   }
 
-  // ── 绘制引线 + label ─────────────────────────────────────────────
-  boxes.forEach(item=>{
-    const{arc,angle,col,isRight,p2x,p2y,p3x,bx,by,boxW,boxH,allLines,pctLine,outerR}=item;
+  // ── 绘制 ─────────────────────────────────────────────────────────
+  items.forEach(item=>{
+    const{arc,angle,col,isRight,allLines,pctLine,boxW,boxH,outerR}=item;
+    const pos=calcPos(item);
+    const{tipX,tipY,endX,endY,bx,by}=pos;
     const midR=(arc.outerRadius+arc.innerRadius)/2;
     const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
     const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
-    const lineEndY=by+boxH/2;
 
     ctx.save();
-    // 引线
-    ctx.strokeStyle=col;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,lineEndY);ctx.stroke();
+    // 引线：从色块中心 → 外圈 → tip → end（角度全程一致）
+    ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(tipX,tipY);ctx.lineTo(endX,endY);ctx.stroke();
+
     // 背景框
     ctx.fillStyle='rgba(255,255,255,0.96)';
     ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,boxW,boxH,3);else ctx.rect(bx,by,boxW,boxH);
     ctx.fill();ctx.strokeStyle=col+'44';ctx.lineWidth=0.5;ctx.stroke();
+
     // 文字
     ctx.textAlign=isRight?'left':'right';ctx.textBaseline='top';
     const tx=isRight?bx+4:bx+boxW-4;
     allLines.forEach((line,li)=>{
       const isLast=li===allLines.length-1;
       ctx.font=isLast?"500 10px 'Nunito',sans-serif":"10px 'Nunito',sans-serif";
-      ctx.fillStyle=isLast?'#888':col;
+      ctx.fillStyle=isLast?'#999':col;
       ctx.fillText(line,tx,by+2+li*LINE_H);
     });
     ctx.restore();
