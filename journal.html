@@ -1522,7 +1522,7 @@ function exportTracker(pid,type){
         children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
       });
       const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
-      Packer.toBase64String(doc).then(b64=>{
+      docxLib.Packer.toBase64String(doc).then(b64=>{
         triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
       }).catch(err=>{alert('DOCX 生成失败: '+err.message);});
     }catch(err){alert('请稍候再试，docx 库加载中: '+err.message);}
