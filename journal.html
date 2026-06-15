@@ -724,7 +724,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
   const W=ch.canvas.width,H=ch.canvas.height;
-  const PAD=6,LINE_H=13,MAX_LINE_W=W*0.26;
+  const PAD=6,LINE_H=13,MAX_LINE_W=W*0.3;
 
   // ── 收集所有 label 数据 ──────────────────────────────────────────
   const allItems=[];
@@ -762,7 +762,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   if(mode==='direct')return;
 
   // ── fallback：选项太多只显示百分比 ─────────────────────────────
-  if(allItems.length>6){
+  if(allItems.length>99){
     allItems.forEach(item=>{
       const{arc,angle,v,pct,col}=item;
       const span=arc.endAngle-arc.startAngle;
@@ -922,7 +922,7 @@ function buildChartBuilderHTML(pid){
     </div>
     <div id="cb-legend-${pid}" style="margin-bottom:8px;max-height:120px;overflow-y:auto"></div>
     <div id="cb-chart-wrap-${pid}">
-      <div style="position:relative;width:100%;height:260px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="项目统计图"></canvas></div>
+      <div style="position:relative;width:100%;height:320px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="项目统计图"></canvas></div>
     </div>
     <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
     <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
