@@ -723,7 +723,10 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const pid=ch._cbPid;const s=getCBState(pid);
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
-  // ── STEP 1: Collect ALL labels first (outside datasets loop) ──
+  const W=ch.canvas.width,H=ch.canvas.height;
+  const PAD=6,LINE_H=13,MAX_LINE_W=W*0.26;
+
+  // ── 收集所有 label 数据 ──────────────────────────────────────────
   const allItems=[];
   ch.data.datasets.forEach((ds,di)=>{
     const meta=ch.getDatasetMeta(di);
@@ -752,88 +755,111 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         ctx.fillText(v+'次('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
       } else {
         if(span<0.12)return;
-        allItems.push({arc,i,v,pct,col,name:dsLabels[i]||'',angle,span});
+        allItems.push({arc,i,v,pct,col,name:dsLabels[i]||'',angle,span,outerR:arc.outerRadius});
       }
     });
   });
-
   if(mode==='direct')return;
 
-  // ── STEP 2: Assign line lengths — start short, extend if overlap ──
-  ctx.font="10px 'Nunito',sans-serif";
-  const W=ch.chartArea.right-ch.chartArea.left;
-  const H=ch.chartArea.bottom-ch.chartArea.top;
+  // ── fallback：选项太多只显示百分比 ─────────────────────────────
+  if(allItems.length>6){
+    allItems.forEach(item=>{
+      const{arc,angle,v,pct,col}=item;
+      const span=arc.endAngle-arc.startAngle;
+      if(span<0.3)return;
+      const r=(arc.outerRadius+arc.innerRadius)/2;
+      ctx.save();ctx.font='bold 11px sans-serif';
+      ctx.fillStyle='rgba(255,255,255,0.9)';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(pct+'%',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);
+      ctx.restore();
+    });
+    return;
+  }
 
-  // Build label list with positions
-  const labels=allItems.map(item=>{
-    const outerR=item.arc.outerRadius;
-    const isRight=Math.cos(item.angle)>=0;
-    // Start with short extension
-    const ext=28;
-    const p2x=cx+Math.cos(item.angle)*(outerR+ext);
-    const p2y=cy+Math.sin(item.angle)*(outerR+ext);
-    const hLen=28;
-    const p3x=p2x+(isRight?hLen:-hLen);
-    const str=item.name+'  '+item.v+'次('+item.pct+'%)';
-    const tw=ctx.measureText(str).width+8;
-    return{...item,isRight,ext,hLen,p3x,p3y:p2y,str,tw,th:13,outerR};
+  // ── 工具函数：文字换行 ───────────────────────────────────────────
+  function wrapText(text,maxW){
+    ctx.font="10px 'Nunito',sans-serif";
+    const words=text.split(/\s+/);
+    if(words.length<=1){
+      return ctx.measureText(text).width>maxW?[text.slice(0,Math.floor(text.length*maxW/ctx.measureText(text).width))+'…']:[text];
+    }
+    const lines=[];let line='';
+    words.forEach(w=>{
+      const test=line?line+' '+w:w;
+      if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}else line=test;
+    });
+    if(line)lines.push(line);
+    return lines;
+  }
+
+  // ── 构建 label boxes ─────────────────────────────────────────────
+  const EXT=32,HLEN=26;
+  const boxes=allItems.map(item=>{
+    const{angle,outerR,v,pct,col,name}=item;
+    const isRight=Math.cos(angle)>=0;
+    const p2x=cx+Math.cos(angle)*(outerR+EXT);
+    const p2y=cy+Math.sin(angle)*(outerR+EXT);
+    const p3x=p2x+(isRight?HLEN:-HLEN);
+
+    ctx.font="10px 'Nunito',sans-serif";
+    const nameLines=wrapText(name,MAX_LINE_W);
+    const pctLine=v+'次 ('+pct+'%)';
+    const allLines=[...nameLines,pctLine];
+    const boxW=Math.max(...allLines.map(l=>ctx.measureText(l).width))+10;
+    const boxH=allLines.length*LINE_H+4;
+
+    let bx=isRight?p3x+3:p3x-boxW-3;
+    let by=p2y-boxH/2;
+    bx=Math.max(PAD,Math.min(W-boxW-PAD,bx));
+    by=Math.max(PAD,Math.min(H-boxH-PAD,by));
+
+    return{...item,isRight,p2x,p2y,p3x,p3y:p2y,bx,by,boxW,boxH,allLines,pctLine};
   });
 
-  // ── STEP 3: Detect overlaps and extend offending labels ──────
-  // Repeat up to 15 passes
-  for(let pass=0;pass<15;pass++){
+  // ── 碰撞检测 + 垂直推移（最多 20 次）───────────────────────────
+  function overlaps(a,b){
+    return!(a.bx>b.bx+b.boxW||a.bx+a.boxW<b.bx||a.by>b.by+b.boxH||a.by+b.boxH<b.by);
+  }
+  for(let pass=0;pass<20;pass++){
     let anyOverlap=false;
-    for(let a=0;a<labels.length;a++){
-      for(let b=a+1;b<labels.length;b++){
-        const la=labels[a],lb=labels[b];
-        if(la.isRight!==lb.isRight)continue;
-        // Check if label boxes overlap
-        const axL=la.isRight?la.p3x+3:la.p3x-la.tw-3;
-        const axR=axL+la.tw;
-        const ayT=la.p3y-la.th/2;
-        const ayB=la.p3y+la.th/2;
-        const bxL=lb.isRight?lb.p3x+3:lb.p3x-lb.tw-3;
-        const bxR=bxL+lb.tw;
-        const byT=lb.p3y-lb.th/2;
-        const byB=lb.p3y+lb.th/2;
-        const xOk=axR<bxL||bxR<axL;
-        const yOk=ayB+2<byT||byB+2<ayT;
-        if(!xOk&&!yOk){
-          anyOverlap=true;
-          // Extend the one closer to centre angle π (more horizontal)
-          const absA=Math.abs(Math.sin(la.angle));
-          const absB=Math.abs(Math.sin(lb.angle));
-          const target=absA<absB?la:lb;
-          target.ext+=12;
-          target.hLen+=10;
-          // Recompute position
-          const p2x2=cx+Math.cos(target.angle)*(target.outerR+target.ext);
-          const p2y2=cy+Math.sin(target.angle)*(target.outerR+target.ext);
-          target.p3x=p2x2+(target.isRight?target.hLen:-target.hLen);
-          target.p3y=p2y2;
-        }
+    for(let a=0;a<boxes.length;a++){
+      for(let b=a+1;b<boxes.length;b++){
+        if(!overlaps(boxes[a],boxes[b]))continue;
+        anyOverlap=true;
+        // 把 by 较大的那个往下推
+        const target=boxes[a].by>=boxes[b].by?boxes[a]:boxes[b];
+        target.by+=LINE_H*0.85;
+        target.by=Math.max(PAD,Math.min(H-target.boxH-PAD,target.by));
       }
     }
     if(!anyOverlap)break;
   }
 
-  // ── STEP 4: Draw all labels ───────────────────────────────────
-  labels.forEach(item=>{
-    const{arc,angle,v,pct,col,name,isRight,ext,hLen,str,tw,th,outerR,p3x,p3y}=item;
+  // ── 绘制引线 + label ─────────────────────────────────────────────
+  boxes.forEach(item=>{
+    const{arc,angle,col,isRight,p2x,p2y,p3x,bx,by,boxW,boxH,allLines,pctLine,outerR}=item;
     const midR=(arc.outerRadius+arc.innerRadius)/2;
     const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
     const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
-    const p2x=cx+Math.cos(angle)*(outerR+ext),p2y=cy+Math.sin(angle)*(outerR+ext);
-    const bx=isRight?p3x+3:p3x-tw-3,by=p3y-th/2;
+    const lineEndY=by+boxH/2;
+
     ctx.save();
+    // 引线
     ctx.strokeStyle=col;ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,p3y);ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.97)';
-    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,tw,th,3);else ctx.rect(bx,by,tw,th);
-    ctx.fill();ctx.strokeStyle=col+'55';ctx.lineWidth=.5;ctx.stroke();
-    ctx.fillStyle=col;ctx.font="500 10px 'Nunito',sans-serif";
-    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='middle';
-    ctx.fillText(str,isRight?bx+4:bx+tw-4,p3y);
+    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,lineEndY);ctx.stroke();
+    // 背景框
+    ctx.fillStyle='rgba(255,255,255,0.96)';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,boxW,boxH,3);else ctx.rect(bx,by,boxW,boxH);
+    ctx.fill();ctx.strokeStyle=col+'44';ctx.lineWidth=0.5;ctx.stroke();
+    // 文字
+    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='top';
+    const tx=isRight?bx+4:bx+boxW-4;
+    allLines.forEach((line,li)=>{
+      const isLast=li===allLines.length-1;
+      ctx.font=isLast?"500 10px 'Nunito',sans-serif":"10px 'Nunito',sans-serif";
+      ctx.fillStyle=isLast?'#888':col;
+      ctx.fillText(line,tx,by+2+li*LINE_H);
+    });
     ctx.restore();
   });
 }};
