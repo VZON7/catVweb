@@ -302,8 +302,9 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .cb-sub { padding:4px 10px; border-radius:999px; font-size:11px; cursor:pointer; color:#666; font-family:'Nunito',sans-serif; background:none; border:none; transition:all .15s; }
 .cb-sub:hover { background:#f0f0f0; color:var(--dark); }
 .cb-sub.on { background:#fff; color:var(--dark); font-weight:600; box-shadow:0 0 0 1px rgba(0,0,0,0.12); }
-.cb-side-panel { width:156px; flex-shrink:0; background:#fff; border:.5px solid rgba(0,0,0,0.08); border-radius:12px; padding:12px; display:none; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
-.cb-side-panel.show { display:block; }
+.cb-side-panel { width:100%; background:#fff; border:.5px solid rgba(0,0,0,0.08); border-radius:12px; padding:0 12px; display:block; max-height:0; overflow:hidden; transition:max-height .3s ease, padding .3s ease, opacity .3s ease; opacity:0; box-sizing:border-box; }
+.cb-side-panel.show { max-height:400px; padding:12px; opacity:1; margin-top:8px; }
+.cb-side-panel-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:0 20px; }
 
 /* Calendar picker */
 .cal-picker-wrap { position:relative; display:inline-block; }
@@ -894,14 +895,10 @@ function buildChartBuilderHTML(pid){
       <button class="cb-tog" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')">统计</button>
     </div>
     <div id="cb-legend-${pid}" style="margin-bottom:8px;max-height:120px;overflow-y:auto"></div>
-    <div style="display:flex;gap:12px;align-items:flex-start">
-      <div style="flex:1;min-width:0">
-        <div id="cb-chart-wrap-${pid}" style="position:relative">
-          <div style="position:relative;width:100%;height:260px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="项目统计图"></canvas></div>
-        </div>
-      </div>
-      <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
+    <div id="cb-chart-wrap-${pid}">
+      <div style="position:relative;width:100%;height:260px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="项目统计图"></canvas></div>
     </div>
+    <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
     <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0">导出内容：</span>
       <button id="cb-tog-text-${pid}" class="cb-tog on" onclick="cbTogExportContent('${pid}','text')">📝 文字记录</button>
@@ -1097,10 +1094,11 @@ function cbRenderBar(pid){
   const spEl=document.getElementById('cb-statpanel-'+pid);
   if(spEl){
     let h='<div style="font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;margin-bottom:10px">数据统计</div>';
+    h+='<div class="cb-side-panel-grid">';
     spGroups.forEach(g=>{
       const midSpCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:cbGetGroupColors(g.vi)[2];
       const titleStyle=`background:${midSpCol}22;color:${midSpCol};border:.5px solid ${midSpCol}66`;
-      h+=`<div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;${titleStyle}">${g.label}</div>`;
+      h+=`<div><div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;${titleStyle}">${g.label}</div>`;
       g.items.forEach(it=>{
         h+=`<div style="display:flex;align-items:center;padding:5px 0;border-bottom:.5px solid #f0f0f0">
           <span style="width:9px;height:9px;border-radius:2px;flex-shrink:0;background:${it.color};margin-right:7px"></span>
@@ -1109,8 +1107,9 @@ function cbRenderBar(pid){
           <span style="font-size:11px;color:#aaa;margin-left:4px">${it.pct}%</span>
         </div>`;
       });
-      h+='<div style="height:8px"></div>';
+      h+='</div>';
     });
+    h+='</div>';
     spEl.innerHTML=h;
     s._spGroups=spGroups;
   }
