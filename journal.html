@@ -1112,6 +1112,7 @@ function cbRenderBar(pid){
       h+='<div style="height:8px"></div>';
     });
     spEl.innerHTML=h;
+    s._spGroups=spGroups;
   }
 
   // ── Y max with buffer for title labels ────────────────────────
@@ -1346,6 +1347,27 @@ function cbExportDocx(pid){
       children.push(new Paragraph({children:[new TextRun({text:'统计图表',bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:160,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
       children.push(new Paragraph({children:[new ImageRun({data:Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transformation:{width:480,height:220},type:'png'})],spacing:{before:0,after:80}}));
     }catch(e){}}
+    // ── 数据统计（showPanel 开启时附在图表后）──
+    if(s.showPanel&&s._varData&&s.varKeys.length){
+      children.push(new Paragraph({children:[new TextRun({text:'数据统计',bold:true,size:22,color:PURPLE,font:'Arial'})],spacing:{before:120,after:60}}));
+      s.varKeys.forEach(vk=>{
+        const vd=s._varData[vk];if(!vd)return;
+        const varInfo=s._vars&&s._vars.find(v=>v.key===vk);
+        const label=varInfo?varInfo.label:vk;
+        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(label),bold:true,size:20,color:DARK,font:'Arial'})],spacing:{before:80,after:30}}));
+        if(vd.type==='number'){
+          const total=Object.values(vd.perDate).reduce((a,b)=>a+b,0);
+          children.push(new Paragraph({children:[new TextRun({text:'  合计：'+total+(varInfo&&varInfo.unit?' '+varInfo.unit:''),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10}}));
+        } else {
+          const grandTotal=vd.options.reduce((a,o)=>a+(vd.totals[o]||0),0);
+          vd.options.forEach(o=>{
+            const cnt=vd.totals[o]||0;
+            const pct=grandTotal?Math.round(cnt/grandTotal*100):0;
+            children.push(new Paragraph({children:[new TextRun({text:'  '+stripEmoji(o)+'：'+cnt+' 次  '+pct+'%',size:18,color:MID,font:'Arial'})],spacing:{before:6,after:6}}));
+          });
+        }
+      });
+    }
   }
 
   const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
@@ -1387,7 +1409,32 @@ function cbExportPdf(pid){
   // ── 统计图表 HTML（下方）──
   let imgTag='';
   if(ec.chart&&canvas){
-    try{imgTag=`<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">统计图表</h2><img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:24px">`;}catch(e){}
+    try{
+      imgTag=`<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">统计图表</h2><img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:16px">`;
+      // ── 数据统计（showPanel 开启时附在图表后）──
+      if(s.showPanel&&s._varData&&s.varKeys.length){
+        imgTag+='<h3 style="color:#7B68EE;font-size:13px;margin:16px 0 10px">数据统计</h3>';
+        s.varKeys.forEach(vk=>{
+          const vd=s._varData[vk];if(!vd)return;
+          const varInfo=s._vars&&s._vars.find(v=>v.key===vk);
+          const label=varInfo?varInfo.label:vk;
+          imgTag+=`<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:4px;display:inline-block;margin:8px 0 6px">${label}</div>`;
+          if(vd.type==='number'){
+            const total=Object.values(vd.perDate).reduce((a,b)=>a+b,0);
+            imgTag+=`<div style="font-size:12px;color:#5a5870;padding:4px 0">合计：${total}${varInfo&&varInfo.unit?' '+varInfo.unit:''}</div>`;
+          } else {
+            const grandTotal=vd.options.reduce((a,o)=>a+(vd.totals[o]||0),0);
+            imgTag+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">';
+            vd.options.forEach(o=>{
+              const cnt=vd.totals[o]||0;
+              const pct=grandTotal?Math.round(cnt/grandTotal*100):0;
+              imgTag+=`<tr style="border-bottom:.5px solid #f0f0f0"><td style="padding:4px 0;color:#444;width:60%">${o}</td><td style="padding:4px;font-weight:700;color:#222;text-align:right">${cnt}</td><td style="padding:4px;color:#aaa;text-align:right">${pct}%</td></tr>`;
+            });
+            imgTag+='</table>';
+          }
+        });
+      }
+    }catch(e){}
   }
 
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
