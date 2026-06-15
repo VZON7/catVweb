@@ -724,9 +724,37 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   const cx=(ch.chartArea.left+ch.chartArea.right)/2;
   const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
   const W=ch.canvas.width,H=ch.canvas.height;
-  const PAD=8,LINE_H=13,MAX_LINE_W=W*0.28;
+  const PAD=6,LINE_H=13,HLEN=20,BASE_EXT=28,MAX_LINE_W=W*0.28;
 
-  // ── 收集所有 label 数据 ──────────────────────────────────────────
+  function measureW(t){ctx.font="10px 'Nunito',sans-serif";return ctx.measureText(t).width;}
+
+  function wrapText(text,maxW){
+    const words=text.split(/\s+/);
+    if(words.length<=1){
+      if(measureW(text)<=maxW)return[text];
+      const cut=Math.max(1,Math.floor(text.length*(maxW/measureW(text)))-1);
+      return[text.slice(0,cut)+"..."];
+    }
+    const lines=[];let line='';
+    words.forEach(w=>{
+      const test=line?line+' '+w:w;
+      if(measureW(test)>maxW&&line){lines.push(line);line=w;}else line=test;
+    });
+    if(line)lines.push(line);
+    return lines;
+  }
+
+  function calcMaxExt(angle,boxW,boxH){
+    const isRight=Math.cos(angle)>=0;
+    const cosA=Math.cos(angle),sinA=Math.sin(angle);
+    const maxTipX=isRight?(W-PAD-boxW-HLEN-3):(PAD+boxW+HLEN+3);
+    let maxE=9999;
+    if(Math.abs(cosA)>0.01){const e=(maxTipX-cx)/cosA;if(e>0)maxE=Math.min(maxE,e);}
+    if(sinA>0.01){const e=(H-PAD-boxH/2-cy)/sinA;if(e>0)maxE=Math.min(maxE,e);}
+    if(sinA<-0.01){const e=(PAD+boxH/2-cy)/sinA;if(e>0)maxE=Math.min(maxE,e);}
+    return Math.max(BASE_EXT,Math.min(maxE-2,W*0.45));
+  }
+
   const allItems=[];
   ch.data.datasets.forEach((ds,di)=>{
     const meta=ch.getDatasetMeta(di);
@@ -755,106 +783,64 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         ctx.fillText(v+'次('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
       } else {
         if(span<0.12)return;
-        allItems.push({arc,i,v,pct,col,name:dsLabels[i]||'',angle,span,outerR:arc.outerRadius});
+        const name=dsLabels[i]||'';
+        const nameLines=wrapText(name,MAX_LINE_W);
+        const pctLine=v+'次 ('+pct+'%)';
+        const allLines=[...nameLines,pctLine];
+        const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
+        const boxH=allLines.length*LINE_H+4;
+        const isRight=Math.cos(angle)>=0;
+        const maxExt=calcMaxExt(angle,boxW,boxH);
+        allItems.push({arc,v,pct,col,name,angle,span,outerR:arc.outerRadius,
+          isRight,nameLines,pctLine,allLines,boxW,boxH,ext:BASE_EXT,maxExt});
       }
     });
   });
   if(mode==='direct')return;
 
-  // ── 工具：单行文字宽度 ──────────────────────────────────────────
-  ctx.font="10px 'Nunito',sans-serif";
-  function measureW(t){return ctx.measureText(t).width;}
-
-  // ── 工具：文字换行（只按空格断行）──────────────────────────────
-  function wrapText(text,maxW){
-    const words=text.split(/\s+/);
-    if(words.length<=1){
-      if(measureW(text)<=maxW)return[text];
-      const cut=Math.max(1,Math.floor(text.length*(maxW/measureW(text)))-1);
-      return[text.slice(0,cut)+'…'];
-    }
-    const lines=[];let line='';
-    words.forEach(w=>{
-      const test=line?line+' '+w:w;
-      if(measureW(test)>maxW&&line){lines.push(line);line=w;}else line=test;
-    });
-    if(line)lines.push(line);
-    return lines;
-  }
-
-  // ── 构建每个 label 的初始数据（固定角度，初始 ext）──────────────
-  const BASE_EXT=30;
-  const HLEN=22;
-  const items=allItems.map(item=>{
-    const{angle,outerR,v,pct,col,name}=item;
-    const isRight=Math.cos(angle)>=0;
-    const nameLines=wrapText(name,MAX_LINE_W);
-    const pctLine=v+'次 ('+pct+'%)';
-    const allLines=[...nameLines,pctLine];
-    const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
-    const boxH=allLines.length*LINE_H+4;
-    return{...item,isRight,nameLines,pctLine,allLines,boxW,boxH,ext:BASE_EXT};
-  });
-
-  // ── 计算 label 位置（角度固定，只改 ext）──────────────────────
-  function calcPos(item){
+  function getBox(item){
     const{angle,outerR,isRight,boxW,boxH,ext}=item;
     const tipX=cx+Math.cos(angle)*(outerR+ext);
     const tipY=cy+Math.sin(angle)*(outerR+ext);
     const endX=tipX+(isRight?HLEN:-HLEN);
-    const endY=tipY; // Y 不变，保持角度一致
-    // 文字框 anchor 在 endX/endY 中心
-    let bx=isRight?endX+3:endX-boxW-3;
-    let by=endY-boxH/2;
-    // 检测1：边界 clamp
-    bx=Math.max(PAD,Math.min(W-boxW-PAD,bx));
-    by=Math.max(PAD,Math.min(H-boxH-PAD,by));
-    return{tipX,tipY,endX,endY,bx,by};
+    const bx=isRight?endX+3:endX-boxW-3;
+    const by=tipY-boxH/2;
+    return{bx,by,tipX,tipY,endX,endY:tipY};
   }
 
-  // ── 检测2+3：碰撞检测，只拉长 ext（不改角度/Y）─────────────────
   function overlaps(a,b){
-    const ap=calcPos(a),bp=calcPos(b);
-    const MARGIN=3;
-    return!(ap.bx>bp.bx+b.boxW+MARGIN||ap.bx+a.boxW+MARGIN<bp.bx||
-            ap.by>bp.by+b.boxH+MARGIN||ap.by+a.boxH+MARGIN<bp.by);
+    const ba=getBox(a),bb=getBox(b);
+    const M=3;
+    return!(ba.bx>bb.bx+b.boxW+M||ba.bx+a.boxW+M<bb.bx||
+            ba.by>bb.by+b.boxH+M||ba.by+a.boxH+M<bb.by);
   }
-
   for(let pass=0;pass<30;pass++){
-    let anyOverlap=false;
-    for(let a=0;a<items.length;a++){
-      for(let b=a+1;b<items.length;b++){
-        if(!overlaps(items[a],items[b]))continue;
-        anyOverlap=true;
-        // 拉长 ext 较小的那个（或两个都拉）
-        const ta=items[a],tb=items[b];
-        if(ta.ext<=tb.ext)ta.ext+=10;
-        else tb.ext+=10;
+    let any=false;
+    for(let a=0;a<allItems.length;a++){
+      for(let b=a+1;b<allItems.length;b++){
+        if(!overlaps(allItems[a],allItems[b]))continue;
+        any=true;
+        const ta=allItems[a],tb=allItems[b];
+        if(ta.ext<tb.ext&&ta.ext<ta.maxExt)ta.ext+=8;
+        else if(tb.ext<tb.maxExt)tb.ext+=8;
+        else if(ta.ext<ta.maxExt)ta.ext+=8;
       }
     }
-    if(!anyOverlap)break;
+    if(!any)break;
   }
 
-  // ── 绘制 ─────────────────────────────────────────────────────────
-  items.forEach(item=>{
-    const{arc,angle,col,isRight,allLines,pctLine,boxW,boxH,outerR}=item;
-    const pos=calcPos(item);
-    const{tipX,tipY,endX,endY,bx,by}=pos;
+  allItems.forEach(item=>{
+    const{arc,angle,col,isRight,allLines,boxW,boxH,outerR}=item;
+    const{bx,by,tipX,tipY,endX,endY}=getBox(item);
     const midR=(arc.outerRadius+arc.innerRadius)/2;
     const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
     const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
-
     ctx.save();
-    // 引线：从色块中心 → 外圈 → tip → end（角度全程一致）
     ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(tipX,tipY);ctx.lineTo(endX,endY);ctx.stroke();
-
-    // 背景框
     ctx.fillStyle='rgba(255,255,255,0.96)';
     ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,boxW,boxH,3);else ctx.rect(bx,by,boxW,boxH);
     ctx.fill();ctx.strokeStyle=col+'44';ctx.lineWidth=0.5;ctx.stroke();
-
-    // 文字
     ctx.textAlign=isRight?'left':'right';ctx.textBaseline='top';
     const tx=isRight?bx+4:bx+boxW-4;
     allLines.forEach((line,li)=>{
@@ -865,7 +851,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
     });
     ctx.restore();
   });
-}};
+}}
 
 // Chart background plugin - white
 const CB_BgPlugin={id:'cbBg',beforeDraw(ch){
@@ -1705,7 +1691,7 @@ function buildEditForm(e,p){
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     } else {
       const esArr=editState.fields[f.id]||[];
-      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):'选择…';
+      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):'选择...';
       varsHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
         <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
           <button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'}">${esDisplay}</span><span style="opacity:.4">▾</span></button>
@@ -1714,7 +1700,7 @@ function buildEditForm(e,p){
               <span>${isSel?'✓ ':''} ${o}</span>
               <span onclick="event.stopPropagation();deleteEditOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
             </div>`;}).join('')}
-            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div>
+            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项..." onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div>
           </div>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     }
@@ -1726,7 +1712,7 @@ function buildEditForm(e,p){
     ${editPpHTML}
     <div class="form-row">
       ${projBadge}
-      <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="今天做了什么…" style="font-weight:700" oninput="editState.title=this.value">
+      <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="今天做了什么..." style="font-weight:700" oninput="editState.title=this.value">
     </div>
     ${varsHTML.length?`<div class="var-rows">${varsHTML}</div>`:''}
     <div class="extras-row">
@@ -1734,8 +1720,8 @@ function buildEditForm(e,p){
       <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()">🔗 链接</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="补充说明…">${es.note}</textarea>`:''}
-      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://…" style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.linkLabel=this.value"></div>`:''}
+      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="补充说明...">${es.note}</textarea>`:''}
+      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.linkLabel=this.value"></div>`:''}
     </div>
     <div class="form-btns">
       <button class="f-cancel" onclick="cancelEdit()">取消</button>
@@ -1802,7 +1788,7 @@ function buildNewForm(){
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       } else {
         const selArr=(window._fv&&window._fv[f.id])||[];
-        const selDisplay=selArr.length?selArr.join(', '):'选择…';
+        const selDisplay=selArr.length?selArr.join(', '):'选择...';
         dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
           <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
             <button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4">▾</span></button>
@@ -1811,7 +1797,7 @@ function buildNewForm(){
                 <span>${isSel?'✓ ':''} ${o}</span>
                 <span onclick="event.stopPropagation();deleteNewOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
               </div>`;}).join('')}
-              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div>
+              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项..." onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div>
             </div>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       }
@@ -1826,7 +1812,7 @@ function buildNewForm(){
         ${p?`<div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}`:'＋ 选择 project'}
         <span style="opacity:.4;margin-left:2px">▾</span>
       </button>
-      <input type="text" id="f-title" placeholder="今天做了什么…" style="font-weight:700" oninput="formTitle=this.value" autocomplete="off">
+      <input type="text" id="f-title" placeholder="今天做了什么..." style="font-weight:700" oninput="formTitle=this.value" autocomplete="off">
     </div>
     ${dynHTML}
     <div class="extras-row">
@@ -1834,8 +1820,8 @@ function buildNewForm(){
       <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')">🔗 链接</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="补充说明、心得…" oninput="formNote=this.value"></textarea>`:''}
-      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://…" style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
+      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="补充说明、心得..." oninput="formNote=this.value"></textarea>`:''}
+      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
     </div>
     <div class="coin-preview">🐾 预计获得 <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?'<span style="color:var(--pink);font-size:10px;margin-left:6px">（过去日期 ×½）</span>':''}</div>
     <div class="form-btns">
@@ -1992,14 +1978,14 @@ function renderModal(){
             <button style="background:none;border:none;color:var(--mid);cursor:pointer;font-size:13px;opacity:.5;padding:2px 4px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.5;this.style.color='var(--mid)'" onclick="removeOption(${i},${oi})">✕</button>
           </div>`).join('')}
           <div style="display:flex;gap:6px;margin-top:4px">
-            <input type="text" id="modal-new-opt-${i}" placeholder="添加新子选项…" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
+            <input type="text" id="modal-new-opt-${i}" placeholder="添加新子选项..." style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
             <button style="padding:3px 10px;border-radius:6px;border:0.5px solid rgba(123,104,238,0.25);background:rgba(123,104,238,0.08);color:var(--purple);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif" onclick="addOptionInModal(${i})">＋</button>
           </div>
         </div>`;
       } else {
         optHtml=`<div style="margin:4px 0 4px 14px;display:flex;align-items:center;gap:6px">
           <span style="font-size:10px;color:var(--mid);flex-shrink:0">单位</span>
-          <input type="text" value="${f.unit||''}" placeholder="如 min、km、次…"
+          <input type="text" value="${f.unit||''}" placeholder="如 min、km、次..."
             style="width:100px;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none"
             oninput="if(modal&&modal.fields[${i}])modal.fields[${i}].unit=this.value.trim()"
             onfocus="this.style.borderColor='var(--purple)'"
