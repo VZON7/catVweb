@@ -729,7 +729,6 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
 
   function measureW(t){ctx.font="10px 'Nunito',sans-serif";return ctx.measureText(t).width;}
 
-  // \u6839\u636e\u89d2\u5ea6\u548c\u5f53\u524d ext \u8ba1\u7b97\u6587\u5b57\u6846\u53ef\u7528\u6700\u5927\u5bbd\u5ea6
   function maxBoxW(angle,outerR,ext){
     const isRight=Math.cos(angle)>=0;
     const tipX=cx+Math.cos(angle)*(outerR+ext);
@@ -791,8 +790,9 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         const allLines=[...nameLines,pctLine];
         const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
         const boxH=allLines.length*LINE_H+4;
+        // byOffset: 额外的垂直偏移（用于同侧碰撞推移）
         allItems.push({arc,v,pct,col,name,angle,span,outerR,
-          isRight,allLines,boxW,boxH,ext:28});
+          isRight,allLines,boxW,boxH,ext:28,byOffset:0});
       }
     });
   });
@@ -803,7 +803,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
     const tipY=cy+Math.sin(it.angle)*(it.outerR+it.ext);
     const endX=tipX+(it.isRight?HLEN:-HLEN);
     const bx=it.isRight?endX+3:endX-it.boxW-3;
-    const by=tipY-it.boxH/2;
+    const by=tipY-it.boxH/2+it.byOffset;
     return{tipX,tipY,endX,bx,by};
   }
 
@@ -829,15 +829,25 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         if(!overlaps(allItems[a],allItems[b]))continue;
         any=true;
         const ta=allItems[a],tb=allItems[b];
-        if(ta.ext<=tb.ext&&!wouldExceed(ta,12))ta.ext+=12;
-        else if(!wouldExceed(tb,12))tb.ext+=12;
-        else if(!wouldExceed(ta,12))ta.ext+=12;
+        const pa=getPos(ta),pb=getPos(tb);
+        // 同侧碰撞：把 by 较大（位置较低）的那个往下推
+        if(ta.isRight===tb.isRight){
+          const target=pa.by>=pb.by?ta:tb;
+          const newBy=target.byOffset+LINE_H;
+          const testPos=getPos({...target,byOffset:newBy});
+          if(testPos.by+target.boxH<=CH-PAD)target.byOffset=newBy;
+        } else {
+          // 不同侧不会真正重叠，拉长线处理
+          if(ta.ext<=tb.ext&&!wouldExceed(ta,12))ta.ext+=12;
+          else if(!wouldExceed(tb,12))tb.ext+=12;
+          else if(!wouldExceed(ta,12))ta.ext+=12;
+        }
       }
     }
     if(!any)break;
   }
 
-  // \u6bcf\u6b21\u7ed8\u5236\u524d\u91cd\u65b0\u6839\u636e\u5b9e\u9645 ext \u8ba1\u7b97\u6362\u884c\uff08\u4fdd\u8bc1\u6587\u5b57\u4e0d\u8d85\u51fa\u8fb9\u754c\uff09
+  // 绘制前用最终 ext 重算换行
   allItems.forEach(it=>{
     const mxW=maxBoxW(it.angle,it.outerR,it.ext);
     const nameLines=wrapText(it.name,mxW);
