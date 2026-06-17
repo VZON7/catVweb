@@ -3,10 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>项目日记 — catVweb</title>
+<title>Project Journal — catVweb</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
+<script>
+// docx@7.x 在浏览器里把自己挂到全局 docx 变量（不是 window.docx）
+// 统一包装到 window.docx 方便我们调用
+window.addEventListener('load', function(){
+  if(typeof docx !== 'undefined') window.docx = docx;
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
@@ -41,9 +50,11 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 
 /* STATS */
 .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
-.stat-card { background:rgba(255,255,255,0.6); border:0.5px solid rgba(123,104,238,0.2); border-radius:12px; padding:12px 14px; text-align:center; }
-.stat-n { font-family:'Lilita One',cursive; font-size:24px; color:var(--purple); }
-.stat-l { font-size:11px; color:var(--mid); margin-top:2px; }
+.stat-card { background:rgba(255,255,255,0.7); border:0.5px solid rgba(123,104,238,0.18); border-radius:14px; padding:14px 14px 12px; text-align:center; transition:box-shadow .18s, transform .12s; }
+.stat-card:hover { box-shadow:0 2px 12px rgba(123,104,238,0.1); transform:translateY(-1px); }
+.stat-icon { font-size:16px; margin-bottom:5px; opacity:.75; }
+.stat-n { font-family:'Lilita One',cursive; font-size:26px; color:var(--purple); line-height:1; }
+.stat-l { font-size:10px; font-weight:700; letter-spacing:.04em; color:var(--mid); margin-top:4px; text-transform:uppercase; }
 
 /* TWO-COL LAYOUT */
 .main-layout { display:grid; grid-template-columns:200px 1fr; gap:16px; }
@@ -56,17 +67,24 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .week-range { font-size:11px; font-weight:600; color:var(--dark); }
 .wnav-btn { background:none; border:none; color:var(--mid); cursor:pointer; font-size:14px; padding:2px 5px; border-radius:4px; }
 .wnav-btn:hover { background:rgba(123,104,238,0.12); }
-.day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; }
+.day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; transition:background .12s; }
 .day-item:hover { background:rgba(123,104,238,0.08); }
 .day-item.active { background:#FAEEDA; }
-.day-dot { width:5px; height:5px; border-radius:50%; background:rgba(123,104,238,0.2); flex-shrink:0; }
+.day-item.is-today:not(.active) { background:rgba(123,104,238,0.05); }
+.day-dot { width:5px; height:5px; border-radius:50%; background:rgba(123,104,238,0.2); flex-shrink:0; transition:background .12s; }
 .day-dot.has { background:var(--purple); }
 .day-name { font-size:12px; color:var(--mid); flex:1; }
 .day-item.active .day-name { color:#633806; font-weight:700; }
-.day-cnt { font-size:10px; color:var(--mid); }
+.day-item.is-today .day-name { color:var(--purple); }
+.day-item.is-today.active .day-name { color:#633806; }
+.day-cnt { font-size:10px; color:var(--mid); background:rgba(123,104,238,0.1); border-radius:999px; padding:1px 5px; min-width:16px; text-align:center; }
 .sb-divider { border:none; border-top:0.5px solid rgba(123,104,238,0.15); margin:12px 0; }
-.proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; }
+.proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; transition:background .1s; user-select:none; }
 .proj-item:hover { background:rgba(123,104,238,0.08); }
+.proj-item.dragging { opacity:.35; }
+.proj-item.drag-over { background:rgba(123,104,238,0.15); box-shadow:0 -2px 0 var(--purple); }
+.proj-drag-handle { font-size:13px; color:var(--mid); opacity:.3; cursor:grab; flex-shrink:0; padding:0 1px; line-height:1; }
+.proj-drag-handle:hover { opacity:.7; }
 .proj-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .proj-name { font-size:12px; color:var(--mid); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .proj-item { position:relative; }
@@ -81,25 +99,29 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 
 /* MAIN AREA */
 .main-area { min-height:400px; }
-.sec-label { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin-bottom:8px; margin-top:4px; display:flex; align-items:center; gap:6px; }
-.sec-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.sec-label { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin-bottom:8px; margin-top:16px; display:flex; align-items:center; gap:6px; padding-bottom:6px; border-bottom:0.5px solid rgba(123,104,238,0.1); }
+.sec-label:first-child { margin-top:4px; }
+.sec-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; box-shadow:0 0 0 2px rgba(255,255,255,0.8); }
 
 /* ENTRY CARD */
-.entry-card { background:rgba(255,255,255,0.65); border:0.5px solid rgba(123,104,238,0.18); border-radius:12px; margin-bottom:8px; transition:border-color .15s; }
-.entry-card:hover { border-color:rgba(123,104,238,0.4); }
-.entry-card.editing { border-color:var(--purple); background:rgba(255,255,255,0.9); }
-.ec-inner { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; }
-.proj-badge { display:flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; flex-shrink:0; margin-top:1px; }
+.entry-card { background:rgba(255,255,255,0.7); border:0.5px solid rgba(123,104,238,0.18); border-radius:12px; margin-bottom:8px; transition:border-color .18s, box-shadow .18s, transform .12s; position:relative; overflow:hidden; }
+.entry-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ec-accent, var(--purple)); border-radius:3px 0 0 3px; opacity:.7; transition:opacity .18s; }
+.entry-card:hover { border-color:rgba(123,104,238,0.38); box-shadow:0 2px 12px rgba(123,104,238,0.08); }
+.entry-card:hover::before { opacity:1; }
+.entry-card.editing { border-color:var(--purple); background:rgba(255,255,255,0.95); box-shadow:0 2px 16px rgba(123,104,238,0.12); }
+.ec-inner { display:flex; align-items:flex-start; gap:10px; padding:11px 14px 11px 17px; }
+.proj-badge { display:flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; flex-shrink:0; margin-top:2px; }
 .ec-body { flex:1; min-width:0; }
-.ec-title { font-size:13px; font-weight:700; color:var(--dark); line-height:1.4; }
+.ec-title { font-size:13px; font-weight:700; color:var(--dark); line-height:1.45; }
 .ec-meta { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:5px; }
 .ec-field { font-size:11px; color:var(--mid); display:flex; align-items:center; gap:3px; }
-.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(123,104,238,0.1); border:0.5px solid rgba(123,104,238,0.25); color:var(--dark); }
-.ec-note { font-size:12px; color:var(--mid); margin-top:5px; line-height:1.5; padding-top:5px; border-top:0.5px solid rgba(123,104,238,0.12); }
-.ec-coin { font-size:10px; color:#854F0B; background:#FAEEDA; border-radius:999px; padding:2px 7px; white-space:nowrap; flex-shrink:0; font-weight:700; }
-.ec-acts { display:flex; gap:2px; flex-shrink:0; }
-.ec-act { background:none; border:none; color:var(--mid); cursor:pointer; font-size:13px; padding:4px; border-radius:4px; opacity:.4; }
-.ec-act:hover { opacity:1; background:rgba(123,104,238,0.1); }
+.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(123,104,238,0.08); border:0.5px solid rgba(123,104,238,0.22); color:var(--dark); }
+.ec-note { font-size:12px; color:var(--mid); margin-top:6px; line-height:1.55; padding-top:6px; border-top:0.5px solid rgba(123,104,238,0.1); }
+.ec-coin { font-size:10px; color:#854F0B; background:#FAEEDA; border-radius:999px; padding:2px 8px; white-space:nowrap; flex-shrink:0; font-weight:700; }
+.ec-acts { display:flex; gap:2px; flex-shrink:0; opacity:0; transition:opacity .15s; }
+.entry-card:hover .ec-acts, .entry-card.editing .ec-acts { opacity:1; }
+.ec-act { background:none; border:none; color:var(--mid); cursor:pointer; font-size:13px; padding:4px; border-radius:4px; transition:all .12s; }
+.ec-act:hover { opacity:1; background:rgba(123,104,238,0.1); color:var(--purple); }
 
 /* INLINE EDIT */
 .inline-edit { padding:0 14px 12px; }
@@ -123,7 +145,8 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .ie-save:hover { opacity:.85; }
 
 /* FORM */
-.form-card { background:rgba(255,255,255,0.85); border:0.5px solid rgba(123,104,238,0.35); border-radius:14px; padding:14px; margin-bottom:12px; }
+@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+.form-card { background:rgba(255,255,255,0.88); border:0.5px solid rgba(123,104,238,0.35); border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:0 2px 16px rgba(123,104,238,0.1); animation:slideDown .2s ease; }
 .form-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
 .form-row input { flex:1; font-size:13px; font-family:'Nunito',sans-serif; background:rgba(255,255,255,0.9); border:0.5px solid rgba(123,104,238,0.25); border-radius:8px; padding:8px 12px; color:var(--dark); outline:none; }
 .form-row input:focus { border-color:var(--purple); }
@@ -202,7 +225,99 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .m-save { padding:6px 16px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; }
 .m-delete { padding:6px 12px; border-radius:999px; border:0.5px solid rgba(255,63,108,0.35); background:none; color:var(--pink); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; }
 
-.empty-hint { text-align:center; padding:2.5rem 0; color:var(--mid); font-size:13px; }
+.empty-hint { text-align:center; padding:3rem 1rem; color:var(--mid); font-size:13px; }
+.empty-hint-icon { font-size:36px; margin-bottom:12px; opacity:.3; display:block; }
+.empty-hint-title { font-size:14px; font-weight:700; color:var(--dark); opacity:.5; margin-bottom:6px; }
+.empty-hint-sub { font-size:12px; color:var(--mid); opacity:.7; line-height:1.6; }
+
+/* ── project 未选时的抖动提示 ── */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-5px)}
+  40%{transform:translateX(5px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.proj-sel-btn.error {
+  border-color:var(--pink)!important;
+  background:rgba(255,63,108,0.08)!important;
+  color:var(--pink)!important;
+  animation:shake .35s ease;
+}
+.cb-wrap { background:#fff; border:0.5px solid rgba(0,0,0,0.08); border-radius:14px; padding:16px; margin-bottom:12px; box-shadow:0 1px 6px rgba(0,0,0,0.05); }
+.cb-step-lbl { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--mid); margin-bottom:6px; margin-top:10px; }
+.cb-step-lbl:first-child { margin-top:0; }
+.cb-var-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:2px; }
+.cb-var-chip { padding:5px 13px; border-radius:999px; border:.5px solid rgba(0,0,0,0.1); background:#f5f4f9; color:#666; font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .15s; }
+.cb-var-chip:hover { background:#eeedf4; color:var(--dark); }
+.cb-var-chip.on { background:var(--purple); border-color:var(--purple); color:#fff; font-weight:600; }
+.cb-chart-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.cb-nav-btn { width:26px; height:26px; border-radius:50%; border:0.5px solid rgba(123,104,238,0.25); background:rgba(255,255,255,0.7); color:var(--mid); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.cb-nav-btn:hover { border-color:var(--purple); color:var(--purple); }
+.cb-type-name { font-size:12px; font-weight:700; color:var(--dark); min-width:56px; text-align:center; }
+.cb-add-btn { display:flex; align-items:center; gap:5px; padding:4px 12px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.3); background:rgba(255,255,255,0.7); color:var(--mid); font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .15s; }
+.cb-add-btn.added { background:rgba(123,104,238,0.12); border-color:var(--purple); color:var(--purple); font-weight:700; }
+.cb-chart-area { background:rgba(255,255,255,0.8); border:0.5px solid rgba(123,104,238,0.12); border-radius:10px; padding:10px; }
+.cb-legend { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; font-size:10px; color:var(--mid); }
+.cb-label-list { display:flex; flex-direction:column; gap:4px; margin-top:4px; }
+.cb-label-row { display:flex; align-items:center; gap:6px; }
+.cb-label-orig { font-size:10px; color:var(--mid); min-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cb-label-inp { flex:1; font-size:11px; border:0.5px solid rgba(123,104,238,0.2); border-radius:6px; padding:3px 7px; background:rgba(255,255,255,0.9); color:var(--dark); outline:none; font-family:'Nunito',sans-serif; }
+.cb-label-inp:focus { border-color:var(--purple); }
+.cb-selected-list { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+.cb-sel-card { display:flex; align-items:center; gap:8px; padding:7px 10px; background:rgba(255,255,255,0.8); border:0.5px solid rgba(123,104,238,0.3); border-radius:10px; }
+.cb-sel-card-name { font-size:12px; font-weight:600; color:var(--dark); flex:1; }
+.cb-sel-card-sub { font-size:10px; color:var(--mid); }
+.cb-sel-del { background:none; border:none; color:var(--mid); cursor:pointer; font-size:13px; padding:2px; }
+.cb-sel-del:hover { color:var(--pink); }
+.cb-export-row { display:flex; gap:8px; }
+.cb-exp-btn { display:flex; align-items:center; gap:5px; padding:7px 16px; border-radius:999px; font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; border:none; transition:all .15s; }
+.cb-exp-docx { background:var(--purple); color:#fff; }
+.cb-exp-docx:hover { opacity:.85; }
+.cb-exp-pdf { background:rgba(123,104,238,0.1); color:var(--purple); border:0.5px solid rgba(123,104,238,0.3); }
+.cb-exp-pdf:hover { background:rgba(123,104,238,0.18); }
+.proj-status { font-size:9px; font-weight:700; letter-spacing:.05em; padding:2px 6px; border-radius:999px; flex-shrink:0; text-transform:uppercase; }
+.proj-status.active { background:rgba(29,158,117,0.12); color:#1D9E75; border:0.5px solid rgba(29,158,117,0.3); }
+.proj-status.done { background:rgba(123,104,238,0.1); color:var(--purple); border:0.5px solid rgba(123,104,238,0.25); }
+.proj-status.archived { color:#A32D2D; background:transparent; border:1.5px solid #A32D2D; border-radius:3px; letter-spacing:.1em; opacity:.75; transform:rotate(-7deg); }
+.undo-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--dark); color:#fff; font-size:13px; font-weight:500; padding:10px 20px; border-radius:999px; display:flex; align-items:center; gap:12px; z-index:500; box-shadow:0 4px 20px rgba(0,0,0,.2); font-family:'Nunito',sans-serif; }
+.undo-btn { font-size:12px; font-weight:700; color:#B0A8FF; cursor:pointer; border:none; background:none; font-family:'Nunito',sans-serif; padding:0; }
+.undo-btn:hover { color:#fff; }
+.tracker-proj-card { background:rgba(255,255,255,0.65); border:0.5px solid rgba(123,104,238,0.18); border-radius:14px; margin-bottom:12px; overflow:hidden; }
+.tracker-proj-header { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; }
+.tracker-proj-header:hover { background:rgba(123,104,238,0.04); }
+.tracker-proj-chevron { font-size:12px; color:var(--mid); transition:transform .2s; flex-shrink:0; }
+.tracker-proj-chevron.open { transform:rotate(90deg); }
+.tracker-proj-name { font-size:14px; font-weight:700; color:var(--dark); flex:1; }
+.tracker-proj-meta { font-size:11px; color:var(--mid); display:flex; gap:10px; }
+.tracker-proj-body { padding:0 16px 12px; border-top:0.5px solid rgba(123,104,238,0.1); }
+.tracker-entry-row { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:0.5px solid rgba(123,104,238,0.07); }
+.tracker-entry-row:last-child { border:none; }
+.tracker-date { font-size:11px; color:var(--mid); min-width:44px; flex-shrink:0; margin-top:2px; }
+.tracker-entry-content { flex:1; min-width:0; }
+.tracker-entry-title { font-size:12px; font-weight:600; color:var(--dark); }
+.tracker-entry-fields { display:flex; gap:5px; flex-wrap:wrap; margin-top:3px; }
+.tracker-field-tag { font-size:10px; padding:1px 7px; border-radius:999px; background:rgba(123,104,238,0.1); color:var(--purple); }
+.tracker-entry-note { font-size:11px; color:var(--mid); margin-top:3px; font-style:italic; }
+.tracker-export-row { display:flex; gap:8px; padding:10px 16px 12px; }
+.tracker-export-btn { display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.3); background:rgba(123,104,238,0.08); color:var(--purple); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; }
+.tracker-export-btn:hover { background:rgba(123,104,238,0.16); }
+.tracker-tabs { display:flex; gap:6px; margin-bottom:16px; }
+.tracker-tab { padding:7px 16px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.25); background:rgba(255,255,255,0.6); color:var(--mid); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; }
+.tracker-tab.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+.tracker-empty { text-align:center; padding:2rem; color:var(--mid); font-size:13px; }
+.cb-type-btn { padding:5px 13px; border-radius:999px; border:.5px solid rgba(0,0,0,0.12); background:#f5f4f9; color:#666; font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .15s; }
+.cb-type-btn:hover { background:#eeedf4; color:var(--dark); }
+.cb-type-btn.on { background:var(--purple); border-color:var(--purple); color:#fff; font-weight:600; }
+.cb-tog { padding:5px 12px; border-radius:999px; border:.5px solid rgba(0,0,0,0.1); background:#f5f4f9; color:#666; font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .15s; display:inline-flex; align-items:center; gap:4px; }
+.cb-tog:hover { background:#eeedf4; color:var(--dark); }
+.cb-tog.on { background:var(--dark); border-color:var(--dark); color:#fff; font-weight:600; }
+.cb-sub { padding:4px 10px; border-radius:999px; font-size:11px; cursor:pointer; color:#666; font-family:'Nunito',sans-serif; background:none; border:none; transition:all .15s; }
+.cb-sub:hover { background:#f0f0f0; color:var(--dark); }
+.cb-sub.on { background:#fff; color:var(--dark); font-weight:600; box-shadow:0 0 0 1px rgba(0,0,0,0.12); }
+.cb-side-panel { width:100%; background:#fff; border:.5px solid rgba(0,0,0,0.08); border-radius:12px; padding:0 12px; display:block; max-height:0; overflow:hidden; transition:max-height .3s ease, padding .3s ease, opacity .3s ease; opacity:0; box-sizing:border-box; }
+.cb-side-panel.show { max-height:400px; padding:12px; opacity:1; margin-top:8px; }
+.cb-side-panel-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:0 20px; }
 
 /* Calendar picker */
 .cal-picker-wrap { position:relative; display:inline-block; }
@@ -307,24 +422,31 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 <div class="page" id="app">
   <div class="page-header">
     <div>
-      <div class="page-title">项目日记</div>
+      <div class="page-title" id="page-title">项目日记</div>
       <div class="page-date" id="page-date"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button class="new-btn" id="stats-btn" style="background:rgba(123,104,238,0.15);color:var(--purple);font-size:12px;padding:8px 14px">📊 周报告</button>
-      <button class="new-btn" id="new-entry-btn">✦ 新记录</button>
+      <div style="display:flex;background:rgba(123,104,238,0.1);border-radius:999px;padding:2px;gap:2px" id="lang-toggle">
+        <button onclick="setLang('zh')" id="lang-zh" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--purple);color:#fff;transition:all .15s">中</button>
+        <button onclick="setLang('en')" id="lang-en" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:transparent;color:var(--purple);transition:all .15s">EN</button>
+      </div>
+      <button class="new-btn" id="stats-btn" style="background:rgba(123,104,238,0.15);color:var(--purple);font-size:12px;padding:8px 14px">📊 <span id="weekly-btn-label">周报告</span></button>
+      <button class="new-btn" id="new-entry-btn">✦ <span id="new-btn-label">新记录</span></button>
     </div>
   </div>
 
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-n" id="st-total">0</div><div class="stat-l">今日记录</div></div>
-    <div class="stat-card"><div class="stat-n" id="st-coins">0</div><div class="stat-l">今日赚得</div></div>
-    <div class="stat-card"><div class="stat-n" id="st-total-coins">0</div><div class="stat-l">Cat Token 余额</div></div>
+    <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-n" id="st-total">0</div><div class="stat-l" id="stat-l-entries">今日记录</div></div>
+    <div class="stat-card"><div class="stat-icon">🐾</div><div class="stat-n" id="st-coins">0</div><div class="stat-l" id="stat-l-earned">今日赚得</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-n" id="st-total-coins">0</div><div class="stat-l" id="stat-l-balance">Cat Token 余额</div></div>
   </div>
 
   <div class="main-layout">
     <div class="sidebar">
-      <div class="sb-label">本周</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="sb-label" id="sb-this-week" style="margin-bottom:0">本周</div>
+        <button id="today-jump-btn" onclick="weekOffset=0;selDate=new Date(today);view='journal';renderAll()" style="font-size:10px;font-weight:700;color:var(--purple);background:rgba(123,104,238,0.1);border:0.5px solid rgba(123,104,238,0.25);border-radius:999px;padding:2px 8px;cursor:pointer;font-family:'Nunito',sans-serif;display:none">↩ 今天</button>
+      </div>
       <div class="week-nav">
         <span class="week-range" id="week-range"></span>
         <div style="display:flex;gap:2px;align-items:center">
@@ -340,9 +462,10 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
       <hr class="sb-divider">
       <div class="sb-label">Projects / Tasks</div>
       <div id="proj-list"></div>
-      <button class="add-proj-btn" id="add-proj-btn">＋ 自定义</button>
+      <button class="add-proj-btn" id="add-proj-btn" id="add-proj-label">＋ <span id="add-proj-label">自定义</span></button>
       <hr class="sb-divider">
-      <button class="sb-nav-btn" id="stats-nav-btn">📊 周报告</button>
+      <button class="sb-nav-btn" id="stats-nav-btn">📊 <span id="stats-nav-label">周报告</span></button>
+    <button class="sb-nav-btn" id="tracker-nav-btn">📁 <span id="tracker-nav-label">项目追踪</span></button>
     </div>
     <div class="main-area" id="main-area"></div>
   </div>
@@ -351,6 +474,153 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 <div id="modal-container"></div>
 
 <script>
+
+// ════════════════════════════════════════════════════════
+// I18N — 双语支持（唯一来源）
+// ════════════════════════════════════════════════════════
+const I18N={
+  zh:{
+    page_title:'项目日记',page_subtitle:'项目追踪',
+    btn_new:'新记录',btn_weekly:'周报告',
+    back_to:'回到',story_suffix:'的故事',
+    stat_entries:'今日记录',stat_earned:'今日赚得',stat_balance:'余额',
+    this_week:'本周',today:'今天',custom:'自定义',
+    weekdays:['日','一','二','三','四','五','六'],
+    tracker:'项目追踪',
+    status_active:'进行中',status_done:'已完成',status_archived:'已归档',
+    archived_stamp:'已归档',
+    tab_all:'全部',tab_all_desc:'全部记录按项目整理',
+    tab_active:'进行中',tab_done:'已完成',tab_archived:'已归档',
+    form_placeholder:'今天做了什么',
+    form_note:'备注',form_note_ph:'补充说明',
+    form_link:'链接',form_link_label:'标签',
+    form_save:'保存',form_cancel:'取消',
+    form_skipped:'已跳过',form_select_ph:'选择…',
+    form_add_opt:'添加新选项…',form_add_sub:'添加新子选项…',
+    form_no_records:'这天还没有记录',
+    form_start_hint:'点右上角「新记录」开始',
+    form_past:'过去日期',form_earn:'预计获得',form_half:'减半',
+    edit_reselect:'重新选择',edit_no_proj:'未选择',
+    modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
+    modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',
+    modal_unit:'单位',modal_unit_ph:'如 min、km、次…',
+    modal_save:'保存',modal_cancel:'取消',modal_delete:'删除',modal_edit:'编辑',
+    del_title:'删除「',del_archive_btn:'保留历史记录，先归档',
+    del_archive_desc:'Project 和所有记录完整保留，可在「已归档」里复原',
+    del_perm_btn:'一并删除所有记录',
+    del_perm_title:'永久删除',del_perm_confirm:'确认永久删除',
+    del_perm_warn:'此操作无法撤销，',del_perm_warn2:'和所有记录将被彻底移除。',
+    del_confirm_q:'确定要永久删除「',del_confirm_q2:'吗？',
+    del_choose:'请选择处理方式：',del_perm_remove:'将永久移除',
+    tracker_empty:'这个分类还没有项目',
+    restore:'复原',perm_delete:'永久删除',
+    no_records:'还没有任何记录',
+    undo:'撤销 (Ctrl+Z)',
+    deleted:'已删除「',archived_toast:'已归档「',perm_deleted:'已永久删除「',
+    records_suffix:'条记录',
+    cb_vars:'选择要统计的',cb_multi:'（可多选）',
+    cb_tone:'色调',cb_warm:'亮色系',cb_cool:'冷色系',
+    cb_type:'图表类型',cb_stacked:'堆叠柱状',cb_grouped:'并排柱状',cb_donut:'嵌套环形',
+    cb_nums:'显示数字',cb_direct:'直接显示',cb_line:'连接线',cb_stats:'统计',cb_title:'标题',
+    cb_inner:'内圈',cb_outer:'外圈',cb_data_stats:'数据统计',cb_chart_img:'项目统计图',
+    cb_no_fields:'这个项目还没有自定义栏位',cb_no_chart:'还没有选择图表',
+    cb_export_label:'导出内容：',cb_export_text:'文字记录',
+    cb_export_chart:'加入图表',cb_export_chart_on:'已加入图表',
+    cb_export_warn:'已选择「加入图表」但尚未选择任何图表变量，请取消图表选项或先选择变量',
+    cb_export_docx:'⬇ 导出 DOCX',cb_export_pdf:'🖨 打印/PDF',
+    cb_added:'已选中',cb_add:'加入导出',
+    cb_total:'合计：',cb_detail:'详细记录',cb_chart_title:'统计图表',
+    cp_open:'打开调色盘',cp_my:'我的颜色',cp_none:'还没有保存颜色',
+    cp_save:'保存到我的颜色',cp_nearest:'近似颜色',cp_drag:'拖动排序',cp_click:'点击选用',
+    cp_display_as:'显示为「数字',
+    weekly_done:'这周完成了',weekly_suffix:'条记录，共赚了',weekly_proud:'为你骄傲！',
+    export_status:'状态',export_total:'总记录',export_detail:'详细记录',
+    export_chart:'统计图表',export_fail:'导出失败',export_gen_fail:'生成失败',
+    export_tracker_title:'项目追踪报告',export_date:'导出日期',
+    docx_loading:'DOCX 库尚未加载完成，请稍等几秒后再试',
+    export_loading2:'请稍候再试，库加载中',
+    export_popup_warn:'请允许弹窗，或复制以下内容：',
+    export_print_warn:'请允许浏览器弹窗以打印报告',
+    field_like_sel:'如 工具、阶段',field_like_num:'如 Sessions、时长',
+    field_note_ph:'补充说明、心得',field_record:'记录下来',field_custom:'自定义栏位',
+    proj_sel_prompt:'选择 Project / Task',
+    no_proj_warn:'⚠ 未选择 project',
+    proj_sel_edit:'重新选择 Project / Task',
+    add_field:'＋ 添加',sel_at_least:'请先点「＋ 加入图表」选择至少一个图表',
+  },
+  en:{
+    page_title:'Project Journal',page_subtitle:'Project Tracker',
+    btn_new:'New Log',btn_weekly:'Week in Review',
+    back_to:'Back to',story_suffix:"'s Story",
+    stat_entries:"Today's Entries",stat_earned:"Today's Earned",stat_balance:'Balance',
+    this_week:'This Week',today:'Today',custom:'Custom',
+    weekdays:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    tracker:'Project Tracker',
+    status_active:'Active',status_done:'Done',status_archived:'Archived',
+    archived_stamp:'ARCHIVED',
+    tab_all:'All',tab_all_desc:'All entries organised by project',
+    tab_active:'Active',tab_done:'Done',tab_archived:'Archived',
+    form_placeholder:'What did you do today?',
+    form_note:'Note',form_note_ph:'Notes',
+    form_link:'Link',form_link_label:'Label',
+    form_save:'Save',form_cancel:'Cancel',
+    form_skipped:'Skipped',form_select_ph:'Select...',
+    form_add_opt:'Add new option...',form_add_sub:'Add sub-option...',
+    form_no_records:'No entries for this day',
+    form_start_hint:'Click "New Log" to start',
+    form_past:'Past date',form_earn:'Will earn',form_half:'Half',
+    edit_reselect:'Reselect',edit_no_proj:'No project',
+    modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
+    modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',
+    modal_unit:'Unit',modal_unit_ph:'e.g. min, km, times...',
+    modal_save:'Save',modal_cancel:'Cancel',modal_delete:'Delete',modal_edit:'Edit',
+    del_title:'Delete "',del_archive_btn:'Archive — keep all records',
+    del_archive_desc:'Project and all entries are preserved. Restore from the Archived tab.',
+    del_perm_btn:'Delete with all records',
+    del_perm_title:'Permanent Delete',del_perm_confirm:'Confirm Delete',
+    del_perm_warn:'This cannot be undone. ',del_perm_warn2:'and all records will be permanently removed.',
+    del_confirm_q:'Permanently delete "',del_confirm_q2:'"?',
+    del_choose:'Choose an action:',del_perm_remove:'will be permanently removed',
+    tracker_empty:'No projects yet',
+    restore:'Restore',perm_delete:'Delete',
+    no_records:'Nothing here yet',
+    undo:'Undo (Ctrl+Z)',
+    deleted:'Deleted "',archived_toast:'Archived "',perm_deleted:'Permanently deleted "',
+    records_suffix:' entries',
+    cb_vars:'Select variables',cb_multi:'(multi-select)',
+    cb_tone:'Palette',cb_warm:'Warm',cb_cool:'Cool',
+    cb_type:'Chart Type',cb_stacked:'Stacked Bar',cb_grouped:'Grouped Bar',cb_donut:'Nested Donut',
+    cb_nums:'Show Numbers',cb_direct:'Direct',cb_line:'Line',cb_stats:'Stats',cb_title:'Title',
+    cb_inner:'Inner',cb_outer:'Outer',cb_data_stats:'Data Stats',cb_chart_img:'Project Chart',
+    cb_no_fields:'No custom fields for this project',cb_no_chart:'No chart selected',
+    cb_export_label:'Export:',cb_export_text:'Text Records',
+    cb_export_chart:'+ Add Chart',cb_export_chart_on:'Chart Added',
+    cb_export_warn:'Chart export selected but no variables chosen. Please deselect or choose variables first.',
+    cb_export_docx:'Export DOCX',cb_export_pdf:'Print/PDF',
+    cb_added:'Added',cb_add:'+ Add to Export',
+    cb_total:'Total: ',cb_detail:'Detailed Records',cb_chart_title:'Statistics Chart',
+    cp_open:'Open Color Picker',cp_my:'My Colors',cp_none:'No saved colors yet',
+    cp_save:'Save Color',cp_nearest:'Similar color',cp_drag:'Drag to reorder',cp_click:'Click to use',
+    cp_display_as:'Shown as number',
+    weekly_done:'This week you completed',weekly_suffix:' entries and earned',weekly_proud:'Great work!',
+    export_status:'Status',export_total:'Total entries',export_detail:'Detailed Records',
+    export_chart:'Statistics Chart',export_fail:'Export failed',export_gen_fail:'Generation failed',
+    export_tracker_title:'Project Tracker Report',export_date:'Export date',
+    docx_loading:'DOCX library not ready, please wait a moment',
+    export_loading2:'Please wait, library loading',
+    export_popup_warn:'Please allow popups, or copy the content below:',
+    export_print_warn:'Please allow browser popups to print the report',
+    field_like_sel:'e.g. Tools, Stage',field_like_num:'e.g. Sessions, Duration',
+    field_note_ph:'Notes and thoughts',field_record:'Log it',field_custom:'custom fields',
+    proj_sel_prompt:'Select Project / Task',
+    no_proj_warn:'⚠ No project selected',
+    proj_sel_edit:'Reselect Project / Task',
+    add_field:'+ Add',sel_at_least:'Please add a chart variable first',
+  }
+}
+let lang='zh';
+function t(key){return(I18N[lang]&&I18N[lang][key]!==undefined?I18N[lang][key]:I18N.zh[key])||key;}
+function setLang(l){lang=l;localStorage.setItem('cj_lang',l);renderAll();renderModal();}
 const COLORS=['#000000','#FFFFFF','#808080','#FF0000','#FF8C00','#FFD700','#008000','#0000FF','#4B0082','#800080','#FF69B4'];
 const DAYS=['日','一','二','三','四','五','六'];
 const WD=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
@@ -390,6 +660,9 @@ function saveData(){
 
 let {projects,entries,totalCoins}=loadData();
 
+// Load saved palette from localStorage
+let cpMyPalette=JSON.parse(localStorage.getItem('cj_mypalette')||'[]');
+
 function syncNav(){
   document.getElementById('nav-coins').textContent=totalCoins;
   document.getElementById('st-total-coins').textContent=totalCoins;
@@ -427,10 +700,1061 @@ function getWeekStart(){
 }
 
 // RENDER
+function showTracker(){view='tracker';showForm=false;renderAll();}
+
+function renderTracker(){
+  document.getElementById('page-date').textContent='项目追踪';
+  const mhSub=document.getElementById('mh-sub');if(mhSub)mhSub.textContent='全部记录按项目整理';
+  const area=document.getElementById('main-area');area.innerHTML='';
+  const currentTab=window._trackerTab||'all';
+  const tabs=['all','active','done','archived'];
+  const tabLabels={all:t('tab_all'),active:t('tab_active'),done:t('tab_done'),archived:t('tab_archived')};
+  const tabRow=document.createElement('div');tabRow.className='tracker-tabs';
+  tabs.forEach(t=>{
+    const btn=document.createElement('button');btn.className='tracker-tab'+(currentTab===t?' active':'');
+    btn.textContent=tabLabels[t];btn.onclick=()=>{window._trackerTab=t;renderTracker();};
+    tabRow.appendChild(btn);
+  });
+  area.appendChild(tabRow);
+  const filtered=projects.filter(p=>currentTab==='all'||(p.status||'active')===currentTab);
+  if(!filtered.length){const em=document.createElement('div');em.className='tracker-empty';em.textContent=t('tracker_empty');area.appendChild(em);return;}
+  filtered.forEach(p=>{
+    const pe=[];
+    Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===p.id)pe.push({...e,dateKey:dk2});}));
+    pe.sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
+    const totalC=pe.reduce((s,e)=>s+calcCoins(e,e.dateKey),0);
+    const days=new Set(pe.map(e=>e.dateKey)).size;
+    const card=document.createElement('div');card.className='tracker-proj-card';
+    const isOpen=window._trackerOpen&&window._trackerOpen[p.id];
+    const isArchived=(p.status||'active')==='archived';
+      const hdr=document.createElement('div');hdr.className='tracker-proj-header';
+    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+getStatusLabels()[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' </span><span>📅 '+days+'</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ '+t('restore')+'</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 '+t('perm_delete')+'</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+    hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
+    card.appendChild(hdr);
+    if(isOpen){
+      const body=document.createElement('div');body.className='tracker-proj-body';
+      if(!pe.length){body.innerHTML='<div class="tracker-empty" style="padding:1rem 0">'+t('no_records')+'</div>';}
+      else{pe.forEach(e=>{
+        const row=document.createElement('div');row.className='tracker-entry-row';
+        const parts=e.dateKey.split('-');const m2=parts[1],d2=parts[2];
+        let fHTML='';
+        (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;fHTML+='<span class="tracker-field-tag">'+f.label+': '+v+'</span>';});
+        row.innerHTML='<span class="tracker-date">'+m2+'/'+d2+'</span><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+''+(fHTML?'<div class="tracker-entry-fields">'+fHTML+'</div>':'')+(e.note?'<div class="tracker-entry-note">'+e.note+'</div>':'')+'</div><span style="font-size:10px;color:#854F0B;background:#FAEEDA;border-radius:999px;padding:2px 7px;flex-shrink:0">🐾 +'+calcCoins(e,e.dateKey)+'</span>';
+        body.appendChild(row);
+      });}
+      card.appendChild(body);
+      // Chart builder
+      const cb=document.createElement('div');cb.className='cb-wrap';
+      cb.id='cb-'+p.id;
+      cb.innerHTML=buildChartBuilderHTML(p.id);
+      card.appendChild(cb);
+      setTimeout(()=>initChartBuilder(p.id,p,pe),0);
+    }
+    area.appendChild(card);
+  });
+}
+
+
+
+// ════════════════════════════════════════════════════════
+// CHART BUILDER v2 — stacked/grouped bar + nested donut
+// ════════════════════════════════════════════════════════
+
+// ── 顶层常量（唯一来源）─────────────────────────────────
+const CB_PALETTES={
+  warm:[
+    ['#FFADAD','#FF6B6B','#E63946','#B52131','#7D1421'],
+    ['#FFCB91','#FFA040','#F07800','#B85A00','#7A3A00'],
+    ['#A8E6B4','#5ECC76','#2DAF4F','#1A8036','#0D5220'],
+    ['#D4B8F5','#A97DE0','#7B4FC0','#56349A','#351D6A'],
+    ['#A8D4F5','#5BAEE0','#2082C0','#0D5A96','#053460'],
+    ['#F5E6A8','#E0C050','#B89820','#8A6E08','#5A4400'],
+  ],
+  cool:[
+    ['#F2B8BB','#D97480','#B84C58','#8A3040','#5C1E2A'],
+    ['#F0D4A8','#D4A054','#A87030','#7A4E18','#4E2E08'],
+    ['#A8D4C0','#60A882','#368058','#1E5A38','#0C3420'],
+    ['#C4BEE8','#8E86CC','#5E56A8','#3C368A','#201C5A'],
+    ['#B8D4F0','#6898C8','#3868A0','#1C4878','#082850'],
+    ['#E0D8A8','#B8A860','#887830','#5A5010','#342E00'],
+  ]
+};
+function cbGetGroupColors(vi){
+  const pal=CB_PALETTES[window._cbColorMode||'warm']||CB_PALETTES.warm;
+  return pal[vi%pal.length];
+}
+function cbGetStops(stops,n){
+  if(n===1)return[stops[2]];
+  if(n===2)return[stops[1],stops[3]];
+  if(n===3)return[stops[1],stops[2],stops[3]];
+  if(n===4)return[stops[0],stops[1],stops[3],stops[4]];
+  return stops.slice(0,n);
+}
+function triggerDownload(href,filename){
+  const a=document.createElement('a');
+  a.href=href;a.download=filename;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+}
+// Project 状态标签（唯一来源）— 从 I18N 取值
+function getStatusLabels(){return{active:t('status_active'),done:t('status_done'),archived:t('status_archived')};}
+// 移除所有 emoji，避免 docx.js TextRun 报错（唯一来源）
+function stripEmoji(str){
+  return String(str||'').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{FE00}-\u{FEFF}\u{1F300}-\u{1F9FF}]/gu,'').trim();
+}
+
+let _cbState={};
+if(!window.charts)window.charts={};
+// ── Chart.js global defaults to match journal style ──────────────
+if(window.Chart){
+  Chart.defaults.font.family="'Nunito',sans-serif";
+  Chart.defaults.font.size=11;
+  Chart.defaults.color='#666';
+  Chart.defaults.borderColor='rgba(0,0,0,0.06)';
+  Chart.defaults.plugins.tooltip.backgroundColor='rgba(30,30,30,0.9)';
+  Chart.defaults.plugins.tooltip.titleColor='#fff';
+  Chart.defaults.plugins.tooltip.bodyColor='rgba(255,255,255,0.8)';
+  Chart.defaults.plugins.tooltip.padding=8;
+  Chart.defaults.plugins.tooltip.cornerRadius=8;
+  Chart.defaults.plugins.tooltip.titleFont={size:11,weight:'700'};
+  Chart.defaults.plugins.tooltip.bodyFont={size:11};
+}
+function getCBState(pid){
+  if(!_cbState[pid])_cbState[pid]={
+    chartType:'stacked',varKeys:[],showNums:true,showTitles:true,showPanel:false,
+    showDonutNums:true,donutMode:'direct',
+    displayTitles:{},selected:[],charts:{}
+  };
+  return _cbState[pid];
+}
+
+// ── Plugins ───────────────────────────────────────────────────────
+const CB_NumPlugin={id:'cbNumPlugin',afterDatasetsDraw(ch){
+  if(!ch._cbNums)return;
+  const ctx=ch.ctx;
+  ch.data.datasets.forEach((ds,di)=>{
+    const meta=ch.getDatasetMeta(di);
+    meta.data.forEach((bar,i)=>{
+      const v=ds.data[i];if(!v)return;
+      const{x,y,base}=bar;const h=Math.abs(base-y);if(h<14)return;
+      ctx.save();ctx.font='10px sans-serif';
+      ctx.fillStyle='rgba(100,100,100,0.55)';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(v,x,(y+base)/2);ctx.restore();
+    });
+  });
+}};
+
+let _cbLabelHits={};
+const CB_TitlePlugin={id:'cbTitlePlugin',afterDatasetsDraw(ch){
+  if(!ch._cbTitles)return;
+  const pid=ch._cbPid;
+  const s=getCBState(pid);
+  _cbLabelHits[pid]=[];
+  const ctx=ch.ctx;const ca=ch.chartArea;
+  const allMetas=ch.data.datasets.map((_,i)=>ch.getDatasetMeta(i));
+  const dates=s._dates||[];
+  dates.forEach((_,i)=>{
+    let topY=Infinity,topX=null;
+    allMetas.forEach(m=>{if(m.data[i]){const{y,x}=m.data[i];if(y<topY){topY=y;topX=x;}}});
+    if(topY===Infinity||!topX)return;
+    const rawTitle=s._titles&&s._titles[i]||'';
+    const title=s.displayTitles[i]!==undefined?s.displayTitles[i]:rawTitle;
+    if(!title)return;
+    ctx.save();ctx.font='10px sans-serif';
+    const maxW=72;
+    const parts=title.split(/(?=[/(])/);
+    const lineArr=[];let cur='';
+    for(const p of parts){
+      const test=cur+p;
+      if(ctx.measureText(test).width>maxW&&cur){lineArr.push(cur);cur=p;}else cur=test;
+    }
+    if(cur)lineArr.push(cur);
+    const lineH=12,pad=4;
+    const boxW=Math.min(maxW,Math.max(...lineArr.map(l=>ctx.measureText(l).width)))+8;
+    const boxH=lineArr.length*lineH+pad*2;
+    let bx=topX-boxW/2;
+    bx=Math.max(ca.left+2,Math.min(ca.right-boxW-2,bx));
+    const by=Math.max(ca.top+2,topY-boxH-6);
+    ctx.fillStyle='rgba(255,255,255,0.97)';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,boxW,boxH,4);else ctx.rect(bx,by,boxW,boxH);
+    ctx.fill();ctx.strokeStyle='rgba(0,0,0,0.12)';ctx.lineWidth=.8;ctx.stroke();
+    ctx.fillStyle='#333';ctx.textAlign='left';ctx.textBaseline='top';
+    lineArr.forEach((l,li)=>ctx.fillText(l,bx+4,by+pad+li*lineH));
+    ctx.restore();
+    _cbLabelHits[pid].push({i,bx,by,bw:boxW,bh:boxH});
+  });
+}};
+
+const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
+  if(!ch._cbDonutNums)return;
+  const ctx=ch.ctx;const mode=ch._cbDonutMode||'direct';
+  const pid=ch._cbPid;const s=getCBState(pid);
+  const cx=(ch.chartArea.left+ch.chartArea.right)/2;
+  const cy=(ch.chartArea.top+ch.chartArea.bottom)/2;
+  const CW=ch.canvas.width,CH=ch.canvas.height;
+  const PAD=8,LINE_H=13,HLEN=24;
+
+  function measureW(t){ctx.font="10px 'Nunito',sans-serif";return ctx.measureText(t).width;}
+
+  function maxBoxW(angle,outerR,ext){
+    const isRight=Math.cos(angle)>=0;
+    const tipX=cx+Math.cos(angle)*(outerR+ext);
+    if(isRight)return Math.max(55,CW-PAD-tipX-HLEN-6);
+    else return Math.max(55,tipX-HLEN-6-PAD);
+  }
+
+  function wrapText(text,maxW){
+    const words=text.split(/\s+/);
+    if(words.length<=1){
+      if(measureW(text)<=maxW)return[text];
+      let cut=text.length;
+      while(cut>1&&measureW(text.slice(0,cut))>maxW)cut--;
+      return[text.slice(0,cut)];
+    }
+    const lines=[];let line='';
+    words.forEach(w=>{
+      const test=line?line+' '+w:w;
+      if(measureW(test)>maxW&&line){lines.push(line);line=w;}else line=test;
+    });
+    if(line)lines.push(line);
+    return lines;
+  }
+
+  const allItems=[];
+  ch.data.datasets.forEach((ds,di)=>{
+    const meta=ch.getDatasetMeta(di);
+    const total=ds.data.reduce((a,b)=>a+b,0);
+    let dsLabels=[];
+    if(s._varKeys&&s._varKeys[di]){
+      const vk=s._varKeys[di];
+      const vd=s._varData&&s._varData[vk];
+      if(vd){
+        if(vd.type==='number'){const vi2=s._vars&&s._vars.find(v=>v.key===vk);dsLabels=[vi2?vi2.label:vk];}
+        else dsLabels=vd.options||[];
+      }
+    }
+    const colorArr=cbGetStops(cbGetGroupColors(di),ds.data.length);
+    meta.data.forEach((arc,i)=>{
+      const v=ds.data[i];if(!v)return;
+      const pct=Math.round(v/total*100);
+      const angle=(arc.startAngle+arc.endAngle)/2;
+      const span=arc.endAngle-arc.startAngle;
+      const col=colorArr[i%colorArr.length];
+      if(mode==='direct'){
+        if(span<0.3)return;
+        const r=(arc.outerRadius+arc.innerRadius)/2;
+        ctx.save();ctx.font='500 10px sans-serif';
+        ctx.fillStyle='rgba(255,255,255,.65)';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(v+'\u6b21('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
+      } else {
+        if(span<0.12)return;
+        const name=dsLabels[i]||'';
+        const isRight=Math.cos(angle)>=0;
+        const outerR=arc.outerRadius;
+        const initMaxW=maxBoxW(angle,outerR,28);
+        const nameLines=wrapText(name,initMaxW);
+        const pctLine=v+'\u6b21 ('+pct+'%)';
+        const allLines=[...nameLines,pctLine];
+        const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
+        const boxH=allLines.length*LINE_H+4;
+        // byOffset: 额外的垂直偏移（用于同侧碰撞推移）
+        allItems.push({arc,v,pct,col,name,angle,span,outerR,
+          isRight,allLines,boxW,boxH,ext:28,byOffset:0});
+      }
+    });
+  });
+  if(mode==='direct')return;
+
+  function getPos(it){
+    const tipX=cx+Math.cos(it.angle)*(it.outerR+it.ext);
+    const tipY=cy+Math.sin(it.angle)*(it.outerR+it.ext);
+    const endX=tipX+(it.isRight?HLEN:-HLEN);
+    const bx=it.isRight?endX+3:endX-it.boxW-3;
+    const by=tipY-it.boxH/2+it.byOffset;
+    return{tipX,tipY,endX,bx,by};
+  }
+
+  function wouldExceed(it,addExt){
+    const p=getPos({...it,ext:it.ext+addExt});
+    if(it.isRight&&p.bx+it.boxW>CW-PAD)return true;
+    if(!it.isRight&&p.bx<PAD)return true;
+    if(p.by<PAD||p.by+it.boxH>CH-PAD)return true;
+    return false;
+  }
+
+  function overlaps(a,b){
+    const pa=getPos(a),pb=getPos(b);
+    const M=3;
+    return!(pa.bx>pb.bx+b.boxW+M||pa.bx+a.boxW+M<pb.bx||
+            pa.by>pb.by+b.boxH+M||pa.by+a.boxH+M<pb.by);
+  }
+
+  for(let pass=0;pass<15;pass++){
+    let any=false;
+    for(let a=0;a<allItems.length;a++){
+      for(let b=a+1;b<allItems.length;b++){
+        if(!overlaps(allItems[a],allItems[b]))continue;
+        any=true;
+        const ta=allItems[a],tb=allItems[b];
+        const pa=getPos(ta),pb=getPos(tb);
+        // 同侧碰撞：把 by 较大（位置较低）的那个往下推
+        if(ta.isRight===tb.isRight){
+          const target=pa.by>=pb.by?ta:tb;
+          const newBy=target.byOffset+LINE_H;
+          const testPos=getPos({...target,byOffset:newBy});
+          if(testPos.by+target.boxH<=CH-PAD)target.byOffset=newBy;
+        } else {
+          // 不同侧不会真正重叠，拉长线处理
+          if(ta.ext<=tb.ext&&!wouldExceed(ta,12))ta.ext+=12;
+          else if(!wouldExceed(tb,12))tb.ext+=12;
+          else if(!wouldExceed(ta,12))ta.ext+=12;
+        }
+      }
+    }
+    if(!any)break;
+  }
+
+  // 绘制前用最终 ext 重算换行
+  allItems.forEach(it=>{
+    const mxW=maxBoxW(it.angle,it.outerR,it.ext);
+    const nameLines=wrapText(it.name,mxW);
+    const pctLine=it.v+'\u6b21 ('+it.pct+'%)';
+    it.allLines=[...nameLines,pctLine];
+    it.boxW=Math.max(...it.allLines.map(l=>measureW(l)))+10;
+    it.boxH=it.allLines.length*LINE_H+4;
+  });
+
+  allItems.forEach(it=>{
+    const{arc,angle,col,isRight,allLines,boxW,boxH,outerR}=it;
+    const{tipX,tipY,endX,bx,by}=getPos(it);
+    const midR=(outerR+arc.innerRadius)/2;
+    const p0x=cx+Math.cos(angle)*midR,p0y=cy+Math.sin(angle)*midR;
+    const p1x=cx+Math.cos(angle)*(outerR+3),p1y=cy+Math.sin(angle)*(outerR+3);
+    ctx.save();
+    ctx.strokeStyle=col;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(tipX,tipY);ctx.lineTo(endX,tipY);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.96)';
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by,boxW,boxH,3);else ctx.rect(bx,by,boxW,boxH);
+    ctx.fill();ctx.strokeStyle=col+'44';ctx.lineWidth=0.5;ctx.stroke();
+    ctx.textAlign=isRight?'left':'right';ctx.textBaseline='top';
+    const tx=isRight?bx+4:bx+boxW-4;
+    allLines.forEach((line,li)=>{
+      const isLast=li===allLines.length-1;
+      ctx.font=isLast?"500 10px 'Nunito',sans-serif":"10px 'Nunito',sans-serif";
+      ctx.fillStyle=isLast?'#999':col;
+      ctx.fillText(line,tx,by+2+li*LINE_H);
+    });
+    ctx.restore();
+  });
+}}
+const CB_BgPlugin={id:'cbBg',beforeDraw(ch){
+  const ctx=ch.ctx;ctx.save();
+  ctx.fillStyle='#fff';
+  ctx.fillRect(0,0,ch.width,ch.height);
+  ctx.restore();
+}};
+Chart.register(CB_NumPlugin,CB_TitlePlugin,CB_DonutPlugin,CB_BgPlugin);
+
+// ── Get data for a variable key ───────────────────────────────────
+function cbGetVarData(pid,varKey,pe,p){
+  const counts={};
+  if(varKey==='_date'){
+    pe.forEach(e=>{const parts=e.dateKey.split('-');const lbl=parts[1]+'/'+parts[2]+'/'+parts[0];counts[lbl]=(counts[lbl]||0)+1;});
+  } else if(varKey==='_title'){
+    pe.forEach(e=>{if(!e.title||!e.title.trim())return;const lbl=e.title.trim();counts[lbl]=(counts[lbl]||0)+1;});
+  } else {
+    const f=(p.fields||[]).find(x=>x.id===varKey);
+    pe.forEach(e=>{
+      if(e.skipped&&e.skipped[varKey])return;
+      const v=e.fields&&e.fields[varKey];if(!v)return;
+      String(v).split(',').map(x=>x.trim()).filter(Boolean).forEach(val=>{counts[val]=(counts[val]||0)+1;});
+    });
+  }
+  return counts;
+}
+
+function buildChartBuilderHTML(pid){
+  return `
+    <div class="cb-step-lbl">${t('cb_vars')} variable${t('cb_multi')}</div>
+    <div class="cb-var-row" id="cb-vars-${pid}"></div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:6px;margin-bottom:2px">
+      <span style="font-size:10px;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;font-weight:600">${t('cb_tone')}</span>
+      <button class="cb-type-btn on" id="cb-cm-warm-${pid}" onclick="cbSetColorMode('${pid}','warm')">${t('cb_warm')}</button>
+      <button class="cb-type-btn" id="cb-cm-cool-${pid}" onclick="cbSetColorMode('${pid}','cool')">${t('cb_cool')}</button>
+    </div>
+    <div class="cb-step-lbl" style="margin-top:10px">${t('cb_type')}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="cb-type-btn on" id="cb-t-stacked-${pid}" onclick="cbSetType('${pid}','stacked')">${t('cb_stacked')}</button>
+      <button class="cb-type-btn" id="cb-t-grouped-${pid}" onclick="cbSetType('${pid}','grouped')">${t('cb_grouped')}</button>
+      <button class="cb-type-btn" id="cb-t-donut-${pid}" onclick="cbSetType('${pid}','donut')">${t('cb_donut')}</button>
+    </div>
+    <div id="cb-ctrl-bar-${pid}" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="cb-tog on" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')">🔢 ${t('cb_nums')}</button>
+      <button class="cb-tog on" id="cb-titles-${pid}" onclick="cbTogTitles('${pid}')">✅ ${t('cb_title')}</button>
+      <button class="cb-tog" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')">${t('cb_stats')}</button>
+    </div>
+    <div id="cb-ctrl-donut-${pid}" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="cb-tog on" id="cb-dnums-${pid}" onclick="cbTogDNums('${pid}')">🔢 ${t('cb_nums')}</button>
+      <div style="display:flex;gap:2px;padding:3px 5px;background:#f0f0f0;border-radius:999px;border:.5px solid rgba(0,0,0,0.08)" id="cb-dmode-${pid}">
+        <button class="cb-sub on" id="cb-ddirect-${pid}" onclick="cbSetDonutMode('${pid}','direct')">${t('cb_direct')}</button>
+        <button class="cb-sub" id="cb-dline-${pid}" onclick="cbSetDonutMode('${pid}','line')">${t('cb_line')}</button>
+      </div>
+      <button class="cb-tog" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')">${t('cb_stats')}</button>
+    </div>
+    <div id="cb-legend-${pid}" style="margin-bottom:8px;max-height:120px;overflow-y:auto"></div>
+    <div id="cb-chart-wrap-${pid}">
+      <div style="position:relative;width:100%;height:320px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="${t('cb_chart_img')}"></canvas></div>
+    </div>
+    <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
+    <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0">${t('cb_export_label')}</span>
+      <button id="cb-tog-text-${pid}" class="cb-tog on" onclick="cbTogExportContent('${pid}','text')">📝 ${t('cb_export_text')}</button>
+      <button id="cb-tog-chart-${pid}" class="cb-tog" onclick="cbTogExportContent('${pid}','chart')">＋ ${t('cb_export_chart')}</button>
+      <div style="width:1px;height:18px;background:rgba(123,104,238,0.2);margin:0 2px;flex-shrink:0"></div>
+      <button class="tracker-export-btn" onclick="cbExport('${pid}','docx')">${t('cb_export_docx')}</button>
+      <button class="tracker-export-btn" onclick="cbExport('${pid}','pdf')">${t('cb_export_pdf')}</button>
+    </div>`;
+}
+
+function initChartBuilder(pid,p,pe){
+  const s=getCBState(pid);
+  // Only show actual project fields (no _date, no _title in selector)
+  const vars=[];
+  (p.fields||[]).forEach(f=>vars.push({key:f.id,label:f.label,field:f}));
+  s._vars=vars;s._pe=pe;s._p=p;
+  // X axis = sorted dates
+  s._dates=[...new Set(pe.map(e=>e.dateKey))].sort();
+  // titles per date (first entry of that day)
+  s._titles=s._dates.map(dk=>{
+    const dayEntries=(entries[dk]||[]).filter(e=>e.projId===p.id);
+    const t=dayEntries.find(e=>e.title&&e.title.trim());
+    return t?t.title.trim():'';
+  });
+  // Precompute per-field data
+  s._varData={};
+  vars.forEach(v=>{
+    const f=v.field;
+    if(f&&f.type==='number'){
+      // number: sum per date
+      const perDate={};
+      s._dates.forEach(dk=>{
+        const dayEntries=(entries[dk]||[]).filter(e=>e.projId===p.id);
+        let total=0;
+        dayEntries.forEach(e=>{
+          if(e.skipped&&e.skipped[f.id])return;
+          const val=e.fields&&e.fields[f.id];
+          if(val!==undefined&&val!=='')total+=parseFloat(val)||0;
+        });
+        perDate[dk]=total;
+      });
+      s._varData[v.key]={type:'number',perDate};
+    } else {
+      // select: count each option per date
+      const options=new Set();
+      pe.forEach(e=>{
+        if(e.skipped&&e.skipped[v.key])return;
+        const val=e.fields&&e.fields[v.key];if(!val)return;
+        String(val).split(',').map(x=>x.trim()).filter(Boolean).forEach(o=>options.add(o));
+      });
+      const perOption={};
+      options.forEach(opt=>{
+        const perDate={};
+        s._dates.forEach(dk=>{
+          const dayEntries=(entries[dk]||[]).filter(e=>e.projId===p.id);
+          let n=0;
+          dayEntries.forEach(e=>{
+            if(e.skipped&&e.skipped[v.key])return;
+            const val=e.fields&&e.fields[v.key];if(!val)return;
+            if(String(val).split(',').map(x=>x.trim()).includes(opt))n++;
+          });
+          perDate[dk]=n;
+        });
+        perOption[opt]=perDate;
+      });
+      // total per option across all dates
+      const totals={};
+      options.forEach(opt=>{totals[opt]=Object.values(perOption[opt]).reduce((a,b)=>a+b,0);});
+      s._varData[v.key]={type:'select',options:[...options],perOption,totals};
+    }
+  });
+
+  const varRow=document.getElementById('cb-vars-'+pid);if(!varRow)return;
+  varRow.innerHTML='';
+  if(!vars.length){
+    varRow.innerHTML='<span style="font-size:11px;color:var(--mid);font-style:italic">'+t('cb_no_fields')+'</span>';
+    return;
+  }
+  vars.forEach(v=>{
+    const chip=document.createElement('button');
+    chip.className='cb-var-chip';chip.textContent=v.label;chip.dataset.key=v.key;
+    chip.onclick=()=>{
+      const idx=s.varKeys.indexOf(v.key);
+      if(idx>=0){s.varKeys.splice(idx,1);chip.classList.remove('on');}
+      else{s.varKeys.push(v.key);chip.classList.add('on');}
+      cbRenderFull(pid);
+    };
+    varRow.appendChild(chip);
+  });
+  // Default: select all variables
+  if(!s.varKeys.length){
+    vars.forEach(v=>{
+      s.varKeys.push(v.key);
+      const chip=varRow.querySelector('[data-key="'+v.key+'"]');
+      if(chip)chip.classList.add('on');
+    });
+  }
+  cbRenderFull(pid);
+}
+
+function cbSetColorMode(pid,m){
+  window._cbColorMode=m;
+  document.getElementById('cb-cm-warm-'+pid)?.classList.toggle('on',m==='warm');
+  document.getElementById('cb-cm-cool-'+pid)?.classList.toggle('on',m==='cool');
+  cbRenderFull(pid);
+}
+
+function cbSetType(pid,type){
+  const s=getCBState(pid);s.chartType=type;
+  ['stacked','grouped','donut'].forEach(t=>{
+    document.getElementById('cb-t-'+t+'-'+pid)?.classList.toggle('on',t===type);
+  });
+  document.getElementById('cb-ctrl-bar-'+pid).style.display=type!=='donut'?'flex':'none';
+  document.getElementById('cb-ctrl-donut-'+pid).style.display=type==='donut'?'flex':'none';
+  cbRenderFull(pid);
+}
+
+function cbRenderFull(pid){
+  if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
+  const s=getCBState(pid);
+  const canvas=document.getElementById('cb-canvas-'+pid);if(!canvas)return;
+  const type=s.chartType;
+
+  if(type==='donut'){cbRenderDonut(pid);return;}
+  cbRenderBar(pid);
+}
+
+function cbRenderBar(pid){
+  const s=getCBState(pid);
+  if(!s.varKeys.length)return;
+  const canvas=document.getElementById('cb-canvas-'+pid);if(!canvas)return;
+  if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
+  const type=s.chartType;
+
+  const ds=[];
+  const lgGroups=[];
+  const spGroups=[];
+
+  s.varKeys.forEach((vk,vi)=>{
+    const varInfo=s._vars.find(v=>v.key===vk);
+    const vdata=s._varData[vk];
+    if(!vdata)return;
+    const rawStops=cbGetGroupColors(vi);
+
+    if(vdata.type==='number'){
+      // Number field: one bar per date showing the value
+      const vals=s._dates.map(dk=>vdata.perDate[dk]||0);
+      const col=rawStops[2];
+      ds.push({label:varInfo.label,data:vals,
+        backgroundColor:col+'CC',borderColor:col,borderWidth:1,
+        stack:type==='stacked'?'v'+vi:'v'+vi+'_0',borderRadius:2});
+      lgGroups.push({label:varInfo.label,items:[{name:varInfo.label,color:rawStops[2]}],vi});
+      const total=vals.reduce((a,b)=>a+b,0);
+      spGroups.push({label:varInfo.label,vi,items:[{name:varInfo.label,color:col,cnt:total,pct:100}]});
+    } else {
+      // Select field: one bar per option per date
+      const opts=vdata.options;
+      const total=opts.reduce((s,o)=>s+(vdata.totals[o]||0),0);
+      const optColors=cbGetStops(rawStops,Math.min(opts.length,5));
+      lgGroups.push({label:varInfo.label,items:opts.map((o,i)=>({name:o,color:optColors[i%optColors.length]})),vi});
+      const spItems=[];
+      opts.forEach((opt,i)=>{
+        const col=optColors[i%optColors.length];
+        const vals=s._dates.map(dk=>vdata.perOption[opt]?vdata.perOption[opt][dk]||0:0);
+        ds.push({label:opt,data:vals,
+          backgroundColor:col+'CC',borderColor:col,borderWidth:1,
+          stack:type==='stacked'?'v'+vi:'v'+vi+'_'+i,borderRadius:2});
+        spItems.push({name:opt,color:col,cnt:vdata.totals[opt]||0,pct:total?Math.round((vdata.totals[opt]||0)/total*100):0});
+      });
+      spGroups.push({label:varInfo.label,vi,items:spItems});
+    }
+  });
+
+  // ── Legend ────────────────────────────────────────────────────
+  const lgEl=document.getElementById('cb-legend-'+pid);
+  if(lgEl){
+    let h='';
+    lgGroups.forEach(g=>{
+      // Use the mid color of this group's palette for the title badge
+      const midCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:cbGetGroupColors(g.vi)[2];
+      const titleStyle=`background:${midCol}22;color:${midCol};border:.5px solid ${midCol}66`;
+      h+=`<div style="margin-bottom:6px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:4px;${titleStyle}">${g.label}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:2px">
+          ${g.items.map(it=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${it.color}"></span>${it.name}</span>`).join('')}
+        </div>
+      </div>`;
+    });
+    lgEl.innerHTML=h;
+  }
+
+  // ── Side panel (image style: color dot + name + bold count + pct) ──
+  const spEl=document.getElementById('cb-statpanel-'+pid);
+  if(spEl){
+    let h=`<div style='font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;margin-bottom:10px'>${t('cb_data_stats')}</div>`;
+    h+='<div class="cb-side-panel-grid">';
+    spGroups.forEach(g=>{
+      const midSpCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:cbGetGroupColors(g.vi)[2];
+      const titleStyle=`background:${midSpCol}22;color:${midSpCol};border:.5px solid ${midSpCol}66`;
+      h+=`<div><div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px;${titleStyle}">${g.label}</div>`;
+      g.items.forEach(it=>{
+        h+=`<div style="display:flex;align-items:center;padding:5px 0;border-bottom:.5px solid #f0f0f0">
+          <span style="width:9px;height:9px;border-radius:2px;flex-shrink:0;background:${it.color};margin-right:7px"></span>
+          <span style="flex:1;font-size:12px;color:#444;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</span>
+          <span style="font-size:12px;font-weight:700;color:#222;margin-left:6px">${it.cnt}</span>
+          <span style="font-size:11px;color:#aaa;margin-left:4px">${it.pct}%</span>
+        </div>`;
+      });
+      h+='</div>';
+    });
+    h+='</div>';
+    spEl.innerHTML=h;
+    s._spGroups=spGroups;
+  }
+
+  // ── Y max with buffer for title labels ────────────────────────
+  const allSums=s._dates.map((_,i)=>{
+    const stacks={};
+    ds.forEach(d=>{stacks[d.stack]=(stacks[d.stack]||0)+(d.data[i]||0);});
+    return Math.max(...Object.values(stacks),0);
+  });
+  const dataMax=Math.max(...allSums,1);
+  const yMax=s.showTitles?Math.ceil(dataMax+Math.max(3,dataMax*0.35)):undefined;
+
+  const dateLabels=s._dates.map(dk=>{const pts=dk.split('-');return pts[1]+'/'+pts[2]+'/'+pts[0];});
+
+  if(!window.charts)window.charts={};
+  window.charts[pid]=new Chart(canvas,{
+    type:'bar',data:{labels:dateLabels,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:ctx=>dateLabels[ctx[0]?.dataIndex],
+        label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+(s._varData[s.varKeys[0]]?.type==='number'?'':' 次')
+      }}},
+      scales:{
+        x:{stacked:type==='stacked',grid:{display:false},ticks:{font:{size:10,family:"'Nunito',sans-serif"},color:'#999',maxRotation:30}},
+        y:{stacked:type==='stacked',max:yMax,grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10,family:"'Nunito',sans-serif"},color:'#999',stepSize:1}}
+      }},plugins:[CB_NumPlugin,CB_TitlePlugin]
+  });
+  window.charts[pid]._cbNums=s.showNums;
+  window.charts[pid]._cbTitles=s.showTitles;
+  window.charts[pid]._cbPid=pid;
+  window.charts[pid]._dates=dateLabels;
+  window.charts[pid]._titles=s._titles;
+  canvas.onclick=(e)=>{cbOnCanvasClick(e,pid);};
+}
+
+function cbRenderDonut(pid){
+  const s=getCBState(pid);
+  const canvas=document.getElementById('cb-canvas-'+pid);if(!canvas)return;
+  if(window.charts&&window.charts[pid]){window.charts[pid].destroy();delete window.charts[pid];}
+
+  const ds=[];const allLabels=[];
+  s._varKeys=[];
+  s.varKeys.forEach((vk,vi)=>{
+    const vdata=s._varData[vk];if(!vdata)return;
+    const groupColors=cbGetGroupColors(vi);
+    const groupColorsA=groupColors.map(c=>c+'CC');
+    let labels=[];let vals=[];
+    if(vdata.type==='number'){
+      const total=Object.values(vdata.perDate).reduce((a,b)=>a+b,0);
+      const varInfo=s._vars.find(v=>v.key===vk);
+      labels=[varInfo?varInfo.label:vk];vals=[total];
+    } else {
+      labels=vdata.options;
+      vals=labels.map(o=>vdata.totals[o]||0);
+    }
+    const pickedColors=cbGetStops(groupColors,labels.length);
+    const pickedA=pickedColors.map(c=>c+'CC');
+    ds.push({data:vals,backgroundColor:pickedA,borderColor:pickedColors,borderWidth:2});
+    labels.forEach(l=>allLabels.push(l));
+    s._varKeys[vi]=vk;
+  });
+  const lgEl=document.getElementById('cb-legend-'+pid);
+  if(lgEl){
+    let h='';
+    s.varKeys.forEach((vk,vi)=>{
+      const varInfo=s._vars.find(v=>v.key===vk);
+      const lbl=varInfo?varInfo.label:vk;
+      const vdata=s._varData[vk];if(!vdata)return;
+      const groupColors=cbGetGroupColors(vi);
+      const rawOpts=vdata.type==='number'?[lbl]:vdata.options;
+      const optColorsLg=cbGetStops(groupColors,Math.min(rawOpts.length,5));
+      const items=rawOpts;
+      const ringLabel=s.varKeys.length>1?(vi===0?t('cb_outer'):t('cb_inner')):'';
+      const midDonutCol=optColorsLg[Math.floor(optColorsLg.length/2)]||optColorsLg[0];
+      const titleSt=`background:${midDonutCol}22;color:${midDonutCol};border:.5px solid ${midDonutCol}66`;
+      h+=`<div style="margin-bottom:6px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:4px;${titleSt}">${lbl}${ringLabel?' ('+ringLabel+')':''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;padding-left:2px">
+          ${items.map((n,i)=>`<span style="display:flex;align-items:center;gap:3px;font-size:11px;color:#555"><span style="width:8px;height:8px;border-radius:2px;flex-shrink:0;background:${optColorsLg[i%optColorsLg.length]}"></span>${n}</span>`).join('')}
+        </div>
+      </div>`;
+    });
+    lgEl.innerHTML=h;
+  }
+  const pad=(s.showDonutNums&&s.donutMode==='line')?65:10;
+  if(!window.charts)window.charts={};
+  window.charts[pid]=new Chart(canvas,{
+    type:'doughnut',data:{labels:allLabels,datasets:ds},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'30%',
+      layout:{padding:pad},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return' '+ctx.label+': '+ctx.parsed+'次('+Math.round(ctx.parsed/t*100)+'%)';}}}}
+    },plugins:[CB_DonutPlugin]
+  });
+  window.charts[pid]._cbDonutNums=s.showDonutNums;
+  window.charts[pid]._cbDonutMode=s.donutMode;
+  window.charts[pid]._cbPid=pid;
+}
+
+function cbOnCanvasClick(e,pid){
+  const s=getCBState(pid);
+  if(!s.showTitles)return;
+  const canvas=document.getElementById('cb-canvas-'+pid);if(!canvas)return;
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+  const cx=(e.clientX-rect.left)*scaleX,cy=(e.clientY-rect.top)*scaleY;
+  const hits=_cbLabelHits[pid]||[];
+  for(const h of hits){
+    if(cx>=h.bx&&cx<=h.bx+h.bw&&cy>=h.by&&cy<=h.by+h.bh){
+      cbShowTitleEdit(e.clientX,e.clientY,h.i,pid,rect);return;
+    }
+  }
+}
+
+function cbShowTitleEdit(clientX,clientY,idx,pid,canvasRect){
+  const s=getCBState(pid);
+  const old=document.getElementById('cb-title-inp-'+pid);if(old)old.remove();
+  const wrap=document.getElementById('cb-chart-wrap-'+pid);if(!wrap)return;
+  const wRect=wrap.getBoundingClientRect();
+  const inp=document.createElement('input');
+  inp.id='cb-title-inp-'+pid;
+  inp.style.cssText='position:absolute;z-index:20;border:.5px solid #7B68EE;border-radius:4px;background:#fff;color:#333;font-size:11px;font-family:sans-serif;padding:3px 7px;outline:none;box-shadow:0 2px 8px rgba(0,0,0,.15);min-width:80px';
+  inp.style.left=(clientX-wRect.left-40)+'px';
+  inp.style.top=(clientY-wRect.top-32)+'px';
+  const rawTitle=s._titles&&s._titles[idx]||'';
+  inp.value=s.displayTitles[idx]!==undefined?s.displayTitles[idx]:rawTitle;
+  wrap.appendChild(inp);inp.focus();inp.select();
+  const finish=()=>{
+    const v=inp.value.trim();
+    s.displayTitles[idx]=v;
+    inp.remove();cbRenderFull(pid);
+  };
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')finish();if(e.key==='Escape')inp.remove();});
+  inp.addEventListener('blur',finish);
+}
+
+function cbTogNum(pid){const s=getCBState(pid);s.showNums=!s.showNums;document.getElementById('cb-nums-'+pid)?.classList.toggle('on',s.showNums);if(window.charts&&window.charts[pid]){window.charts[pid]._cbNums=s.showNums;window.charts[pid].update();}}
+function cbTogTitles(pid){const s=getCBState(pid);s.showTitles=!s.showTitles;document.getElementById('cb-titles-'+pid)?.classList.toggle('on',s.showTitles);cbRenderFull(pid);}
+function cbTogDNums(pid){const s=getCBState(pid);s.showDonutNums=!s.showDonutNums;document.getElementById('cb-dnums-'+pid)?.classList.toggle('on',s.showDonutNums);const dm=document.getElementById('cb-dmode-'+pid);if(dm)dm.style.opacity=s.showDonutNums?1:.35;cbRenderDonut(pid);}
+function cbSetDonutMode(pid,m){const s=getCBState(pid);s.donutMode=m;document.getElementById('cb-ddirect-'+pid)?.classList.toggle('on',m==='direct');document.getElementById('cb-dline-'+pid)?.classList.toggle('on',m==='line');cbRenderDonut(pid);}
+function cbTogPanel(pid){
+  const s=getCBState(pid);s.showPanel=!s.showPanel;
+  // update panel div
+  const el=document.getElementById('cb-statpanel-'+pid);
+  if(el)el.classList.toggle('show',s.showPanel);
+  // sync both bar and donut panel buttons
+  ['cb-panel-'+pid,'cb-dpanel-'+pid].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn)btn.classList.toggle('on',s.showPanel);
+  });
+}
+
+function cbToggleAdd(pid){
+  const s=getCBState(pid);const type=s.chartType;
+  const key=type+'-'+s.varKeys.join('_');
+  const existing=s.selected.findIndex(x=>x.key===key);
+  if(existing>=0){s.selected.splice(existing,1);}
+  else{s.selected.push({key,type,varKeys:[...s.varKeys],label:s.varKeys.map(vk=>{const vi=s._vars.find(v=>v.key===vk);return vi?vi.label:vk;}).join(' + ')+' — '+{stacked:t('cb_stacked'),grouped:t('cb_grouped'),donut:t('cb_donut')}[type]});}
+  cbRenderSelectedList(pid);
+  const btn=document.getElementById('cb-addbtn-'+pid);
+  if(btn){const added=s.selected.some(x=>x.key===key);btn.classList.toggle('on',added);btn.textContent=added?t('cb_added'):t('cb_add');}
+}
+
+function cbRenderSelectedList(pid){
+  const s=getCBState(pid);
+  const el=document.getElementById('cb-selected-'+pid);if(!el)return;
+  if(!s.selected.length){el.innerHTML=`<div style='font-size:11px;color:var(--mid);font-style:italic'>${t('cb_no_chart')}</div>`;return;}
+  el.innerHTML=s.selected.map(item=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 10px;background:rgba(255,255,255,.7);border:.5px solid rgba(123,104,238,.25);border-radius:8px"><span style="font-size:13px">${{stacked:'📊',grouped:'📊',donut:'🍩'}[item.type]}</span><span style="flex:1;font-size:12px;font-weight:600;color:var(--dark)">${item.label}</span><button style="background:none;border:none;color:var(--mid);cursor:pointer;font-size:13px" onclick="cbRemoveSel('${pid}','${item.key}')">✕</button></div>`).join('');
+}
+
+function cbRemoveSel(pid,key){const s=getCBState(pid);s.selected=s.selected.filter(x=>x.key!==key);cbRenderSelectedList(pid);}
+
+function cbTogExportContent(pid,type){
+  const s=getCBState(pid);
+  if(!s._exportContent)s._exportContent={text:true,chart:false};
+  s._exportContent[type]=!s._exportContent[type];
+  // 至少保留一个
+  if(!s._exportContent.text&&!s._exportContent.chart)s._exportContent[type]=true;
+  // 更新按钮样式
+  const tb=document.getElementById('cb-tog-text-'+pid);
+  const cb=document.getElementById('cb-tog-chart-'+pid);
+  if(tb){tb.classList.toggle('on',s._exportContent.text);tb.textContent=s._exportContent.text?'✓ '+t('cb_export_text'):'📝 '+t('cb_export_text');}
+  if(cb){cb.classList.toggle('on',s._exportContent.chart);cb.textContent=s._exportContent.chart?'✓ '+t('cb_export_chart_on'):'＋ '+t('cb_export_chart');}
+}
+
+function cbExport(pid,type){
+  const s=getCBState(pid);
+  if(!s._exportContent)s._exportContent={text:true,chart:false};
+  // 如果要导出图表但没有选图表变量，提示
+  if(s._exportContent.chart&&!s.varKeys.length){
+    alert(t('cb_export_warn'));return;
+  }
+  if(type==='docx')cbExportDocx(pid);else cbExportPdf(pid);
+}
+
+function cbExportDocx(pid){
+  const docxLib=window.docx;
+  if(!docxLib||!docxLib.Packer){alert(t('docx_loading'));return;}
+  const s=getCBState(pid);const p=s._p;
+  const ec=s._exportContent||{text:true,chart:false};
+  const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
+  const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
+  const pe=[...(s._pe||[])].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+  const children=[];
+
+  // ── 标题 ──
+  children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — '+t('export_tracker_title')),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
+  children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('export_status')+': '+getStatusLabels()[p.status||'active']+'   '+t('export_total')+': '+pe.length+'   '+new Date().toLocaleDateString()),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+
+  // ── 文字记录（上方）──
+  if(ec.text&&pe.length){
+    children.push(new Paragraph({children:[new TextRun({text:t('cb_detail'),bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:60,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');
+      children.push(new Paragraph({children:[new TextRun({text:parts[0]+'年'+parts[1]+'月'+parts[2]+'日',bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
+      if(e.title&&e.title.trim())children.push(new Paragraph({children:[new TextRun({text:stripEmoji(e.title.trim()),bold:true,size:22,color:DARK,font:'Arial'})],spacing:{before:0,after:20},indent:{left:240}}));
+      (p.fields||[]).forEach(f=>{
+        if(e.skipped&&e.skipped[f.id])return;
+        const v=e.fields&&e.fields[f.id];if(!v)return;
+        const display=Array.isArray(v)?v.join(', '):String(v);
+        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+display+(f.unit?' '+f.unit:'')),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+      });
+      if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('form_note')+': '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+      children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
+    });
+  }
+
+  // ── 统计图表（下方）──
+  if(ec.chart){
+    const canvas=document.getElementById('cb-canvas-'+pid);
+    if(canvas){try{
+      const base64=canvas.toDataURL('image/png').split(',')[1];
+      children.push(new Paragraph({children:[new TextRun({text:t('cb_chart_title'),bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:160,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
+      children.push(new Paragraph({children:[new ImageRun({data:Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transformation:{width:480,height:220},type:'png'})],spacing:{before:0,after:80}}));
+    }catch(e){}}
+    // ── 数据统计（showPanel 开启时附在图表后）──
+    if(s.showPanel&&s._varData&&s.varKeys.length){
+      children.push(new Paragraph({children:[new TextRun({text:t('cb_data_stats'),bold:true,size:22,color:PURPLE,font:'Arial'})],spacing:{before:120,after:60}}));
+      s.varKeys.forEach(vk=>{
+        const vd=s._varData[vk];if(!vd)return;
+        const varInfo=s._vars&&s._vars.find(v=>v.key===vk);
+        const label=varInfo?varInfo.label:vk;
+        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(label),bold:true,size:20,color:DARK,font:'Arial'})],spacing:{before:80,after:30}}));
+        if(vd.type==='number'){
+          const total=Object.values(vd.perDate).reduce((a,b)=>a+b,0);
+          children.push(new Paragraph({children:[new TextRun({text:'  '+t('cb_total')+total+(varInfo&&varInfo.unit?' '+varInfo.unit:''),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10}}));
+        } else {
+          const grandTotal=vd.options.reduce((a,o)=>a+(vd.totals[o]||0),0);
+          vd.options.forEach(o=>{
+            const cnt=vd.totals[o]||0;
+            const pct=grandTotal?Math.round(cnt/grandTotal*100):0;
+            children.push(new Paragraph({children:[new TextRun({text:'  '+stripEmoji(o)+'：'+cnt+' 次  '+pct+'%',size:18,color:MID,font:'Arial'})],spacing:{before:6,after:6}}));
+          });
+        }
+      });
+    }
+  }
+
+  const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
+  docxLib.Packer.toBase64String(doc).then(b64=>{
+    triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
+  }).catch(err=>alert(t('export_fail')+': '+err.message));
+}
+
+function cbExportPdf(pid){
+  const s=getCBState(pid);const p=s._p;
+  const ec=s._exportContent||{text:true,chart:false};
+  const canvas=document.getElementById('cb-canvas-'+pid);
+  const pe=[...(s._pe||[])].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+
+  // ── 文字记录 HTML（上方）──
+  let entriesHtml='';
+  if(ec.text&&pe.length){
+    entriesHtml='<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">'+t('cb_detail')+'</h2>';
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');
+      let fieldsHtml='';
+      (p.fields||[]).forEach(f=>{
+        if(e.skipped&&e.skipped[f.id])return;
+        const v=e.fields&&e.fields[f.id];if(!v)return;
+        const display=Array.isArray(v)?v.join(', '):String(v);
+        fieldsHtml+=`<span class="tag">${f.label}: ${display}${f.unit?' '+f.unit:''}</span>`;
+      });
+      entriesHtml+=`<div class="entry">
+        <div class="date">${parts[0]}年${parts[1]}月${parts[2]}日</div>
+        ${e.title&&e.title.trim()?`<div class="title">${e.title.trim()}</div>`:''}
+        ${fieldsHtml?`<div style="margin-top:4px">${fieldsHtml}</div>`:''}
+        ${e.note?`<div class='note'>${t('form_note')}：${e.note}</div>`:''}
+        <div style="font-size:11px;color:#854F0B;margin-top:4px">Cat Token +${calcCoins(e,e.dateKey)}</div>
+      </div>`;
+    });
+  }
+
+  // ── 统计图表 HTML（下方）──
+  let imgTag='';
+  if(ec.chart&&canvas){
+    try{
+      imgTag=`<h2 style='color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px'>${t('cb_chart_title')}</h2><img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:16px">`;
+      // ── 数据统计（showPanel 开启时附在图表后）──
+      if(s.showPanel&&s._varData&&s.varKeys.length){
+        imgTag+='<h3 style="color:#7B68EE;font-size:13px;margin:16px 0 10px">'+t('cb_data_stats')+'</h3>';
+        s.varKeys.forEach(vk=>{
+          const vd=s._varData[vk];if(!vd)return;
+          const varInfo=s._vars&&s._vars.find(v=>v.key===vk);
+          const label=varInfo?varInfo.label:vk;
+          imgTag+=`<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:4px;display:inline-block;margin:8px 0 6px">${label}</div>`;
+          if(vd.type==='number'){
+            const total=Object.values(vd.perDate).reduce((a,b)=>a+b,0);
+            imgTag+=`<div style="font-size:12px;color:#5a5870;padding:4px 0">${t('cb_total')}${total}${varInfo&&varInfo.unit?' '+varInfo.unit:''}</div>`;
+          } else {
+            const grandTotal=vd.options.reduce((a,o)=>a+(vd.totals[o]||0),0);
+            imgTag+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">';
+            vd.options.forEach(o=>{
+              const cnt=vd.totals[o]||0;
+              const pct=grandTotal?Math.round(cnt/grandTotal*100):0;
+              imgTag+=`<tr style="border-bottom:.5px solid #f0f0f0"><td style="padding:4px 0;color:#444;width:60%">${o}</td><td style="padding:4px;font-weight:700;color:#222;text-align:right">${cnt}</td><td style="padding:4px;color:#aaa;text-align:right">${pct}%</td></tr>`;
+            });
+            imgTag+='</table>';
+          }
+        });
+      }
+    }catch(e){}
+  }
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}
+    h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px;margin-bottom:4px}
+    .meta{font-size:12px;color:#888;margin-bottom:20px}
+    .entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:8px 0;background:#f9f9ff;border-radius:0 8px 8px 0}
+    .date{color:#7B68EE;font-weight:700;font-size:12px}
+    .title{font-size:14px;font-weight:600;margin:3px 0}
+    .tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
+    .note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}
+    @media print{body{padding:20px}img{max-width:100%!important}}
+  </style></head><body>
+    <h1>${p.name}</h1>
+    <div class="meta">${t('export_status')}: ${getStatusLabels()[p.status||'active']} | ${t('export_total')}: ${pe.length} | ${new Date().toLocaleDateString()}</div>
+    ${entriesHtml}
+    ${imgTag}
+    <script>window.onload=function(){window.print()}<\/script>
+  </body></html>`;
+  triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_report.html');
+}
+
+function exportTracker(pid,type){
+  const p=proj(pid);
+  const pe=[];
+  Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===pid)pe.push({...e,dateKey:dk2});}));
+  pe.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+  if(type==='docx'){
+    try{
+      const docxLib=window.docx;if(!docxLib||!docxLib.Packer){alert(t('docx_loading'));return;}
+      const {Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle}=docxLib;
+      const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
+      const children=[];
+      children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — '+t('export_tracker_title')),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
+      children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('export_status')+': '+getStatusLabels()[p.status||'active']+'   |   '+t('export_total')+': '+pe.length+'   |   '+new Date().toLocaleDateString()),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+      pe.forEach(e=>{
+        const parts=e.dateKey.split('-');
+        const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
+        children.push(new Paragraph({children:[new TextRun({text:dateStr,bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
+        if(e.title&&e.title.trim())children.push(new Paragraph({children:[new TextRun({text:stripEmoji(e.title.trim()),bold:true,size:22,color:DARK,font:'Arial'})],spacing:{before:0,after:20},indent:{left:240}}));
+        (p.fields||[]).forEach(f=>{
+          if(e.skipped&&e.skipped[f.id])return;
+          const v=e.fields&&e.fields[f.id];if(!v)return;
+          children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+v),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        });
+        if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('form_note')+': '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
+      });
+      const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
+      docxLib.Packer.toBase64String(doc).then(b64=>{
+        triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
+      }).catch(err=>{alert(t('export_gen_fail')+': '+err.message);});
+    }catch(err){alert(t('export_loading2')+': '+err.message);}
+  } else if(type==='txt'){
+    let txt=t('export_tracker_title')+'\n'+t('modal_name')+': '+p.name+'\n'+t('export_status')+': '+getStatusLabels()[p.status||'active']+'\n'+t('export_total')+': '+pe.length+'\n\n';
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');
+      txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
+      (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;txt+='  '+f.label+': '+v+'\n';});
+      if(e.note)txt+='  '+t('form_note')+': '+e.note+'\n';txt+='\n';
+    });
+    try{
+      triggerDownload('data:text/plain;charset=utf-8,'+encodeURIComponent(txt),p.name+'_tracker.txt');
+    }catch(err){
+      const w=window.open('','_blank');
+      if(w){w.document.write('<pre>'+txt.replace(/</g,'&lt;')+'</pre>');w.document.close();}
+      else{alert(t('export_popup_warn')+'\n\n'+txt);}
+    }
+  } else {
+    let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}@media print{body{padding:20px}}</style></head><body>';
+    html+='<h1>'+p.name+'</h1><div class="meta">'+t('export_status')+': '+getStatusLabels()[p.status||'active']+' | '+t('export_total')+': '+pe.length+' | '+new Date().toLocaleDateString()+'</div>';
+    pe.forEach(e=>{
+      const parts=e.dateKey.split('-');let f='';
+      (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+v+'</span>';});
+      html+='<div class="entry"><div class="date">'+parts[0]+'年'+parts[1]+'月'+parts[2]+'日</div>'+(e.title&&e.title.trim()?'<div class="title">'+e.title.trim()+'</div>':'')+(f?'<div>'+f+'</div>':'')+(e.note?'<div class="note">'+e.note+'</div>':'')+'</div>';
+    });
+    html+='<script>window.onload=function(){window.print();}<\/script></body></html>';
+    try{
+      triggerDownload('data:text/html;charset=utf-8,'+encodeURIComponent(html),p.name+'_tracker.html');
+    }catch(err){
+      const w=window.open('about:blank','_blank');
+      if(w){w.document.open();w.document.write(html);w.document.close();}
+      else{alert(t('export_print_warn'));}
+    }
+  }
+}
+
+function updateStaticI18N(){
+  const set=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  set('page-title',t('page_title'));
+  set('new-btn-label',t('btn_new'));
+  set('weekly-btn-label',t('btn_weekly'));
+  set('stat-l-entries',t('stat_entries'));
+  set('stat-l-earned',t('stat_earned'));
+  set('stat-l-balance','Cat Token '+t('stat_balance'));
+  set('sb-this-week',t('this_week'));
+  set('add-proj-label',t('custom'));
+  set('stats-nav-label',t('btn_weekly'));
+  set('tracker-nav-label',t('tracker'));
+  const zh=document.getElementById('lang-zh');
+  const en=document.getElementById('lang-en');
+  if(zh&&en){
+    zh.style.background=lang==='zh'?'var(--purple)':'transparent';
+    zh.style.color=lang==='zh'?'#fff':'var(--purple)';
+    en.style.background=lang==='en'?'var(--purple)':'transparent';
+    en.style.color=lang==='en'?'#fff':'var(--purple)';
+  }
+}
+
 function renderAll(){
+  updateStaticI18N();
   recalcTotalCoins();syncNav();
   renderSidebar();
   if(view==='stats')renderStats();
+  else if(view==='tracker')renderTracker();
   else renderJournal();
   renderDayStats();
   const el=document.getElementById('f-title');
@@ -454,34 +1778,54 @@ function renderDayStats(){
 function renderSidebar(){
   const ws=getWeekStart(),we=new Date(ws);we.setDate(we.getDate()+6);
   document.getElementById('week-range').textContent=(ws.getMonth()+1)+'月'+ws.getDate()+'–'+(we.getMonth()+1)+'月'+we.getDate();
+  const todayJump=document.getElementById('today-jump-btn');
+  if(todayJump)todayJump.style.display=weekOffset!==0?'block':'none';
   const dl=document.getElementById('day-list');dl.innerHTML='';
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(d.getDate()+i);
     const key=dk(d),isSel=key===dk(selDate),isT=key===todayKey,isFut=d>today,cnt=(entries[key]||[]).length;
-    const div=document.createElement('div');div.className='day-item'+(isSel?' active':'');div.style.opacity=isFut?.4:1;
+    const div=document.createElement('div');
+    let cls='day-item'+(isSel?' active':'')+(isT?' is-today':'');
+    div.className=cls;div.style.opacity=isFut?.4:1;
     if(!isFut)div.onclick=()=>{selDate=new Date(d);view='journal';editingId=null;renderAll()};
-    div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${DAYS[d.getDay()]}${isT?' · 今天':''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
+    const dm=(d.getMonth()+1)+'/'+d.getDate();
+    div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${t('weekdays')[d.getDay()]} <span style="font-size:10px;opacity:.6">${dm}</span>${isT?' · '+t('today'):''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
     dl.appendChild(div);
   }
   const pl=document.getElementById('proj-list');pl.innerHTML='';
-  projects.forEach(p=>{
-    const cnt=Object.values(entries).flat().filter(e=>e.projId===p.id).length;
-    const div=document.createElement('div');div.className='proj-item';
-    div.title=p.name;
-    div.innerHTML=`<div class="proj-dot" style="background:${p.color}"></div><span class="proj-name">${p.name}</span>${p.name.length>14?`<span class="proj-tooltip">${p.name}</span>`:''}`;
-    div.onclick=()=>openEditProject(p.id);pl.appendChild(div);
+  projects.filter(p=>(p.status||'active')!=='archived').forEach((p,idx)=>{
+    const div=document.createElement('div');
+    div.className='proj-item';div.draggable=true;div.dataset.idx=idx;div.title=p.name;
+    div.innerHTML=`<span class="proj-drag-handle" title="${t('cp_drag')}">⠿</span><div class="proj-dot" style="background:${p.color}"></div><span class="proj-name">${p.name}</span>${p.name.length>14?`<span class="proj-tooltip">${p.name}</span>`:''}`;
+    div.onclick=(e)=>{if(!div._dragged)openEditProject(p.id);div._dragged=false;};
+    div.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(idx));setTimeout(()=>div.classList.add('dragging'),0);});
+    div.addEventListener('dragend',()=>{div.classList.remove('dragging');document.querySelectorAll('.proj-item').forEach(el=>el.classList.remove('drag-over'));div._dragged=true;});
+    div.addEventListener('dragover',e=>{e.preventDefault();document.querySelectorAll('.proj-item').forEach(el=>el.classList.remove('drag-over'));div.classList.add('drag-over');});
+    div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
+    div.addEventListener('drop',e=>{
+      e.preventDefault();div.classList.remove('drag-over');
+      const from=parseInt(e.dataTransfer.getData('text/plain'));const to=idx;
+      if(from===to)return;
+      const moved=projects.splice(from,1)[0];projects.splice(to,0,moved);
+      saveData();renderAll();
+    });
+    pl.appendChild(div);
   });
 }
 
 function renderJournal(){
   const key=dk(selDate),isToday=key===todayKey,d=selDate;
-  document.getElementById('page-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+WD[d.getDay()]+(isToday?' · 今天':'');
+  const _wd2=t('weekdays')[d.getDay()];
+  document.getElementById('page-date').textContent=lang==='zh'
+    ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+_wd2+(isToday?' · '+t('today'):'')
+    :_wd2+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+(isToday?' · '+t('today'):'');
+  const sbwk=document.getElementById('sb-this-week');if(sbwk)sbwk.textContent=t('this_week');
   const area=document.getElementById('main-area');area.innerHTML='';
   if(showForm)area.appendChild(buildNewForm());
   const dayEs=entries[key]||[];
   if(!dayEs.length&&!showForm){
     const em=document.createElement('div');em.className='empty-hint';
-    em.innerHTML=`<div style="font-size:32px;margin-bottom:10px;opacity:.3">✦</div>这天还没有记录<br><span style="font-size:12px;margin-top:4px;display:block;color:var(--mid)">${isToday?'点右上角「新记录」开始':'可以补填，Token 减半'}</span>`;
+    em.innerHTML=`<span class="empty-hint-icon">${isToday?'✦':'🗓'}</span><div class="empty-hint-title">${t('form_no_records')}</div><div class="empty-hint-sub">${isToday?t('form_start_hint'):t('form_past')+' — '+t('form_half')}</div>`;
     area.appendChild(em);return;
   }
   const byProj={};
@@ -501,6 +1845,7 @@ function renderJournal(){
 
 function buildCard(e,p){
   const card=document.createElement('div');card.className='entry-card';
+  const isArchived=(p.status||'active')==='archived';
   let fHTML='';
   (p.fields||[]).forEach(f=>{
     if(e.skipped&&e.skipped[f.id])return;
@@ -509,17 +1854,21 @@ function buildCard(e,p){
     else{const tags=String(v).split(',').map(s=>s.trim()).filter(Boolean);fHTML+=tags.map(t=>`<span class="ec-selval">${t}</span>`).join('');}
   });
   const coins=calcCoins(e, dk(selDate));
+  card.style.setProperty('--ec-accent', p.color);
   card.innerHTML=`<div class="ec-inner">
-    <div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.12);color:${p.color};border:0.5px solid rgba(${hexRgb(p.color)},.3)">${p.name}</div>
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:2px">
+      ${isArchived?`<span style="font-size:12px;font-weight:500;color:#A32D2D;background:transparent;border:1.5px solid #A32D2D;border-radius:3px;padding:2px 7px;white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;opacity:.75;transform:rotate(-7deg);display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px">${t('archived_stamp')}</span>`:''}
+      <div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.12);color:${p.color};border:0.5px solid rgba(${hexRgb(p.color)},.3)">${p.name}</div>
+    </div>
     <div class="ec-body">
-      <div class="ec-title">${e.title}</div>
-      <div class="ec-meta">${fHTML}${e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">↗ ${e.linkLabel||'链接'}</a>`:''}</div>
+      ${e.title&&e.title.trim()?`<div class="ec-title">${e.title}</div>`:''}
+      <div class="ec-meta">${fHTML}${e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">↗ ${e.linkLabel||t('form_link')}</a>`:''}</div>
       ${e.note?`<div class="ec-note">${e.note}</div>`:''}
     </div>
     <span class="ec-coin">${dk(selDate)!==todayKey?'½ ':''} 🐾 +${coins}</span>
     <div class="ec-acts">
-      <button class="ec-act" title="编辑" onclick="startEdit(${e.id},'${dk(selDate)}')">✎</button>
-      <button class="ec-act" title="删除" onclick="deleteEntry('${dk(selDate)}',${e.id})">✕</button>
+      <button class="ec-act" title="${t('modal_edit')}" onclick="startEdit(${e.id},'${dk(selDate)}')">✎</button>
+      <button class="ec-act" title="${t('modal_delete')}" onclick="deleteEntry('${dk(selDate)}',${e.id})">✕</button>
     </div>
   </div>`;
   return card;
@@ -539,57 +1888,65 @@ function startEdit(id,key){
       editFields[k]=e.fields[k];
     }
   });
-  editState={title:e.title,fields:editFields,skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link)};
+  editState={title:e.title,projId:e.projId||'',fields:editFields,skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link),showProjPicker:false};
   openDropId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('edit-title');if(el)el.focus()},50);
 }
 
 function buildEditForm(e,p){
-  // Reuse same card style as new-entry form
   const wrap=document.createElement('div');wrap.className='form-card';
   const es=editState;
+  const isMissingProj=!es.projId||es.projId==='';
+  let editPpHTML='';
+  if(isMissingProj&&es.showProjPicker){
+    editPpHTML=`<div class="proj-picker" style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:800;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">${t('proj_sel_edit')}</div>
+      <div>${projects.filter(pr=>(pr.status||'active')!=='archived').map(pr=>`<div class="pp-item${es.projId===pr.id?' sel':''}" onclick="editState.projId='${pr.id}';editState.showProjPicker=false;renderAll()"><div style="width:8px;height:8px;border-radius:50%;background:${pr.color};flex-shrink:0"></div>${pr.name}</div>`).join('')}</div>
+    </div>`;
+  }
   let varsHTML='';
   (p.fields||[]).forEach(f=>{
     const isSkip=es.skipped[f.id],curVal=es.fields[f.id]||'',isOpen=openDropId===('ed-'+f.id);
     if(f.type==='number'){
       varsHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-        <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<input type="number" id="edf-${f.id}" value="${curVal}" min="0" style="width:90px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.fields['${f.id}']=this.value">`}</div>
+        <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;align-items:center;gap:5px'><input type="number" id="edf-${f.id}" value="${curVal}" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.fields['${f.id}']=this.value">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     } else {
       const esArr=editState.fields[f.id]||[];
-      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):'选择…';
+      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):t('form_select_ph');
       varsHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-        <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
-          <button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'}">${esDisplay}</span><span style="opacity:.4">▾</span></button>
+        <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'}">${esDisplay}</span><span style="opacity:.4">▾</span></button>
           ${isOpen?`<div class="sel-dropdown">
             ${f.options.map(o=>{const arr=editState.fields[f.id]||[];const isSel=Array.isArray(arr)?arr.includes(o):arr===o;return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickEditOpt('${f.id}','${o}')">
               <span>${isSel?'✓ ':''} ${o}</span>
               <span onclick="event.stopPropagation();deleteEditOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
             </div>`;}).join('')}
-            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div>
+            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">${t('form_save')}</button></div>
           </div>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     }
   });
+  const projBadge=isMissingProj
+    ?`<button class="proj-sel-btn error" onclick="editState.showProjPicker=!editState.showProjPicker;renderAll()" style="animation:none">${t('no_proj_warn')}<span style="opacity:.5">▾</span></button>`
+    :`<div class="proj-sel-btn" style="cursor:default;opacity:.7"><div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}</div>`;
   wrap.innerHTML=`
+    ${editPpHTML}
     <div class="form-row">
-      <div class="proj-sel-btn" style="cursor:default;opacity:.7">
-        <div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}
-      </div>
-      <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="今天做了什么…" style="font-weight:700" oninput="editState.title=this.value">
+      ${projBadge}
+      <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="editState.title=this.value">
     </div>
     ${varsHTML.length?`<div class="var-rows">${varsHTML}</div>`:''}
     <div class="extras-row">
-      <div class="extra-toggle${es.showNote?' on':''}" onclick="editState.showNote=!editState.showNote;renderAll()">📝 备注</div>
-      <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()">🔗 链接</div>
+      <div class="extra-toggle${es.showNote?' on':''}" onclick="editState.showNote=!editState.showNote;renderAll()">📝 ${t('form_note')}</div>
+      <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()">🔗 ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="补充说明…">${es.note}</textarea>`:''}
-      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://…" style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.linkLabel=this.value"></div>`:''}
+      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="${t('form_note_ph')}">${es.note}</textarea>`:''}
+      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.linkLabel=this.value"></div>`:''}
     </div>
     <div class="form-btns">
-      <button class="f-cancel" onclick="cancelEdit()">取消</button>
-      <button class="f-save" onclick="saveEdit(${e.id},'${dk(selDate)}')">✓ 保存</button>
+      <button class="f-cancel" onclick="cancelEdit()">${t('form_cancel')}</button>
+      <button class="f-save" onclick="saveEdit(${e.id},'${dk(selDate)}')">✓ ${t('form_save')}</button>
     </div>`;
   return wrap;
 }
@@ -622,6 +1979,7 @@ function cancelEdit(){editingId=null;editState={};openDropId=null;renderAll()}
 function saveEdit(id,key){
   const e=(entries[key]||[]).find(x=>x.id===id);if(!e)return;
   e.title=editState.title||e.title;
+  if(editState.projId&&editState.projId!==e.projId)e.projId=editState.projId;
   e.fields={...editState.fields};e.skipped={...editState.skipped};
   e.note=editState.note||'';e.link=editState.link||'';e.linkLabel=editState.linkLabel||'';
   editingId=null;editState={};openDropId=null;saveData();renderAll();
@@ -638,7 +1996,7 @@ function buildNewForm(){
   let ppHTML='';
   if(showProjPicker){
     ppHTML=`<div class="proj-picker"><div style="font-size:10px;font-weight:800;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Choose Project / Task</div>
-    <div>${projects.map(pr=>`<div class="pp-item${formProj===pr.id?' sel':''}" onclick="selectProj('${pr.id}')"><div style="width:8px;height:8px;border-radius:50%;background:${pr.color};flex-shrink:0"></div>${pr.name}</div>`).join('')}</div></div>`;
+    <div>${projects.filter(pr=>(pr.status||'active')!=='archived').map(pr=>`<div class="pp-item${formProj===pr.id?' sel':''}" onclick="selectProj('${pr.id}')"><div style="width:8px;height:8px;border-radius:50%;background:${pr.color};flex-shrink:0"></div>${pr.name}</div>`).join('')}</div></div>`;
   }
   let dynHTML='';
   if(p&&p.fields&&p.fields.length){
@@ -647,20 +2005,19 @@ function buildNewForm(){
       const isSkip=skippedFields[f.id],curVal=window._fv&&window._fv[f.id]||'',isOpen=openDropId===('new-'+f.id);
       if(f.type==='number'){
         dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-          <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<input type="number" id="ff-${f.id}" placeholder="0" min="0" style="width:90px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none">`}</div>
+          <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;align-items:center;gap:5px'><input type='number' id='ff-${f.id}' placeholder="0" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       } else {
         const selArr=(window._fv&&window._fv[f.id])||[];
-        const selDisplay=selArr.length?selArr.join(', '):'选择…';
+        const selDisplay=selArr.length?selArr.join(', '):t('form_select_ph');
         dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-          <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
-            <button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4">▾</span></button>
+          <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4">▾</span></button>
             ${isOpen?`<div class="sel-dropdown">
               ${f.options.map(o=>{const isSel=selArr.includes(o);return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickNewOpt('${f.id}','${o}')">
                 <span>${isSel?'✓ ':''} ${o}</span>
                 <span onclick="event.stopPropagation();deleteNewOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
               </div>`;}).join('')}
-              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项…" onclick="event.stopPropagation()"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div>
+              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">${t('form_save')}</button></div>
             </div>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       }
@@ -672,24 +2029,24 @@ function buildNewForm(){
   wrap.innerHTML=`${ppHTML}
     <div class="form-row">
       <button class="proj-sel-btn" onclick="toggleProjPicker()">
-        ${p?`<div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}`:'＋ 选择 project'}
+        ${p?`<div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}`:'＋ '+t('proj_sel_prompt')}
         <span style="opacity:.4;margin-left:2px">▾</span>
       </button>
-      <input type="text" id="f-title" placeholder="今天做了什么…" style="font-weight:700" oninput="formTitle=this.value" autocomplete="off">
+      <input type="text" id="f-title" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="formTitle=this.value" autocomplete="off">
     </div>
     ${dynHTML}
     <div class="extras-row">
-      <div class="extra-toggle${formExtras.note?' on':''}" onclick="toggleExtra('note')">📝 备注</div>
-      <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')">🔗 链接</div>
+      <div class="extra-toggle${formExtras.note?' on':''}" onclick="toggleExtra('note')">📝 ${t('form_note')}</div>
+      <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')">🔗 ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="补充说明、心得…" oninput="formNote=this.value"></textarea>`:''}
-      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://…" style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
+      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="${t('field_note_ph')}" oninput="formNote=this.value"></textarea>`:''}
+      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
     </div>
-    <div class="coin-preview">🐾 预计获得 <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?'<span style="color:var(--pink);font-size:10px;margin-left:6px">（过去日期 ×½）</span>':''}</div>
+    <div class="coin-preview">🐾 ${t('form_earn')} <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?`<span style="color:var(--pink);font-size:10px;margin-left:6px">(${t('form_past')} ×½)</span>`:''}</div>
     <div class="form-btns">
-      <button class="f-cancel" onclick="cancelForm()">取消</button>
-      <button class="f-save" onclick="saveEntry()">✓ 记录下来</button>
+      <button class="f-cancel" onclick="cancelForm()">${t('form_cancel')}</button>
+      <button class="f-save" onclick="saveEntry()">${'✓ '+t('field_record')}</button>
     </div>`;
   return wrap;
 }
@@ -732,12 +2089,18 @@ function selectProj(id){
 function toggleExtra(k){formExtras[k]=!formExtras[k];renderAll()}
 
 function openForm(){
-  formTitle='';formNote='';formLink='';formLinkLabel='';showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
+  formTitle='';formNote='';formLink='';formLinkLabel='';formProj=null;showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
 }
 function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
 
 function saveEntry(){
+  // 没选 project 不允许保存
+  if(!formProj){
+    const btn=document.querySelector('.proj-sel-btn');
+    if(btn){btn.classList.remove('error');void btn.offsetWidth;btn.classList.add('error');setTimeout(()=>btn.classList.remove('error'),600);}
+    return;
+  }
   const titleEl=document.getElementById('f-title');
   const t=(titleEl?titleEl.value.trim():'')||formTitle.trim();
   const p=formProj?proj(formProj):null;
@@ -763,8 +2126,8 @@ function saveEntry(){
 }
 
 // PROJECTS MODAL
-function openAddProject(){modal={mode:'add',name:'',color:COLORS[0],fields:[],nf:'',nft:'number'};renderModal()}
-function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,fields:p.fields.map(f=>({...f,options:[...(f.options||[])]})),nf:'',nft:'number'};renderModal()}
+function openAddProject(){modal={mode:'add',name:'',color:COLORS[0],status:'active',fields:[],nf:'',nft:'number'};renderModal()}
+function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,options:[...(f.options||[])]})),nf:'',nft:'number'};renderModal()}
 
 function renderModal(){
   const mc=document.getElementById('modal-container');
@@ -772,20 +2135,20 @@ function renderModal(){
   const m=modal;
   mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this){modal=null;renderModal()}">
   <div class="modal">
-    <div class="modal-title">${m.mode==='add'?'新建 项目/任务':'编辑 项目/任务'}</div>
-    <div class="modal-lbl">名称</div>
+    <div class="modal-title">${m.mode==='add'?t('modal_new')+' '+t('modal_task'):t('modal_edit')+' '+t('modal_task')}</div>
+    <div class="modal-lbl">${t('modal_name')}</div>
     <input type="text" id="m-name" value="${m.name}" placeholder="Project / Task name" autocomplete="off" oninput="modal.name=this.value;const b=document.getElementById('cp-badge-preview');if(b)b.textContent=this.value||'Project'">
-    <div class="modal-lbl">颜色</div>
+    <div class="modal-lbl">${t('modal_color')}</div>
     <div class="color-picker-wrap" id="cp-wrap-modal">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
           <div id="cp-presets" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"></div>
-          <button class="cp-palette-toggle" id="cp-palette-toggle" onclick="cpTogglePanel()" title="打开调色盘" style="display:flex;align-items:center;gap:5px;width:auto;border-radius:999px;padding:3px 10px 3px 4px;white-space:nowrap">
-            <img src="cat_paws_colors.png" alt="🎨" onerror="this.style.display='none'" style="width:20px;height:20px;object-fit:contain;flex-shrink:0">
+          <button class="cp-palette-toggle" id="cp-palette-toggle" onclick="cpTogglePanel()" title="${t('cp_open')}" style="display:flex;align-items:center;gap:5px;width:auto;border-radius:999px;padding:3px 10px 3px 4px;white-space:nowrap">
+            <img src="Pictures/cat_paws_colors.png" alt="🎨" onerror="this.style.display='none'" style="width:20px;height:20px;object-fit:contain;flex-shrink:0">
             <span style="font-size:11px;font-weight:600;color:var(--purple);font-family:'Nunito',sans-serif">More Colors</span>
           </button>
         </div>
-        <div id="cp-badge-preview" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:999px;border:1.5px solid rgba(123,104,238,0.5);background:rgba(123,104,238,0.1);font-size:12px;font-weight:700;color:var(--purple);font-family:'Nunito',sans-serif;white-space:nowrap;word-break:break-all;flex-wrap:wrap;max-width:100%">Project</div>
+        <div id="cp-badge-preview" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:999px;border:1.5px solid rgba(123,104,238,0.5);background:rgba(123,104,238,0.1);font-size:12px;font-weight:700;color:var(--purple);font-family:'Nunito',sans-serif;white-space:nowrap;word-break:break-all;flex-wrap:wrap;max-width:100%">Project / Task</div>
       </div>
       <div class="cp-picker-panel" id="cp-picker-panel">
         <div class="cp-canvas-wrap" id="cp-cv-wrap"><canvas class="cp-sat-canvas" id="cp-sat"></canvas><div class="cp-dot" id="cp-dot"></div></div>
@@ -793,7 +2156,7 @@ function renderModal(){
         <div class="cp-preview-row">
           <div class="cp-preview-swatch" id="cp-preview-swatch"></div>
           <input class="cp-hex-input" id="cp-hex-input" type="text" maxlength="7" placeholder="#000000" spellcheck="false">
-          <button class="cp-save-icon-btn" onclick="cpSaveColor()" title="保存到我的颜色" style="font-size:18px;font-weight:400;color:var(--purple);letter-spacing:0">＋</button>
+          <button class="cp-save-icon-btn" onclick="cpSaveColor()" title="${t('cp_save')}" style="font-size:18px;font-weight:400;color:var(--purple);letter-spacing:0">＋</button>
         </div>
         <div class="cp-color-name" id="cp-color-name"></div>
         <div class="cp-bottom-row">
@@ -803,25 +2166,29 @@ function renderModal(){
             <div class="cp-rgb-box"><div class="cp-rgb-num" id="cp-b">0</div><div class="cp-rgb-lbl">B</div></div>
           </div>
           <div class="cp-bag-wrap">
-            <button class="cp-bag-btn" id="cp-bag-btn" onclick="cpTogglePalettePopup(event)" title="我的颜色">
-              <img src="cat_paw__color_bag.png" alt="🎒" onerror="this.style.display='none';this.parentNode.textContent='🎒'">
+            <button class="cp-bag-btn" id="cp-bag-btn" onclick="cpTogglePalettePopup(event)" title="${t('cp_my')}">
+              <img src="Pictures/cat_paw__color_bag.png" alt="🎒" onerror="this.style.display='none';this.parentNode.textContent='🎒'">
             </button>
             <div class="cp-palette-popup" id="cp-palette-popup">
               <div class="cp-palette-popup-header">
-                <span class="cp-palette-popup-title">我的颜色</span>
+                <span class="cp-palette-popup-title">${t('cp_my')}</span>
                 <button class="cp-palette-popup-close" onclick="cpClosePalettePopup()">✕</button>
               </div>
-              <div class="cp-palette-swatches" id="cp-my-swatches"><span class="cp-palette-empty">还没有保存颜色</span></div>
+              <div class="cp-palette-swatches" id="cp-my-swatches"><span class='cp-palette-empty'>${t('cp_none')}</span></div>
             </div>
           </div>
         </div>
         <div class="cp-closest-wrap">
-          <div class="cp-closest-title">近似颜色 — 点击选用</div>
+          <div class="cp-closest-title">${t('cp_nearest')} — ${t('cp_click')}</div>
           <div id="cp-closest-list"></div>
         </div>
       </div>
     </div>
-    <div class="modal-lbl">Variables（自定义栏位）</div>
+    <div class="modal-lbl">${t('export_status')}</div>
+    <div style="display:flex;gap:6px;margin-bottom:4px">
+      ${['active','done','archived'].map(s=>{const lbl=s==='active'?t('status_active'):s==='done'?t('status_done'):t('status_archived');return`<div onclick="modal.status='${s}';renderModal()" style="padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;border:0.5px solid ${(m.status||'active')===s?'var(--purple)':'rgba(123,104,238,0.2)'};background:${(m.status||'active')===s?'rgba(123,104,238,0.12)':'rgba(255,255,255,0.5)'};color:${(m.status||'active')===s?'var(--purple)':'var(--mid)'}">${lbl}</div>`;}).join('')}
+    </div>
+    <div class="modal-lbl">Variables (${t('field_custom')})</div>
     <div>${m.fields.map((f,i)=>{
       let optHtml='';
       if(f.type==='select'){
@@ -831,38 +2198,53 @@ function renderModal(){
             <button style="background:none;border:none;color:var(--mid);cursor:pointer;font-size:13px;opacity:.5;padding:2px 4px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.5;this.style.color='var(--mid)'" onclick="removeOption(${i},${oi})">✕</button>
           </div>`).join('')}
           <div style="display:flex;gap:6px;margin-top:4px">
-            <input type="text" id="modal-new-opt-${i}" placeholder="添加新子选项…" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()">
+            <input type="text" id="modal-new-opt-${i}" placeholder="${t('form_add_sub')}" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
             <button style="padding:3px 10px;border-radius:6px;border:0.5px solid rgba(123,104,238,0.25);background:rgba(123,104,238,0.08);color:var(--purple);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif" onclick="addOptionInModal(${i})">＋</button>
           </div>
+        </div>`;
+      } else {
+        optHtml=`<div style="margin:4px 0 4px 14px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--mid);flex-shrink:0">${t('modal_unit')}</span>
+          <input type="text" value="${f.unit||''}" placeholder="如 min、km、次..."
+            style="width:100px;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none"
+            oninput="if(modal&&modal.fields[${i}])modal.fields[${i}].unit=this.value.trim()"
+            onfocus="this.style.borderColor='var(--purple)'"
+            onblur="this.style.borderColor='rgba(123,104,238,0.2)'">
+          <span style="font-size:10px;color:var(--mid);font-style:italic">${f.unit?t('cp_display_as')+' '+f.unit+'"':''}</span>
         </div>`;
       }
       return`<div class="mfl-item" style="flex-direction:column;align-items:flex-start;gap:2px">
         <div style="display:flex;align-items:center;gap:6px;width:100%">
-          <div style="width:6px;height:6px;border-radius:50%;background:${m.color}"></div>
-          <span>${f.label}</span>
-          <span style="font-size:10px;color:var(--mid);margin-left:2px">${f.type==='select'?'多选选项':'数字'}</span>
-          <button class="mfl-del" style="margin-left:auto" onclick="removeField(${i})">✕</button>
+          <div style="width:6px;height:6px;border-radius:50%;background:${m.color};flex-shrink:0"></div>
+          <input type="text" value="${f.label}" placeholder="${t('modal_field_name')}"
+            style="flex:1;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none;min-width:0"
+            onchange="renameField(${i},this.value)"
+            onfocus="this.style.borderColor='var(--purple)'"
+            onblur="this.style.borderColor='rgba(123,104,238,0.2)'">
+          <span style="font-size:10px;color:var(--mid);flex-shrink:0">${f.type==='select'?t('modal_sel'):t('modal_num')}</span>
+          <button class="mfl-del" onclick="removeField(${i})">✕</button>
         </div>
         ${optHtml}
       </div>`;
     }).join('')}</div>
     <div class="ftype-row">
-      <div class="ftype-btn${m.nft==='number'?' sel':''}" onclick="modal.nft='number';renderModal()">数字</div>
-      <div class="ftype-btn${m.nft==='select'?' sel':''}" onclick="modal.nft='select';renderModal()">选项</div>
+      <div class="ftype-btn${m.nft==='number'?' sel':''}" onclick="modal.nft='number';renderModal()">${t('modal_num')}</div>
+      <div class="ftype-btn${m.nft==='select'?' sel':''}" onclick="modal.nft='select';renderModal()">${t('modal_sel')}</div>
     </div>
     <div class="add-field-row">
-      <input type="text" id="m-field" placeholder="${m.nft==='number'?'如 Sessions、时长':'如 工具、阶段'}" autocomplete="off" oninput="modal.nf=this.value" value="${m.nf}">
-      <button class="add-field-btn" onclick="addField()">＋ 添加</button>
+      <input type="text" id="m-field" placeholder="${m.nft==='number'?t('field_like_num'):t('field_like_sel')}" autocomplete="off" oninput="modal.nf=this.value" value="${m.nf}">
+      <button class="add-field-btn" onclick="addField()">${t('add_field')}</button>
     </div>
     <div class="modal-btns">
-      ${m.mode==='edit'?`<button class="m-delete" onclick="deleteProject('${m.pid}')">删除</button>`:''}
-      <button class="m-cancel" onclick="modal=null;renderModal()">取消</button>
-      <button class="m-save" onclick="saveProject()">保存</button>
+      ${m.mode==='edit'?`<button class="m-delete" onclick="deleteProject('${m.pid}')">${t('modal_delete')}</button>`:''}
+      <button class="m-cancel" onclick="modal=null;renderModal()">${t('modal_cancel')}</button>
+      <button class="m-save" onclick="saveProject()">${t('modal_save')}</button>
     </div>
   </div></div>`;
   setTimeout(()=>cpInitPicker(modal?modal.color:'#7B68EE'),0);
 }
-function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[]});modal.nf='';renderModal()}
+function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[],unit:''});modal.nf='';renderModal()}
+function renameField(fi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].label=val.trim()}
 function removeOption(fi,oi){if(modal&&modal.fields[fi])modal.fields[fi].options.splice(oi,1);renderModal()}
 function renameOption(fi,oi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].options[oi]=val.trim()}
 function addOptionInModal(fi){
@@ -877,15 +2259,144 @@ function addOptionInModal(fi){
 function removeField(i){modal.fields.splice(i,1);renderModal()}
 function saveProject(){
   if(!modal.name.trim())return;
-  if(modal.mode==='add')projects.push({id:'p'+Date.now(),name:modal.name,color:modal.color,fields:modal.fields});
-  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.fields=modal.fields;}}
+  const status=modal.status||'active';
+  if(modal.mode==='add')projects.push({id:'p'+Date.now(),name:modal.name,color:modal.color,status,fields:modal.fields});
+  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;}}
   modal=null;renderModal();saveData();renderAll();
 }
-function deleteProject(id){projects=projects.filter(p=>p.id!==id);modal=null;renderModal();saveData();renderAll()}
+function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',options:[...(f.options||[])]})),nf:'',nft:'number'};renderModal()}
+let _deletedProj=null,_delTimer=null;
+
+function deleteProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  let entryCount=0;
+  Object.values(entries).forEach(arr=>arr.forEach(e=>{if(e.projId===id)entryCount++;}));
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-title" style="color:var(--pink)">${t('del_title')}${p.name}」</div>
+    <p style="font-size:13px;color:var(--mid);margin-bottom:16px;line-height:1.6">
+      ${entryCount?`此 project 有 <strong style="color:var(--dark)">${entryCount} </strong>${t('records_suffix')}，${t('del_choose')}`:t('del_choose')}
+    </p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <button onclick="_doDeleteProject('${id}','archive')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(123,104,238,0.3);background:rgba(123,104,238,0.06);cursor:pointer;font-family:'Nunito',sans-serif;text-align:left;width:100%">
+        <span style="font-size:18px;flex-shrink:0">📦</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px">${t('del_archive_btn')}</div>
+          <div style="font-size:11px;color:var(--mid)">${t('del_archive_desc')}</div>
+        </div>
+      </button>
+      <button onclick="_doDeleteProject('${id}','delete')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(255,63,108,0.3);background:rgba(255,63,108,0.05);cursor:pointer;font-family:'Nunito',sans-serif;text-align:left;width:100%">
+        <span style="font-size:18px;flex-shrink:0">🗑</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--pink);margin-bottom:2px">${t('del_perm_btn')}</div>
+          <div style="font-size:11px;color:var(--mid)">${entryCount?t('del_perm_btn'):t('del_perm_btn')}</div>
+        </div>
+      </button>
+    </div>
+    <div class="modal-btns" style="border-top:0.5px solid rgba(123,104,238,0.15);padding-top:12px;margin-top:0">
+      <button class="m-cancel" onclick="_closeDelConfirm()">${t('modal_cancel')}</button>
+    </div>
+  </div></div>`;
+}
+
+function _closeDelConfirm(){
+  document.getElementById('modal-container').innerHTML='';
+  modal=null;
+}
+
+function _doDeleteProject(id,action){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  const idx=projects.indexOf(p);
+  if(action==='archive'){
+    p.status='archived';
+    _deletedProj={p,idx,action};
+    _closeDelConfirm();
+    saveData();renderAll();
+    showUndoToast(t('archived_toast')+'"'+p.name+'」');
+  } else {
+    const affectedEntries={};
+    Object.entries(entries).forEach(([dk2,arr])=>{
+      const hits=arr.filter(e=>e.projId===id);
+      if(hits.length)affectedEntries[dk2]=hits.map(e=>({...e}));
+    });
+    Object.keys(entries).forEach(dk2=>{
+      entries[dk2]=entries[dk2].filter(e=>e.projId!==id);
+    });
+    projects=projects.filter(x=>x.id!==id);
+    _deletedProj={p,idx,action,affectedEntries};
+    _closeDelConfirm();
+    saveData();renderAll();
+    const total=Object.values(affectedEntries).flat().length;
+    showUndoToast(t('deleted')+'"'+p.name+'」'+(total?' '+t('records_suffix')+' '+total+' '+t('records_suffix'):''));
+  }
+}
+
+function restoreProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  p.status='active';
+  saveData();renderAll();
+}
+
+function confirmPermDelete(id,name){
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  <div class="modal" style="max-width:300px">
+    <div class="modal-title" style="color:var(--pink)">${t('del_perm_title')}</div>
+    <p style="font-size:13px;color:var(--mid);margin-bottom:6px;line-height:1.6">
+      ${t('del_confirm_q')}<strong style="color:var(--dark)">${name}</strong>${t('del_confirm_q2')}
+    </p>
+    <p style="font-size:12px;color:var(--pink);margin-bottom:16px;line-height:1.5">
+      ${t('del_perm_warn')}project ${t('del_perm_warn2')}
+    </p>
+    <div class="modal-btns" style="border-top:0.5px solid rgba(123,104,238,0.15);padding-top:12px;margin-top:0">
+      <button class="m-cancel" onclick="_closeDelConfirm()">${t('modal_cancel')}</button>
+      <button class="m-save" style="background:var(--pink)" onclick="_permDeleteProject('${id}')">${t('del_perm_confirm')}</button>
+    </div>
+  </div></div>`;
+}
+
+function _permDeleteProject(id){
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  const entryCount=Object.values(entries).reduce((s,arr)=>s+arr.filter(e=>e.projId===id).length,0);
+  Object.keys(entries).forEach(dk2=>{entries[dk2]=entries[dk2].filter(e=>e.projId!==id);});
+  projects=projects.filter(x=>x.id!==id);
+  _closeDelConfirm();
+  saveData();renderAll();
+  showUndoToast(t('perm_deleted')+'"'+p.name+'」'+(entryCount?' '+t('records_suffix')+' '+entryCount+' '+t('records_suffix'):''));
+}
+
+function showUndoToast(msg){
+  clearTimeout(_delTimer);
+  let t=document.getElementById('undo-toast');
+  if(!t){t=document.createElement('div');t.id='undo-toast';t.className='undo-toast';document.body.appendChild(t);}
+  t.innerHTML=msg+' <button class="undo-btn" onclick="undoDelete()">'+t('undo')+'</button>';
+  t.style.display='flex';
+  _delTimer=setTimeout(()=>{t.style.display='none';_deletedProj=null;},5000);
+}
+
+function undoDelete(){
+  clearTimeout(_delTimer);
+  if(!_deletedProj)return;
+  const{p,idx,action,affectedEntries}=_deletedProj;
+  if(action==='archive'){
+    const found=projects.find(x=>x.id===p.id);
+    if(found)found.status='active';
+  } else {
+    projects.splice(idx,0,p);
+    Object.entries(affectedEntries||{}).forEach(([dk2,arr])=>{
+      if(!entries[dk2])entries[dk2]=[];
+      arr.forEach(e=>{if(!entries[dk2].find(x=>x.id===e.id))entries[dk2].push(e);});
+    });
+  }
+  saveData();renderAll();_deletedProj=null;
+  const t=document.getElementById('undo-toast');if(t)t.style.display='none';
+}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'&&_deletedProj)undoDelete();});
 
 // STATS
 function renderStats(){
-  document.getElementById('page-date').textContent='周报告';
+  const _pd=document.getElementById('page-date');if(_pd)_pd.textContent=t('btn_weekly');
   const area=document.getElementById('main-area');area.innerHTML='';
   const ws=getWeekStart();
   const perDay=[];let totalE=0,totalC=0;const projStats={};
@@ -909,7 +2420,7 @@ function renderStats(){
   const maxC=Math.max(...perDay.map(x=>x.cnt),1);
   const todayI=perDay.findIndex(x=>dk(x.d)===todayKey);
   const cat=document.createElement('div');cat.className='cat66-bar';
-  cat.innerHTML=`<span style="font-size:24px">${totalE>=10?'(=^▽^=)':totalE>=5?'ᓚᘏᗢ':'=^.^='}</span><div>这周完成了 <strong>${totalE}</strong> 条记录，共赚了 <strong>${totalC}</strong> Cat Token<br><span style="font-size:11px">66 为你骄傲！</span></div>`;
+  cat.innerHTML=`<span style="font-size:24px">${totalE>=10?'(=^▽^=)':totalE>=5?'ᓚᘏᗢ':'=^.^='}</span><div>${t('weekly_done')} <strong>${totalE}</strong> ${t('weekly_suffix')} <strong>${totalC}</strong> Cat Token<br><span style='font-size:11px'>66 ${t('weekly_proud')}</span></div>`;
   area.appendChild(cat);
   const wb=document.createElement('div');wb.className='stats-bars';
   perDay.forEach((x,i)=>{
@@ -919,7 +2430,7 @@ function renderStats(){
     wb.appendChild(col);
   });
   area.appendChild(wb);
-  const sl=document.createElement('div');sl.className='sec-label';sl.textContent='Projects 统计';area.appendChild(sl);
+  const sl=document.createElement('div');sl.className='sec-label';sl.textContent='Projects '+t('cb_stats');area.appendChild(sl);
   const maxP=Math.max(...Object.values(projStats).map(x=>x.count),1);
   Object.keys(projStats).forEach(pid=>{
     const p=proj(pid),ps=projStats[pid];
@@ -1118,7 +2629,6 @@ function cpDrawSatVal(){
   ctx.fillStyle=gV;ctx.fillRect(0,0,w,h);
 }
 
-let cpMyPalette=[];
 let cpPopupOpen=false;
 
 function cpUpdateUI(skipHexInput=false){
@@ -1146,7 +2656,7 @@ function cpUpdateUI(skipHexInput=false){
   // Update badge preview
   const badge=document.getElementById('cp-badge-preview');
   if(badge){
-    const name=modal&&modal.name?modal.name:'Project';
+    const name=modal&&modal.name?modal.name:'Project / Task';
     badge.textContent=name||'Project';
     badge.style.color=hex;
     badge.style.borderColor=hex+'80';
@@ -1169,17 +2679,19 @@ function cpTogglePalettePopup(e){
 }
 function cpClosePalettePopup(){cpPopupOpen=false;const p=document.getElementById('cp-palette-popup');if(p)p.classList.remove('open');}
 
-function cpRemoveColor(hex){cpMyPalette=cpMyPalette.filter(c=>c!==hex);cpRenderMyPalette();}
+function cpRemoveColor(hex){cpMyPalette=cpMyPalette.filter(c=>c!==hex);localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));cpRenderMyPalette();}
 function cpRenderMyPalette(){
   const el=document.getElementById('cp-my-swatches');if(!el)return;
   const curHex=(modal&&modal.color?modal.color:'').toUpperCase();
-  if(!cpMyPalette.length){el.innerHTML='<span class="cp-palette-empty">还没有保存颜色</span>';return;}
+  if(!cpMyPalette.length){el.innerHTML='<span class="cp-palette-empty">'+t('cp_none')+'</span>';return;}
   el.innerHTML=cpMyPalette.map(c=>`<div class="cp-my-swatch${curHex===c?' active':''}" style="background:${c}" onclick="cpSetFromHex('${c}')" title="${c}"><div class="cp-my-del" onclick="event.stopPropagation();cpRemoveColor('${c}')">✕</div></div>`).join('');
 }
 function cpSaveColor(){
   const hex=(modal&&modal.color?modal.color:'').toUpperCase();
   if(!hex||cpMyPalette.includes(hex))return;
-  cpMyPalette.push(hex);cpRenderMyPalette();
+  cpMyPalette.push(hex);
+  localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));
+  cpRenderMyPalette();
 }
 
 function cpPickClosest(hex){cpSelectedClosest=hex;cpSetFromHex(hex,true);}
@@ -1261,16 +2773,24 @@ document.addEventListener('mouseup',()=>{cpDraggingSat=false;cpDraggingHue=false
 document.addEventListener('touchend',()=>{cpDraggingSat=false;cpDraggingHue=false;});
 
 // INIT
+const _savedLang=localStorage.getItem('cj_lang');
+if(_savedLang&&I18N[_savedLang])lang=_savedLang;
+
 document.getElementById('new-entry-btn').onclick=openForm;
 document.getElementById('stats-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
 document.getElementById('stats-nav-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
+document.getElementById('tracker-nav-btn').onclick=()=>showTracker();
 document.getElementById('add-proj-btn').onclick=openAddProject;
 document.getElementById('prev-week').onclick=()=>{weekOffset--;renderAll()};
 document.getElementById('next-week').onclick=()=>{if(weekOffset<0){weekOffset++;renderAll()}};
 document.getElementById('cal-icon-btn').onclick=(e)=>{e.stopPropagation();openCalPicker()};
 
 const d=new Date();
-document.getElementById('page-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+WD[d.getDay()]+' · 今天';
+const _wd=t('weekdays')[d.getDay()];
+const _dateStr=lang==='zh'
+  ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+_wd+' · '+t('today')
+  :_wd+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' · '+t('today');
+document.getElementById('page-date').textContent=_dateStr;
 
 renderAll();
 </script>
