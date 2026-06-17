@@ -50,11 +50,9 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 
 /* STATS */
 .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
-.stat-card { background:rgba(255,255,255,0.7); border:0.5px solid rgba(123,104,238,0.18); border-radius:14px; padding:14px 14px 12px; text-align:center; transition:box-shadow .18s, transform .12s; }
-.stat-card:hover { box-shadow:0 2px 12px rgba(123,104,238,0.1); transform:translateY(-1px); }
-.stat-icon { font-size:16px; margin-bottom:5px; opacity:.75; }
-.stat-n { font-family:'Lilita One',cursive; font-size:26px; color:var(--purple); line-height:1; }
-.stat-l { font-size:10px; font-weight:700; letter-spacing:.04em; color:var(--mid); margin-top:4px; text-transform:uppercase; }
+.stat-card { background:rgba(255,255,255,0.6); border:0.5px solid rgba(123,104,238,0.2); border-radius:12px; padding:12px 14px; text-align:center; }
+.stat-n { font-family:'Lilita One',cursive; font-size:24px; color:var(--purple); }
+.stat-l { font-size:11px; color:var(--mid); margin-top:2px; }
 
 /* TWO-COL LAYOUT */
 .main-layout { display:grid; grid-template-columns:200px 1fr; gap:16px; }
@@ -67,17 +65,14 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .week-range { font-size:11px; font-weight:600; color:var(--dark); }
 .wnav-btn { background:none; border:none; color:var(--mid); cursor:pointer; font-size:14px; padding:2px 5px; border-radius:4px; }
 .wnav-btn:hover { background:rgba(123,104,238,0.12); }
-.day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; transition:background .12s; }
+.day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; }
 .day-item:hover { background:rgba(123,104,238,0.08); }
 .day-item.active { background:#FAEEDA; }
-.day-item.is-today:not(.active) { background:rgba(123,104,238,0.05); }
-.day-dot { width:5px; height:5px; border-radius:50%; background:rgba(123,104,238,0.2); flex-shrink:0; transition:background .12s; }
+.day-dot { width:5px; height:5px; border-radius:50%; background:rgba(123,104,238,0.2); flex-shrink:0; }
 .day-dot.has { background:var(--purple); }
 .day-name { font-size:12px; color:var(--mid); flex:1; }
 .day-item.active .day-name { color:#633806; font-weight:700; }
-.day-item.is-today .day-name { color:var(--purple); }
-.day-item.is-today.active .day-name { color:#633806; }
-.day-cnt { font-size:10px; color:var(--mid); background:rgba(123,104,238,0.1); border-radius:999px; padding:1px 5px; min-width:16px; text-align:center; }
+.day-cnt { font-size:10px; color:var(--mid); }
 .sb-divider { border:none; border-top:0.5px solid rgba(123,104,238,0.15); margin:12px 0; }
 .proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; transition:background .1s; user-select:none; }
 .proj-item:hover { background:rgba(123,104,238,0.08); }
@@ -99,29 +94,25 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 
 /* MAIN AREA */
 .main-area { min-height:400px; }
-.sec-label { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin-bottom:8px; margin-top:16px; display:flex; align-items:center; gap:6px; padding-bottom:6px; border-bottom:0.5px solid rgba(123,104,238,0.1); }
-.sec-label:first-child { margin-top:4px; }
-.sec-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; box-shadow:0 0 0 2px rgba(255,255,255,0.8); }
+.sec-label { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin-bottom:8px; margin-top:4px; display:flex; align-items:center; gap:6px; }
+.sec-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 
 /* ENTRY CARD */
-.entry-card { background:rgba(255,255,255,0.7); border:0.5px solid rgba(123,104,238,0.18); border-radius:12px; margin-bottom:8px; transition:border-color .18s, box-shadow .18s, transform .12s; position:relative; overflow:hidden; }
-.entry-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ec-accent, var(--purple)); border-radius:3px 0 0 3px; opacity:.7; transition:opacity .18s; }
-.entry-card:hover { border-color:rgba(123,104,238,0.38); box-shadow:0 2px 12px rgba(123,104,238,0.08); }
-.entry-card:hover::before { opacity:1; }
-.entry-card.editing { border-color:var(--purple); background:rgba(255,255,255,0.95); box-shadow:0 2px 16px rgba(123,104,238,0.12); }
-.ec-inner { display:flex; align-items:flex-start; gap:10px; padding:11px 14px 11px 17px; }
-.proj-badge { display:flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+.entry-card { background:rgba(255,255,255,0.65); border:0.5px solid rgba(123,104,238,0.18); border-radius:12px; margin-bottom:8px; transition:border-color .15s; }
+.entry-card:hover { border-color:rgba(123,104,238,0.4); }
+.entry-card.editing { border-color:var(--purple); background:rgba(255,255,255,0.9); }
+.ec-inner { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; }
+.proj-badge { display:flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; flex-shrink:0; margin-top:1px; }
 .ec-body { flex:1; min-width:0; }
-.ec-title { font-size:13px; font-weight:700; color:var(--dark); line-height:1.45; }
+.ec-title { font-size:13px; font-weight:700; color:var(--dark); line-height:1.4; }
 .ec-meta { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:5px; }
 .ec-field { font-size:11px; color:var(--mid); display:flex; align-items:center; gap:3px; }
-.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(123,104,238,0.08); border:0.5px solid rgba(123,104,238,0.22); color:var(--dark); }
-.ec-note { font-size:12px; color:var(--mid); margin-top:6px; line-height:1.55; padding-top:6px; border-top:0.5px solid rgba(123,104,238,0.1); }
-.ec-coin { font-size:10px; color:#854F0B; background:#FAEEDA; border-radius:999px; padding:2px 8px; white-space:nowrap; flex-shrink:0; font-weight:700; }
-.ec-acts { display:flex; gap:2px; flex-shrink:0; opacity:0; transition:opacity .15s; }
-.entry-card:hover .ec-acts, .entry-card.editing .ec-acts { opacity:1; }
-.ec-act { background:none; border:none; color:var(--mid); cursor:pointer; font-size:13px; padding:4px; border-radius:4px; transition:all .12s; }
-.ec-act:hover { opacity:1; background:rgba(123,104,238,0.1); color:var(--purple); }
+.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(123,104,238,0.1); border:0.5px solid rgba(123,104,238,0.25); color:var(--dark); }
+.ec-note { font-size:12px; color:var(--mid); margin-top:5px; line-height:1.5; padding-top:5px; border-top:0.5px solid rgba(123,104,238,0.12); }
+.ec-coin { font-size:10px; color:#854F0B; background:#FAEEDA; border-radius:999px; padding:2px 7px; white-space:nowrap; flex-shrink:0; font-weight:700; }
+.ec-acts { display:flex; gap:2px; flex-shrink:0; }
+.ec-act { background:none; border:none; color:var(--mid); cursor:pointer; font-size:13px; padding:4px; border-radius:4px; opacity:.4; }
+.ec-act:hover { opacity:1; background:rgba(123,104,238,0.1); }
 
 /* INLINE EDIT */
 .inline-edit { padding:0 14px 12px; }
@@ -145,8 +136,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .ie-save:hover { opacity:.85; }
 
 /* FORM */
-@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-.form-card { background:rgba(255,255,255,0.88); border:0.5px solid rgba(123,104,238,0.35); border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:0 2px 16px rgba(123,104,238,0.1); animation:slideDown .2s ease; }
+.form-card { background:rgba(255,255,255,0.85); border:0.5px solid rgba(123,104,238,0.35); border-radius:14px; padding:14px; margin-bottom:12px; }
 .form-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
 .form-row input { flex:1; font-size:13px; font-family:'Nunito',sans-serif; background:rgba(255,255,255,0.9); border:0.5px solid rgba(123,104,238,0.25); border-radius:8px; padding:8px 12px; color:var(--dark); outline:none; }
 .form-row input:focus { border-color:var(--purple); }
@@ -225,10 +215,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .m-save { padding:6px 16px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; }
 .m-delete { padding:6px 12px; border-radius:999px; border:0.5px solid rgba(255,63,108,0.35); background:none; color:var(--pink); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; }
 
-.empty-hint { text-align:center; padding:3rem 1rem; color:var(--mid); font-size:13px; }
-.empty-hint-icon { font-size:36px; margin-bottom:12px; opacity:.3; display:block; }
-.empty-hint-title { font-size:14px; font-weight:700; color:var(--dark); opacity:.5; margin-bottom:6px; }
-.empty-hint-sub { font-size:12px; color:var(--mid); opacity:.7; line-height:1.6; }
+.empty-hint { text-align:center; padding:2.5rem 0; color:var(--mid); font-size:13px; }
 
 /* ── project 未选时的抖动提示 ── */
 @keyframes shake {
@@ -436,17 +423,14 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
   </div>
 
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-n" id="st-total">0</div><div class="stat-l" id="stat-l-entries">今日记录</div></div>
-    <div class="stat-card"><div class="stat-icon">🐾</div><div class="stat-n" id="st-coins">0</div><div class="stat-l" id="stat-l-earned">今日赚得</div></div>
-    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-n" id="st-total-coins">0</div><div class="stat-l" id="stat-l-balance">Cat Token 余额</div></div>
+    <div class="stat-card"><div class="stat-n" id="st-total">0</div><div class="stat-l" id="stat-l-entries">今日记录</div></div>
+    <div class="stat-card"><div class="stat-n" id="st-coins">0</div><div class="stat-l" id="stat-l-earned">今日赚得</div></div>
+    <div class="stat-card"><div class="stat-n" id="st-total-coins">0</div><div class="stat-l" id="stat-l-balance">Cat Token 余额</div></div>
   </div>
 
   <div class="main-layout">
     <div class="sidebar">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div class="sb-label" id="sb-this-week" style="margin-bottom:0">本周</div>
-        <button id="today-jump-btn" onclick="weekOffset=0;selDate=new Date(today);view='journal';renderAll()" style="font-size:10px;font-weight:700;color:var(--purple);background:rgba(123,104,238,0.1);border:0.5px solid rgba(123,104,238,0.25);border-radius:999px;padding:2px 8px;cursor:pointer;font-family:'Nunito',sans-serif;display:none">↩ 今天</button>
-      </div>
+      <div class="sb-label" id="sb-this-week">本周</div>
       <div class="week-nav">
         <span class="week-range" id="week-range"></span>
         <div style="display:flex;gap:2px;align-items:center">
@@ -1778,15 +1762,11 @@ function renderDayStats(){
 function renderSidebar(){
   const ws=getWeekStart(),we=new Date(ws);we.setDate(we.getDate()+6);
   document.getElementById('week-range').textContent=(ws.getMonth()+1)+'月'+ws.getDate()+'–'+(we.getMonth()+1)+'月'+we.getDate();
-  const todayJump=document.getElementById('today-jump-btn');
-  if(todayJump)todayJump.style.display=weekOffset!==0?'block':'none';
   const dl=document.getElementById('day-list');dl.innerHTML='';
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(d.getDate()+i);
     const key=dk(d),isSel=key===dk(selDate),isT=key===todayKey,isFut=d>today,cnt=(entries[key]||[]).length;
-    const div=document.createElement('div');
-    let cls='day-item'+(isSel?' active':'')+(isT?' is-today':'');
-    div.className=cls;div.style.opacity=isFut?.4:1;
+    const div=document.createElement('div');div.className='day-item'+(isSel?' active':'');div.style.opacity=isFut?.4:1;
     if(!isFut)div.onclick=()=>{selDate=new Date(d);view='journal';editingId=null;renderAll()};
     const dm=(d.getMonth()+1)+'/'+d.getDate();
     div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${t('weekdays')[d.getDay()]} <span style="font-size:10px;opacity:.6">${dm}</span>${isT?' · '+t('today'):''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
@@ -1825,7 +1805,7 @@ function renderJournal(){
   const dayEs=entries[key]||[];
   if(!dayEs.length&&!showForm){
     const em=document.createElement('div');em.className='empty-hint';
-    em.innerHTML=`<span class="empty-hint-icon">${isToday?'✦':'🗓'}</span><div class="empty-hint-title">${t('form_no_records')}</div><div class="empty-hint-sub">${isToday?t('form_start_hint'):t('form_past')+' — '+t('form_half')}</div>`;
+    em.innerHTML=`<div style="font-size:32px;margin-bottom:10px;opacity:.3">✦</div>${t('form_no_records')}<br><span style="font-size:12px;margin-top:4px;display:block;color:var(--mid)">${isToday?t('form_start_hint'):t('form_past')+' ×½'}</span>`;
     area.appendChild(em);return;
   }
   const byProj={};
@@ -1854,9 +1834,8 @@ function buildCard(e,p){
     else{const tags=String(v).split(',').map(s=>s.trim()).filter(Boolean);fHTML+=tags.map(t=>`<span class="ec-selval">${t}</span>`).join('');}
   });
   const coins=calcCoins(e, dk(selDate));
-  card.style.setProperty('--ec-accent', p.color);
   card.innerHTML=`<div class="ec-inner">
-    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:2px">
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:1px">
       ${isArchived?`<span style="font-size:12px;font-weight:500;color:#A32D2D;background:transparent;border:1.5px solid #A32D2D;border-radius:3px;padding:2px 7px;white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;opacity:.75;transform:rotate(-7deg);display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px">${t('archived_stamp')}</span>`:''}
       <div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.12);color:${p.color};border:0.5px solid rgba(${hexRgb(p.color)},.3)">${p.name}</div>
     </div>
