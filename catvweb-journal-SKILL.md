@@ -192,3 +192,42 @@ Chart.js doughnut 的圆心是 `chartArea` 中心，`arc.outerRadius` 基于 `ch
 - 边界计算时，`(limitX - cx) / cosA` 里的 `cx` 和 `limitX` 必须在同一坐标系
 - `layout.padding` 会让 `chartArea` 比 canvas 小，偏移量 = padding 值
 
+
+---
+
+## 十三、I18N 操作安全规则
+
+⚠️ 以下三条各踩过一次，直接导致页面崩溃：
+
+**全局替换前必须排除 I18N 块**
+Python 做字符串全局替换时，先定位 I18N 块边界再操作：
+```python
+i18n_start = content.find('const I18N={')
+i18n_end = content.find('\nlet lang=', i18n_start)
+# 只在 content[:i18n_start] + content[i18n_end:] 范围内替换
+```
+不排除会把 I18N 内部的字符串值替换成 `t('key')` 调用，造成循环依赖崩溃。
+
+**Template literal 里禁用字符串拼接语法**
+在 backtick template literal 内取 I18N 值，只能用 `${t('key')}`，绝对不能用 `'+t('key')+'`：
+```js
+// ✅ 正确：template literal 内用 ${}
+`<button>${t('form_save')}</button>`
+// ❌ 错误：字符串拼接语法在 template literal 内是 SyntaxError
+`<button>'+t('form_save')+'</button>`
+```
+
+**I18N 必须是 script 最顶部第一段代码**
+`const I18N` 使用 `const` 声明，有 Temporal Dead Zone。任何在 I18N 定义前调用 `t()` 的代码都会报 `ReferenceError: Cannot access 'I18N' before initialization`。每次移动代码块后，验证 `const I18N=` 仍然是 script 的第一行有效代码。
+
+---
+
+## 十四、UI 整改安全规则
+
+- `cb-canvas-${pid}` id 和父容器结构不能动，CB_DonutPlugin / CB_BgPlugin 靠它定位
+- `cb-side-panel` class 名不能改，统计面板展开动画依赖它
+- `.proj-status.active / .done / .archived` class 名不能改，只改 CSS 属性值
+- 按钮文字改动必须改 I18N.zh + I18N.en，不能硬编码 HTML
+- `border-radius:999px` 保留例外：`.coin-pill` / `.proj-badge` / color 色点 / `#lang-zh` `#lang-en`
+- 改颜色先改 `--purple` 等变量的值，不删变量名，全部验证后再清理
+- 每次大改后用 Node `--check` 验证 script 块语法无误再输出
