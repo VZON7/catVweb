@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>项目日记 — catVweb</title>
+<title>Project Journal — catVweb</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
@@ -409,24 +409,28 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 <div class="page" id="app">
   <div class="page-header">
     <div>
-      <div class="page-title">项目日记</div>
+      <div class="page-title" id="page-title">项目日记</div>
       <div class="page-date" id="page-date"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button class="new-btn" id="stats-btn" style="background:rgba(123,104,238,0.15);color:var(--purple);font-size:12px;padding:8px 14px">📊 周报告</button>
-      <button class="new-btn" id="new-entry-btn">✦ 新记录</button>
+      <div style="display:flex;background:rgba(123,104,238,0.1);border-radius:999px;padding:2px;gap:2px" id="lang-toggle">
+        <button onclick="setLang('zh')" id="lang-zh" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--purple);color:#fff;transition:all .15s">中</button>
+        <button onclick="setLang('en')" id="lang-en" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:transparent;color:var(--purple);transition:all .15s">EN</button>
+      </div>
+      <button class="new-btn" id="stats-btn" style="background:rgba(123,104,238,0.15);color:var(--purple);font-size:12px;padding:8px 14px">📊 <span id="weekly-btn-label">周报告</span></button>
+      <button class="new-btn" id="new-entry-btn">✦ <span id="new-btn-label">新记录</span></button>
     </div>
   </div>
 
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-n" id="st-total">0</div><div class="stat-l">今日记录</div></div>
-    <div class="stat-card"><div class="stat-n" id="st-coins">0</div><div class="stat-l">今日赚得</div></div>
-    <div class="stat-card"><div class="stat-n" id="st-total-coins">0</div><div class="stat-l">Cat Token 余额</div></div>
+    <div class="stat-card"><div class="stat-n" id="st-total">0</div><div class="stat-l" id="stat-l-entries">今日记录</div></div>
+    <div class="stat-card"><div class="stat-n" id="st-coins">0</div><div class="stat-l" id="stat-l-earned">今日赚得</div></div>
+    <div class="stat-card"><div class="stat-n" id="st-total-coins">0</div><div class="stat-l" id="stat-l-balance">Cat Token 余额</div></div>
   </div>
 
   <div class="main-layout">
     <div class="sidebar">
-      <div class="sb-label">本周</div>
+      <div class="sb-label" id="sb-this-week">本周</div>
       <div class="week-nav">
         <span class="week-range" id="week-range"></span>
         <div style="display:flex;gap:2px;align-items:center">
@@ -442,10 +446,10 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
       <hr class="sb-divider">
       <div class="sb-label">Projects / Tasks</div>
       <div id="proj-list"></div>
-      <button class="add-proj-btn" id="add-proj-btn">＋ 自定义</button>
+      <button class="add-proj-btn" id="add-proj-btn" id="add-proj-label">＋ <span id="add-proj-label">自定义</span></button>
       <hr class="sb-divider">
-      <button class="sb-nav-btn" id="stats-nav-btn">📊 周报告</button>
-    <button class="sb-nav-btn" id="tracker-nav-btn">📁 项目追踪</button>
+      <button class="sb-nav-btn" id="stats-nav-btn">📊 <span id="stats-nav-label">周报告</span></button>
+    <button class="sb-nav-btn" id="tracker-nav-btn">📁 <span id="tracker-nav-label">项目追踪</span></button>
     </div>
     <div class="main-area" id="main-area"></div>
   </div>
@@ -454,6 +458,153 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 <div id="modal-container"></div>
 
 <script>
+
+// ════════════════════════════════════════════════════════
+// I18N — 双语支持（唯一来源）
+// ════════════════════════════════════════════════════════
+const I18N={
+  zh:{
+    page_title:'项目日记',page_subtitle:'项目追踪',
+    btn_new:'新记录',btn_weekly:'周报告',
+    back_to:'回到',story_suffix:'的故事',
+    stat_entries:'今日记录',stat_earned:'今日赚得',stat_balance:'余额',
+    this_week:'本周',today:'今天',custom:'自定义',
+    weekdays:['日','一','二','三','四','五','六'],
+    tracker:'项目追踪',
+    status_active:'进行中',status_done:'已完成',status_archived:'已归档',
+    archived_stamp:'已归档',
+    tab_all:'全部',tab_all_desc:'全部记录按项目整理',
+    tab_active:'进行中',tab_done:'已完成',tab_archived:'已归档',
+    form_placeholder:'今天做了什么',
+    form_note:'备注',form_note_ph:'补充说明',
+    form_link:'链接',form_link_label:'标签',
+    form_save:'保存',form_cancel:'取消',
+    form_skipped:'已跳过',form_select_ph:'选择…',
+    form_add_opt:'添加新选项…',form_add_sub:'添加新子选项…',
+    form_no_records:'这天还没有记录',
+    form_start_hint:'点右上角「新记录」开始',
+    form_past:'过去日期',form_earn:'预计获得',form_half:'减半',
+    edit_reselect:'重新选择',edit_no_proj:'未选择',
+    modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
+    modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',
+    modal_unit:'单位',modal_unit_ph:'如 min、km、次…',
+    modal_save:'保存',modal_cancel:'取消',modal_delete:'删除',modal_edit:'编辑',
+    del_title:'删除「',del_archive_btn:'保留历史记录，先归档',
+    del_archive_desc:'Project 和所有记录完整保留，可在「已归档」里复原',
+    del_perm_btn:'一并删除所有记录',
+    del_perm_title:'永久删除',del_perm_confirm:'确认永久删除',
+    del_perm_warn:'此操作无法撤销，',del_perm_warn2:'和所有记录将被彻底移除。',
+    del_confirm_q:'确定要永久删除「',del_confirm_q2:'吗？',
+    del_choose:'请选择处理方式：',del_perm_remove:'将永久移除',
+    tracker_empty:'这个分类还没有项目',
+    restore:'复原',perm_delete:'永久删除',
+    no_records:'还没有任何记录',
+    undo:'撤销 (Ctrl+Z)',
+    deleted:'已删除「',archived_toast:'已归档「',perm_deleted:'已永久删除「',
+    records_suffix:'条记录',
+    cb_vars:'选择要统计的',cb_multi:'（可多选）',
+    cb_tone:'色调',cb_warm:'亮色系',cb_cool:'冷色系',
+    cb_type:'图表类型',cb_stacked:'堆叠柱状',cb_grouped:'并排柱状',cb_donut:'嵌套环形',
+    cb_nums:'显示数字',cb_direct:'直接显示',cb_line:'连接线',cb_stats:'统计',cb_title:'标题',
+    cb_inner:'内圈',cb_outer:'外圈',cb_data_stats:'数据统计',cb_chart_img:'项目统计图',
+    cb_no_fields:'这个项目还没有自定义栏位',cb_no_chart:'还没有选择图表',
+    cb_export_label:'导出内容：',cb_export_text:'文字记录',
+    cb_export_chart:'加入图表',cb_export_chart_on:'已加入图表',
+    cb_export_warn:'已选择「加入图表」但尚未选择任何图表变量，请取消图表选项或先选择变量',
+    cb_export_docx:'⬇ 导出 DOCX',cb_export_pdf:'🖨 打印/PDF',
+    cb_added:'已选中',cb_add:'加入导出',
+    cb_total:'合计：',cb_detail:'详细记录',cb_chart_title:'统计图表',
+    cp_open:'打开调色盘',cp_my:'我的颜色',cp_none:'还没有保存颜色',
+    cp_save:'保存到我的颜色',cp_nearest:'近似颜色',cp_drag:'拖动排序',cp_click:'点击选用',
+    cp_display_as:'显示为「数字',
+    weekly_done:'这周完成了',weekly_suffix:'条记录，共赚了',weekly_proud:'为你骄傲！',
+    export_status:'状态',export_total:'总记录',export_detail:'详细记录',
+    export_chart:'统计图表',export_fail:'导出失败',export_gen_fail:'生成失败',
+    export_tracker_title:'项目追踪报告',export_date:'导出日期',
+    docx_loading:'DOCX 库尚未加载完成，请稍等几秒后再试',
+    export_loading2:'请稍候再试，库加载中',
+    export_popup_warn:'请允许弹窗，或复制以下内容：',
+    export_print_warn:'请允许浏览器弹窗以打印报告',
+    field_like_sel:'如 工具、阶段',field_like_num:'如 Sessions、时长',
+    field_note_ph:'补充说明、心得',field_record:'记录下来',field_custom:'自定义栏位',
+    proj_sel_prompt:'选择 Project / Task',
+    no_proj_warn:'⚠ 未选择 project',
+    proj_sel_edit:'重新选择 Project / Task',
+    add_field:'＋ 添加',sel_at_least:'请先点「＋ 加入图表」选择至少一个图表',
+  },
+  en:{
+    page_title:'Project Journal',page_subtitle:'Project Tracker',
+    btn_new:'New Log',btn_weekly:'Week in Review',
+    back_to:'Back to',story_suffix:"'s Story",
+    stat_entries:"Today's Entries",stat_earned:"Today's Earned",stat_balance:'Balance',
+    this_week:'This Week',today:'Today',custom:'Custom',
+    weekdays:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    tracker:'Project Tracker',
+    status_active:'Active',status_done:'Done',status_archived:'Archived',
+    archived_stamp:'ARCHIVED',
+    tab_all:'All',tab_all_desc:'All entries organised by project',
+    tab_active:'Active',tab_done:'Done',tab_archived:'Archived',
+    form_placeholder:'What did you do today?',
+    form_note:'Note',form_note_ph:'Notes',
+    form_link:'Link',form_link_label:'Label',
+    form_save:'Save',form_cancel:'Cancel',
+    form_skipped:'Skipped',form_select_ph:'Select...',
+    form_add_opt:'Add new option...',form_add_sub:'Add sub-option...',
+    form_no_records:'No entries for this day',
+    form_start_hint:'Click "New Log" to start',
+    form_past:'Past date',form_earn:'Will earn',form_half:'Half',
+    edit_reselect:'Reselect',edit_no_proj:'No project',
+    modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
+    modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',
+    modal_unit:'Unit',modal_unit_ph:'e.g. min, km, times...',
+    modal_save:'Save',modal_cancel:'Cancel',modal_delete:'Delete',modal_edit:'Edit',
+    del_title:'Delete "',del_archive_btn:'Archive — keep all records',
+    del_archive_desc:'Project and all entries are preserved. Restore from the Archived tab.',
+    del_perm_btn:'Delete with all records',
+    del_perm_title:'Permanent Delete',del_perm_confirm:'Confirm Delete',
+    del_perm_warn:'This cannot be undone. ',del_perm_warn2:'and all records will be permanently removed.',
+    del_confirm_q:'Permanently delete "',del_confirm_q2:'"?',
+    del_choose:'Choose an action:',del_perm_remove:'will be permanently removed',
+    tracker_empty:'No projects yet',
+    restore:'Restore',perm_delete:'Delete',
+    no_records:'Nothing here yet',
+    undo:'Undo (Ctrl+Z)',
+    deleted:'Deleted "',archived_toast:'Archived "',perm_deleted:'Permanently deleted "',
+    records_suffix:' entries',
+    cb_vars:'Select variables',cb_multi:'(multi-select)',
+    cb_tone:'Palette',cb_warm:'Warm',cb_cool:'Cool',
+    cb_type:'Chart Type',cb_stacked:'Stacked Bar',cb_grouped:'Grouped Bar',cb_donut:'Nested Donut',
+    cb_nums:'Show Numbers',cb_direct:'Direct',cb_line:'Line',cb_stats:'Stats',cb_title:'Title',
+    cb_inner:'Inner',cb_outer:'Outer',cb_data_stats:'Data Stats',cb_chart_img:'Project Chart',
+    cb_no_fields:'No custom fields for this project',cb_no_chart:'No chart selected',
+    cb_export_label:'Export:',cb_export_text:'Text Records',
+    cb_export_chart:'+ Add Chart',cb_export_chart_on:'Chart Added',
+    cb_export_warn:'Chart export selected but no variables chosen. Please deselect or choose variables first.',
+    cb_export_docx:'Export DOCX',cb_export_pdf:'Print/PDF',
+    cb_added:'Added',cb_add:'+ Add to Export',
+    cb_total:'Total: ',cb_detail:'Detailed Records',cb_chart_title:'Statistics Chart',
+    cp_open:'Open Color Picker',cp_my:'My Colors',cp_none:'No saved colors yet',
+    cp_save:'Save Color',cp_nearest:'Similar color',cp_drag:'Drag to reorder',cp_click:'Click to use',
+    cp_display_as:'Shown as number',
+    weekly_done:'This week you completed',weekly_suffix:' entries and earned',weekly_proud:'Great work!',
+    export_status:'Status',export_total:'Total entries',export_detail:'Detailed Records',
+    export_chart:'Statistics Chart',export_fail:'Export failed',export_gen_fail:'Generation failed',
+    export_tracker_title:'Project Tracker Report',export_date:'Export date',
+    docx_loading:'DOCX library not ready, please wait a moment',
+    export_loading2:'Please wait, library loading',
+    export_popup_warn:'Please allow popups, or copy the content below:',
+    export_print_warn:'Please allow browser popups to print the report',
+    field_like_sel:'e.g. Tools, Stage',field_like_num:'e.g. Sessions, Duration',
+    field_note_ph:'Notes and thoughts',field_record:'Log it',field_custom:'custom fields',
+    proj_sel_prompt:'Select Project / Task',
+    no_proj_warn:'⚠ No project selected',
+    proj_sel_edit:'Reselect Project / Task',
+    add_field:'+ Add',sel_at_least:'Please add a chart variable first',
+  }
+}
+let lang='zh';
+function t(key){return(I18N[lang]&&I18N[lang][key]!==undefined?I18N[lang][key]:I18N.zh[key])||key;}
+function setLang(l){lang=l;localStorage.setItem('cj_lang',l);renderAll();renderModal();}
 const COLORS=['#000000','#FFFFFF','#808080','#FF0000','#FF8C00','#FFD700','#008000','#0000FF','#4B0082','#800080','#FF69B4'];
 const DAYS=['日','一','二','三','四','五','六'];
 const WD=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
@@ -541,7 +692,7 @@ function renderTracker(){
   const area=document.getElementById('main-area');area.innerHTML='';
   const currentTab=window._trackerTab||'all';
   const tabs=['all','active','done','archived'];
-  const tabLabels={all:'全部',active:'进行中',done:'已完成',archived:'已归档'};
+  const tabLabels={all:t('tab_all'),active:t('tab_active'),done:t('tab_done'),archived:t('tab_archived')};
   const tabRow=document.createElement('div');tabRow.className='tracker-tabs';
   tabs.forEach(t=>{
     const btn=document.createElement('button');btn.className='tracker-tab'+(currentTab===t?' active':'');
@@ -550,7 +701,7 @@ function renderTracker(){
   });
   area.appendChild(tabRow);
   const filtered=projects.filter(p=>currentTab==='all'||(p.status||'active')===currentTab);
-  if(!filtered.length){const em=document.createElement('div');em.className='tracker-empty';em.textContent='这个分类还没有项目';area.appendChild(em);return;}
+  if(!filtered.length){const em=document.createElement('div');em.className='tracker-empty';em.textContent=t('tracker_empty');area.appendChild(em);return;}
   filtered.forEach(p=>{
     const pe=[];
     Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===p.id)pe.push({...e,dateKey:dk2});}));
@@ -561,12 +712,12 @@ function renderTracker(){
     const isOpen=window._trackerOpen&&window._trackerOpen[p.id];
     const isArchived=(p.status||'active')==='archived';
       const hdr=document.createElement('div');hdr.className='tracker-proj-header';
-    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+STATUS_LABELS[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' 条</span><span>📅 '+days+' 天</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ 复原</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 永久删除</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+getStatusLabels()[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' </span><span>📅 '+days+'</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ '+t('restore')+'</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 '+t('perm_delete')+'</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
     hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
     card.appendChild(hdr);
     if(isOpen){
       const body=document.createElement('div');body.className='tracker-proj-body';
-      if(!pe.length){body.innerHTML='<div class="tracker-empty" style="padding:1rem 0">还没有任何记录</div>';}
+      if(!pe.length){body.innerHTML='<div class="tracker-empty" style="padding:1rem 0">'+t('no_records')+'</div>';}
       else{pe.forEach(e=>{
         const row=document.createElement('div');row.className='tracker-entry-row';
         const parts=e.dateKey.split('-');const m2=parts[1],d2=parts[2];
@@ -586,6 +737,7 @@ function renderTracker(){
     area.appendChild(card);
   });
 }
+
 
 
 // ════════════════════════════════════════════════════════
@@ -628,8 +780,8 @@ function triggerDownload(href,filename){
   document.body.appendChild(a);a.click();
   document.body.removeChild(a);
 }
-// Project 状态标签（唯一来源）— 禁止在函数内重复定义
-const STATUS_LABELS={active:'进行中',done:'已完成',archived:'已归档'};
+// Project 状态标签（唯一来源）— 从 I18N 取值
+function getStatusLabels(){return{active:t('status_active'),done:t('status_done'),archived:t('status_archived')};}
 // 移除所有 emoji，避免 docx.js TextRun 报错（唯一来源）
 function stripEmoji(str){
   return String(str||'').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{FE00}-\u{FEFF}\u{1F300}-\u{1F9FF}]/gu,'').trim();
@@ -906,47 +1058,46 @@ function cbGetVarData(pid,varKey,pe,p){
   return counts;
 }
 
-// ── Build HTML for chart builder ──────────────────────────────────
 function buildChartBuilderHTML(pid){
   return `
-    <div class="cb-step-lbl">选择要统计的 variable（可多选）</div>
+    <div class="cb-step-lbl">${t('cb_vars')} variable${t('cb_multi')}</div>
     <div class="cb-var-row" id="cb-vars-${pid}"></div>
     <div style="display:flex;gap:6px;align-items:center;margin-top:6px;margin-bottom:2px">
-      <span style="font-size:10px;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;font-weight:600">色调</span>
-      <button class="cb-type-btn on" id="cb-cm-warm-${pid}" onclick="cbSetColorMode('${pid}','warm')">亮色系</button>
-      <button class="cb-type-btn" id="cb-cm-cool-${pid}" onclick="cbSetColorMode('${pid}','cool')">冷色系</button>
+      <span style="font-size:10px;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;font-weight:600">${t('cb_tone')}</span>
+      <button class="cb-type-btn on" id="cb-cm-warm-${pid}" onclick="cbSetColorMode('${pid}','warm')">${t('cb_warm')}</button>
+      <button class="cb-type-btn" id="cb-cm-cool-${pid}" onclick="cbSetColorMode('${pid}','cool')">${t('cb_cool')}</button>
     </div>
-    <div class="cb-step-lbl" style="margin-top:10px">图表类型</div>
+    <div class="cb-step-lbl" style="margin-top:10px">${t('cb_type')}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="cb-type-btn on" id="cb-t-stacked-${pid}" onclick="cbSetType('${pid}','stacked')">堆叠柱状</button>
-      <button class="cb-type-btn" id="cb-t-grouped-${pid}" onclick="cbSetType('${pid}','grouped')">并排柱状</button>
-      <button class="cb-type-btn" id="cb-t-donut-${pid}" onclick="cbSetType('${pid}','donut')">嵌套环形</button>
+      <button class="cb-type-btn on" id="cb-t-stacked-${pid}" onclick="cbSetType('${pid}','stacked')">${t('cb_stacked')}</button>
+      <button class="cb-type-btn" id="cb-t-grouped-${pid}" onclick="cbSetType('${pid}','grouped')">${t('cb_grouped')}</button>
+      <button class="cb-type-btn" id="cb-t-donut-${pid}" onclick="cbSetType('${pid}','donut')">${t('cb_donut')}</button>
     </div>
     <div id="cb-ctrl-bar-${pid}" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="cb-tog on" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')">🔢 数字</button>
-      <button class="cb-tog on" id="cb-titles-${pid}" onclick="cbTogTitles('${pid}')">✅ 标题</button>
-      <button class="cb-tog" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')">统计</button>
+      <button class="cb-tog on" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')">🔢 ${t('cb_nums')}</button>
+      <button class="cb-tog on" id="cb-titles-${pid}" onclick="cbTogTitles('${pid}')">✅ ${t('cb_title')}</button>
+      <button class="cb-tog" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')">${t('cb_stats')}</button>
     </div>
     <div id="cb-ctrl-donut-${pid}" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="cb-tog on" id="cb-dnums-${pid}" onclick="cbTogDNums('${pid}')">🔢 显示数字</button>
+      <button class="cb-tog on" id="cb-dnums-${pid}" onclick="cbTogDNums('${pid}')">🔢 ${t('cb_nums')}</button>
       <div style="display:flex;gap:2px;padding:3px 5px;background:#f0f0f0;border-radius:999px;border:.5px solid rgba(0,0,0,0.08)" id="cb-dmode-${pid}">
-        <button class="cb-sub on" id="cb-ddirect-${pid}" onclick="cbSetDonutMode('${pid}','direct')">直接显示</button>
-        <button class="cb-sub" id="cb-dline-${pid}" onclick="cbSetDonutMode('${pid}','line')">连接线</button>
+        <button class="cb-sub on" id="cb-ddirect-${pid}" onclick="cbSetDonutMode('${pid}','direct')">${t('cb_direct')}</button>
+        <button class="cb-sub" id="cb-dline-${pid}" onclick="cbSetDonutMode('${pid}','line')">${t('cb_line')}</button>
       </div>
-      <button class="cb-tog" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')">统计</button>
+      <button class="cb-tog" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')">${t('cb_stats')}</button>
     </div>
     <div id="cb-legend-${pid}" style="margin-bottom:8px;max-height:120px;overflow-y:auto"></div>
     <div id="cb-chart-wrap-${pid}">
-      <div style="position:relative;width:100%;height:320px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="项目统计图"></canvas></div>
+      <div style="position:relative;width:100%;height:320px;background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.07);overflow:hidden"><canvas id="cb-canvas-${pid}" role="img" aria-label="${t('cb_chart_img')}"></canvas></div>
     </div>
     <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
     <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <span style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0">导出内容：</span>
-      <button id="cb-tog-text-${pid}" class="cb-tog on" onclick="cbTogExportContent('${pid}','text')">📝 文字记录</button>
-      <button id="cb-tog-chart-${pid}" class="cb-tog" onclick="cbTogExportContent('${pid}','chart')">＋ 加入图表</button>
+      <span style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0">${t('cb_export_label')}</span>
+      <button id="cb-tog-text-${pid}" class="cb-tog on" onclick="cbTogExportContent('${pid}','text')">📝 ${t('cb_export_text')}</button>
+      <button id="cb-tog-chart-${pid}" class="cb-tog" onclick="cbTogExportContent('${pid}','chart')">＋ ${t('cb_export_chart')}</button>
       <div style="width:1px;height:18px;background:rgba(123,104,238,0.2);margin:0 2px;flex-shrink:0"></div>
-      <button class="tracker-export-btn" onclick="cbExport('${pid}','docx')">⬇ 导出 DOCX</button>
-      <button class="tracker-export-btn" onclick="cbExport('${pid}','pdf')">🖨 打印/PDF</button>
+      <button class="tracker-export-btn" onclick="cbExport('${pid}','docx')">${t('cb_export_docx')}</button>
+      <button class="tracker-export-btn" onclick="cbExport('${pid}','pdf')">${t('cb_export_pdf')}</button>
     </div>`;
 }
 
@@ -1015,7 +1166,7 @@ function initChartBuilder(pid,p,pe){
   const varRow=document.getElementById('cb-vars-'+pid);if(!varRow)return;
   varRow.innerHTML='';
   if(!vars.length){
-    varRow.innerHTML='<span style="font-size:11px;color:var(--mid);font-style:italic">这个项目还没有自定义栏位</span>';
+    varRow.innerHTML='<span style="font-size:11px;color:var(--mid);font-style:italic">'+t('cb_no_fields')+'</span>';
     return;
   }
   vars.forEach(v=>{
@@ -1134,7 +1285,7 @@ function cbRenderBar(pid){
   // ── Side panel (image style: color dot + name + bold count + pct) ──
   const spEl=document.getElementById('cb-statpanel-'+pid);
   if(spEl){
-    let h='<div style="font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;margin-bottom:10px">数据统计</div>';
+    let h=`<div style='font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#aaa;margin-bottom:10px'>${t('cb_data_stats')}</div>`;
     h+='<div class="cb-side-panel-grid">';
     spGroups.forEach(g=>{
       const midSpCol=g.items.length?g.items[Math.floor(g.items.length/2)].color:cbGetGroupColors(g.vi)[2];
@@ -1224,7 +1375,7 @@ function cbRenderDonut(pid){
       const rawOpts=vdata.type==='number'?[lbl]:vdata.options;
       const optColorsLg=cbGetStops(groupColors,Math.min(rawOpts.length,5));
       const items=rawOpts;
-      const ringLabel=s.varKeys.length>1?(vi===0?'外圈':'内圈'):'';
+      const ringLabel=s.varKeys.length>1?(vi===0?t('cb_outer'):t('cb_inner')):'';
       const midDonutCol=optColorsLg[Math.floor(optColorsLg.length/2)]||optColorsLg[0];
       const titleSt=`background:${midDonutCol}22;color:${midDonutCol};border:.5px solid ${midDonutCol}66`;
       h+=`<div style="margin-bottom:6px">
@@ -1308,16 +1459,16 @@ function cbToggleAdd(pid){
   const key=type+'-'+s.varKeys.join('_');
   const existing=s.selected.findIndex(x=>x.key===key);
   if(existing>=0){s.selected.splice(existing,1);}
-  else{s.selected.push({key,type,varKeys:[...s.varKeys],label:s.varKeys.map(vk=>{const vi=s._vars.find(v=>v.key===vk);return vi?vi.label:vk;}).join(' + ')+' — '+{stacked:'堆叠柱状',grouped:'并排柱状',donut:'嵌套环形'}[type]});}
+  else{s.selected.push({key,type,varKeys:[...s.varKeys],label:s.varKeys.map(vk=>{const vi=s._vars.find(v=>v.key===vk);return vi?vi.label:vk;}).join(' + ')+' — '+{stacked:t('cb_stacked'),grouped:t('cb_grouped'),donut:t('cb_donut')}[type]});}
   cbRenderSelectedList(pid);
   const btn=document.getElementById('cb-addbtn-'+pid);
-  if(btn){const added=s.selected.some(x=>x.key===key);btn.classList.toggle('on',added);btn.textContent=added?'✓ 已选中':'＋ 加入导出';}
+  if(btn){const added=s.selected.some(x=>x.key===key);btn.classList.toggle('on',added);btn.textContent=added?t('cb_added'):t('cb_add');}
 }
 
 function cbRenderSelectedList(pid){
   const s=getCBState(pid);
   const el=document.getElementById('cb-selected-'+pid);if(!el)return;
-  if(!s.selected.length){el.innerHTML='<div style="font-size:11px;color:var(--mid);font-style:italic">还没有选择图表</div>';return;}
+  if(!s.selected.length){el.innerHTML=`<div style='font-size:11px;color:var(--mid);font-style:italic'>${t('cb_no_chart')}</div>`;return;}
   el.innerHTML=s.selected.map(item=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 10px;background:rgba(255,255,255,.7);border:.5px solid rgba(123,104,238,.25);border-radius:8px"><span style="font-size:13px">${{stacked:'📊',grouped:'📊',donut:'🍩'}[item.type]}</span><span style="flex:1;font-size:12px;font-weight:600;color:var(--dark)">${item.label}</span><button style="background:none;border:none;color:var(--mid);cursor:pointer;font-size:13px" onclick="cbRemoveSel('${pid}','${item.key}')">✕</button></div>`).join('');
 }
 
@@ -1332,8 +1483,8 @@ function cbTogExportContent(pid,type){
   // 更新按钮样式
   const tb=document.getElementById('cb-tog-text-'+pid);
   const cb=document.getElementById('cb-tog-chart-'+pid);
-  if(tb){tb.classList.toggle('on',s._exportContent.text);tb.textContent=s._exportContent.text?'✓ 文字记录':'📝 文字记录';}
-  if(cb){cb.classList.toggle('on',s._exportContent.chart);cb.textContent=s._exportContent.chart?'✓ 已加入图表':'＋ 加入图表';}
+  if(tb){tb.classList.toggle('on',s._exportContent.text);tb.textContent=s._exportContent.text?'✓ '+t('cb_export_text'):'📝 '+t('cb_export_text');}
+  if(cb){cb.classList.toggle('on',s._exportContent.chart);cb.textContent=s._exportContent.chart?'✓ '+t('cb_export_chart_on'):'＋ '+t('cb_export_chart');}
 }
 
 function cbExport(pid,type){
@@ -1341,14 +1492,14 @@ function cbExport(pid,type){
   if(!s._exportContent)s._exportContent={text:true,chart:false};
   // 如果要导出图表但没有选图表变量，提示
   if(s._exportContent.chart&&!s.varKeys.length){
-    alert('已选择「加入图表」但尚未选择任何图表变量，请取消图表选项或先选择变量');return;
+    alert(t('cb_export_warn'));return;
   }
   if(type==='docx')cbExportDocx(pid);else cbExportPdf(pid);
 }
 
 function cbExportDocx(pid){
   const docxLib=window.docx;
-  if(!docxLib||!docxLib.Packer){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
+  if(!docxLib||!docxLib.Packer){alert(t('docx_loading'));return;}
   const s=getCBState(pid);const p=s._p;
   const ec=s._exportContent||{text:true,chart:false};
   const{Document,Packer,Paragraph,TextRun,ImageRun,BorderStyle}=docxLib;
@@ -1357,12 +1508,12 @@ function cbExportDocx(pid){
   const children=[];
 
   // ── 标题 ──
-  children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — 项目追踪报告'),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-  children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+STATUS_LABELS[p.status||'active']+'   总记录: '+pe.length+' 条   导出: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+  children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — '+t('export_tracker_title')),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
+  children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('export_status')+': '+getStatusLabels()[p.status||'active']+'   '+t('export_total')+': '+pe.length+'   '+new Date().toLocaleDateString()),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
 
   // ── 文字记录（上方）──
   if(ec.text&&pe.length){
-    children.push(new Paragraph({children:[new TextRun({text:'详细记录',bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:60,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
+    children.push(new Paragraph({children:[new TextRun({text:t('cb_detail'),bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:60,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       children.push(new Paragraph({children:[new TextRun({text:parts[0]+'年'+parts[1]+'月'+parts[2]+'日',bold:true,size:20,color:PURPLE,font:'Arial'})],spacing:{before:140,after:30}}));
@@ -1373,7 +1524,7 @@ function cbExportDocx(pid){
         const display=Array.isArray(v)?v.join(', '):String(v);
         children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+display+(f.unit?' '+f.unit:'')),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
       });
-      if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji('备注: '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+      if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('form_note')+': '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
       children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
     });
   }
@@ -1383,12 +1534,12 @@ function cbExportDocx(pid){
     const canvas=document.getElementById('cb-canvas-'+pid);
     if(canvas){try{
       const base64=canvas.toDataURL('image/png').split(',')[1];
-      children.push(new Paragraph({children:[new TextRun({text:'统计图表',bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:160,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
+      children.push(new Paragraph({children:[new TextRun({text:t('cb_chart_title'),bold:true,size:24,color:PURPLE,font:'Arial'})],spacing:{before:160,after:60},border:{bottom:{style:BorderStyle.SINGLE,size:2,color:PURPLE,space:4}}}));
       children.push(new Paragraph({children:[new ImageRun({data:Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transformation:{width:480,height:220},type:'png'})],spacing:{before:0,after:80}}));
     }catch(e){}}
     // ── 数据统计（showPanel 开启时附在图表后）──
     if(s.showPanel&&s._varData&&s.varKeys.length){
-      children.push(new Paragraph({children:[new TextRun({text:'数据统计',bold:true,size:22,color:PURPLE,font:'Arial'})],spacing:{before:120,after:60}}));
+      children.push(new Paragraph({children:[new TextRun({text:t('cb_data_stats'),bold:true,size:22,color:PURPLE,font:'Arial'})],spacing:{before:120,after:60}}));
       s.varKeys.forEach(vk=>{
         const vd=s._varData[vk];if(!vd)return;
         const varInfo=s._vars&&s._vars.find(v=>v.key===vk);
@@ -1396,7 +1547,7 @@ function cbExportDocx(pid){
         children.push(new Paragraph({children:[new TextRun({text:stripEmoji(label),bold:true,size:20,color:DARK,font:'Arial'})],spacing:{before:80,after:30}}));
         if(vd.type==='number'){
           const total=Object.values(vd.perDate).reduce((a,b)=>a+b,0);
-          children.push(new Paragraph({children:[new TextRun({text:'  合计：'+total+(varInfo&&varInfo.unit?' '+varInfo.unit:''),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10}}));
+          children.push(new Paragraph({children:[new TextRun({text:'  '+t('cb_total')+total+(varInfo&&varInfo.unit?' '+varInfo.unit:''),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10}}));
         } else {
           const grandTotal=vd.options.reduce((a,o)=>a+(vd.totals[o]||0),0);
           vd.options.forEach(o=>{
@@ -1412,7 +1563,7 @@ function cbExportDocx(pid){
   const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
   docxLib.Packer.toBase64String(doc).then(b64=>{
     triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
-  }).catch(err=>alert('DOCX 导出失败: '+err.message));
+  }).catch(err=>alert(t('export_fail')+': '+err.message));
 }
 
 function cbExportPdf(pid){
@@ -1424,7 +1575,7 @@ function cbExportPdf(pid){
   // ── 文字记录 HTML（上方）──
   let entriesHtml='';
   if(ec.text&&pe.length){
-    entriesHtml='<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">详细记录</h2>';
+    entriesHtml='<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">'+t('cb_detail')+'</h2>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       let fieldsHtml='';
@@ -1438,7 +1589,7 @@ function cbExportPdf(pid){
         <div class="date">${parts[0]}年${parts[1]}月${parts[2]}日</div>
         ${e.title&&e.title.trim()?`<div class="title">${e.title.trim()}</div>`:''}
         ${fieldsHtml?`<div style="margin-top:4px">${fieldsHtml}</div>`:''}
-        ${e.note?`<div class="note">备注：${e.note}</div>`:''}
+        ${e.note?`<div class='note'>${t('form_note')}：${e.note}</div>`:''}
         <div style="font-size:11px;color:#854F0B;margin-top:4px">Cat Token +${calcCoins(e,e.dateKey)}</div>
       </div>`;
     });
@@ -1448,10 +1599,10 @@ function cbExportPdf(pid){
   let imgTag='';
   if(ec.chart&&canvas){
     try{
-      imgTag=`<h2 style="color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px">统计图表</h2><img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:16px">`;
+      imgTag=`<h2 style='color:#7B68EE;font-size:15px;border-bottom:1.5px solid #7B68EE;padding-bottom:6px;margin:24px 0 12px'>${t('cb_chart_title')}</h2><img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:560px;border-radius:8px;margin-bottom:16px">`;
       // ── 数据统计（showPanel 开启时附在图表后）──
       if(s.showPanel&&s._varData&&s.varKeys.length){
-        imgTag+='<h3 style="color:#7B68EE;font-size:13px;margin:16px 0 10px">数据统计</h3>';
+        imgTag+='<h3 style="color:#7B68EE;font-size:13px;margin:16px 0 10px">'+t('cb_data_stats')+'</h3>';
         s.varKeys.forEach(vk=>{
           const vd=s._varData[vk];if(!vd)return;
           const varInfo=s._vars&&s._vars.find(v=>v.key===vk);
@@ -1459,7 +1610,7 @@ function cbExportPdf(pid){
           imgTag+=`<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:4px;display:inline-block;margin:8px 0 6px">${label}</div>`;
           if(vd.type==='number'){
             const total=Object.values(vd.perDate).reduce((a,b)=>a+b,0);
-            imgTag+=`<div style="font-size:12px;color:#5a5870;padding:4px 0">合计：${total}${varInfo&&varInfo.unit?' '+varInfo.unit:''}</div>`;
+            imgTag+=`<div style="font-size:12px;color:#5a5870;padding:4px 0">${t('cb_total')}${total}${varInfo&&varInfo.unit?' '+varInfo.unit:''}</div>`;
           } else {
             const grandTotal=vd.options.reduce((a,o)=>a+(vd.totals[o]||0),0);
             imgTag+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">';
@@ -1487,7 +1638,7 @@ function cbExportPdf(pid){
     @media print{body{padding:20px}img{max-width:100%!important}}
   </style></head><body>
     <h1>${p.name}</h1>
-    <div class="meta">状态: ${STATUS_LABELS[p.status||'active']} | 总记录: ${pe.length} 条 | 导出: ${new Date().toLocaleDateString('zh-CN')}</div>
+    <div class="meta">${t('export_status')}: ${getStatusLabels()[p.status||'active']} | ${t('export_total')}: ${pe.length} | ${new Date().toLocaleDateString()}</div>
     ${entriesHtml}
     ${imgTag}
     <script>window.onload=function(){window.print()}<\/script>
@@ -1502,12 +1653,12 @@ function exportTracker(pid,type){
   pe.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
   if(type==='docx'){
     try{
-      const docxLib=window.docx;if(!docxLib||!docxLib.Packer){alert('DOCX 库尚未加载完成，请稍等几秒后再试');return;}
+      const docxLib=window.docx;if(!docxLib||!docxLib.Packer){alert(t('docx_loading'));return;}
       const {Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle}=docxLib;
       const PURPLE='7B68EE',DARK='2D2B3D',MID='5A5870';
       const children=[];
-      children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — 项目追踪报告'),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
-      children.push(new Paragraph({children:[new TextRun({text:stripEmoji('状态: '+STATUS_LABELS[p.status||'active']+'   |   总记录: '+pe.length+' 条   |   导出日期: '+new Date().toLocaleDateString('zh-CN')),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
+      children.push(new Paragraph({children:[new TextRun({text:stripEmoji(p.name+' — '+t('export_tracker_title')),bold:true,size:32,color:PURPLE,font:'Arial'})],spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:PURPLE,space:4}}}));
+      children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('export_status')+': '+getStatusLabels()[p.status||'active']+'   |   '+t('export_total')+': '+pe.length+'   |   '+new Date().toLocaleDateString()),size:18,color:MID,font:'Arial'})],spacing:{before:60,after:160}}));
       pe.forEach(e=>{
         const parts=e.dateKey.split('-');
         const dateStr=parts[0]+'年'+parts[1]+'月'+parts[2]+'日';
@@ -1518,32 +1669,32 @@ function exportTracker(pid,type){
           const v=e.fields&&e.fields[f.id];if(!v)return;
           children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+v),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
         });
-        if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji('备注: '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('form_note')+': '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
         children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
       });
       const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
       docxLib.Packer.toBase64String(doc).then(b64=>{
         triggerDownload('data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,'+b64,p.name+'_tracker.docx');
-      }).catch(err=>{alert('DOCX 生成失败: '+err.message);});
-    }catch(err){alert('请稍候再试，docx 库加载中: '+err.message);}
+      }).catch(err=>{alert(t('export_gen_fail')+': '+err.message);});
+    }catch(err){alert(t('export_loading2')+': '+err.message);}
   } else if(type==='txt'){
-    let txt='项目追踪报告\n项目: '+p.name+'\n状态: '+STATUS_LABELS[p.status||'active']+'\n总记录: '+pe.length+'\n\n';
+    let txt=t('export_tracker_title')+'\n'+t('modal_name')+': '+p.name+'\n'+t('export_status')+': '+getStatusLabels()[p.status||'active']+'\n'+t('export_total')+': '+pe.length+'\n\n';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
       (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;txt+='  '+f.label+': '+v+'\n';});
-      if(e.note)txt+='  备注: '+e.note+'\n';txt+='\n';
+      if(e.note)txt+='  '+t('form_note')+': '+e.note+'\n';txt+='\n';
     });
     try{
       triggerDownload('data:text/plain;charset=utf-8,'+encodeURIComponent(txt),p.name+'_tracker.txt');
     }catch(err){
       const w=window.open('','_blank');
       if(w){w.document.write('<pre>'+txt.replace(/</g,'&lt;')+'</pre>');w.document.close();}
-      else{alert('请允许弹窗，或复制以下内容：\n\n'+txt);}
+      else{alert(t('export_popup_warn')+'\n\n'+txt);}
     }
   } else {
     let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}@media print{body{padding:20px}}</style></head><body>';
-    html+='<h1>'+p.name+'</h1><div class="meta">状态: '+STATUS_LABELS[p.status||'active']+' | 总记录: '+pe.length+' | 导出: '+new Date().toLocaleDateString('zh-CN')+'</div>';
+    html+='<h1>'+p.name+'</h1><div class="meta">'+t('export_status')+': '+getStatusLabels()[p.status||'active']+' | '+t('export_total')+': '+pe.length+' | '+new Date().toLocaleDateString()+'</div>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');let f='';
       (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+v+'</span>';});
@@ -1555,12 +1706,35 @@ function exportTracker(pid,type){
     }catch(err){
       const w=window.open('about:blank','_blank');
       if(w){w.document.open();w.document.write(html);w.document.close();}
-      else{alert('请允许浏览器弹窗以打印报告');}
+      else{alert(t('export_print_warn'));}
     }
   }
 }
 
+function updateStaticI18N(){
+  const set=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  set('page-title',t('page_title'));
+  set('new-btn-label',t('btn_new'));
+  set('weekly-btn-label',t('btn_weekly'));
+  set('stat-l-entries',t('stat_entries'));
+  set('stat-l-earned',t('stat_earned'));
+  set('stat-l-balance','Cat Token '+t('stat_balance'));
+  set('sb-this-week',t('this_week'));
+  set('add-proj-label',t('custom'));
+  set('stats-nav-label',t('btn_weekly'));
+  set('tracker-nav-label',t('tracker'));
+  const zh=document.getElementById('lang-zh');
+  const en=document.getElementById('lang-en');
+  if(zh&&en){
+    zh.style.background=lang==='zh'?'var(--purple)':'transparent';
+    zh.style.color=lang==='zh'?'#fff':'var(--purple)';
+    en.style.background=lang==='en'?'var(--purple)':'transparent';
+    en.style.color=lang==='en'?'#fff':'var(--purple)';
+  }
+}
+
 function renderAll(){
+  updateStaticI18N();
   recalcTotalCoins();syncNav();
   renderSidebar();
   if(view==='stats')renderStats();
@@ -1595,14 +1769,14 @@ function renderSidebar(){
     const div=document.createElement('div');div.className='day-item'+(isSel?' active':'');div.style.opacity=isFut?.4:1;
     if(!isFut)div.onclick=()=>{selDate=new Date(d);view='journal';editingId=null;renderAll()};
     const dm=(d.getMonth()+1)+'/'+d.getDate();
-    div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${DAYS[d.getDay()]} <span style="font-size:10px;opacity:.6">${dm}</span>${isT?' · 今天':''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
+    div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${t('weekdays')[d.getDay()]} <span style="font-size:10px;opacity:.6">${dm}</span>${isT?' · '+t('today'):''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
     dl.appendChild(div);
   }
   const pl=document.getElementById('proj-list');pl.innerHTML='';
   projects.filter(p=>(p.status||'active')!=='archived').forEach((p,idx)=>{
     const div=document.createElement('div');
     div.className='proj-item';div.draggable=true;div.dataset.idx=idx;div.title=p.name;
-    div.innerHTML=`<span class="proj-drag-handle" title="拖动排序">⠿</span><div class="proj-dot" style="background:${p.color}"></div><span class="proj-name">${p.name}</span>${p.name.length>14?`<span class="proj-tooltip">${p.name}</span>`:''}`;
+    div.innerHTML=`<span class="proj-drag-handle" title="${t('cp_drag')}">⠿</span><div class="proj-dot" style="background:${p.color}"></div><span class="proj-name">${p.name}</span>${p.name.length>14?`<span class="proj-tooltip">${p.name}</span>`:''}`;
     div.onclick=(e)=>{if(!div._dragged)openEditProject(p.id);div._dragged=false;};
     div.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(idx));setTimeout(()=>div.classList.add('dragging'),0);});
     div.addEventListener('dragend',()=>{div.classList.remove('dragging');document.querySelectorAll('.proj-item').forEach(el=>el.classList.remove('drag-over'));div._dragged=true;});
@@ -1621,13 +1795,17 @@ function renderSidebar(){
 
 function renderJournal(){
   const key=dk(selDate),isToday=key===todayKey,d=selDate;
-  document.getElementById('page-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+WD[d.getDay()]+(isToday?' · 今天':'');
+  const _wd2=t('weekdays')[d.getDay()];
+  document.getElementById('page-date').textContent=lang==='zh'
+    ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+_wd2+(isToday?' · '+t('today'):'')
+    :_wd2+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+(isToday?' · '+t('today'):'');
+  const sbwk=document.getElementById('sb-this-week');if(sbwk)sbwk.textContent=t('this_week');
   const area=document.getElementById('main-area');area.innerHTML='';
   if(showForm)area.appendChild(buildNewForm());
   const dayEs=entries[key]||[];
   if(!dayEs.length&&!showForm){
     const em=document.createElement('div');em.className='empty-hint';
-    em.innerHTML=`<div style="font-size:32px;margin-bottom:10px;opacity:.3">✦</div>这天还没有记录<br><span style="font-size:12px;margin-top:4px;display:block;color:var(--mid)">${isToday?'点右上角「新记录」开始':'可以补填，Token 减半'}</span>`;
+    em.innerHTML=`<div style="font-size:32px;margin-bottom:10px;opacity:.3">✦</div>${t('form_no_records')}<br><span style="font-size:12px;margin-top:4px;display:block;color:var(--mid)">${isToday?t('form_start_hint'):t('form_past')+' ×½'}</span>`;
     area.appendChild(em);return;
   }
   const byProj={};
@@ -1658,18 +1836,18 @@ function buildCard(e,p){
   const coins=calcCoins(e, dk(selDate));
   card.innerHTML=`<div class="ec-inner">
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:1px">
-      ${isArchived?`<span style="font-size:12px;font-weight:500;color:#A32D2D;background:transparent;border:1.5px solid #A32D2D;border-radius:3px;padding:2px 7px;white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;opacity:.75;transform:rotate(-7deg);display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px">已归档</span>`:''}
+      ${isArchived?`<span style="font-size:12px;font-weight:500;color:#A32D2D;background:transparent;border:1.5px solid #A32D2D;border-radius:3px;padding:2px 7px;white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;opacity:.75;transform:rotate(-7deg);display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px">${t('archived_stamp')}</span>`:''}
       <div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.12);color:${p.color};border:0.5px solid rgba(${hexRgb(p.color)},.3)">${p.name}</div>
     </div>
     <div class="ec-body">
       ${e.title&&e.title.trim()?`<div class="ec-title">${e.title}</div>`:''}
-      <div class="ec-meta">${fHTML}${e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">↗ ${e.linkLabel||'链接'}</a>`:''}</div>
+      <div class="ec-meta">${fHTML}${e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">↗ ${e.linkLabel||t('form_link')}</a>`:''}</div>
       ${e.note?`<div class="ec-note">${e.note}</div>`:''}
     </div>
     <span class="ec-coin">${dk(selDate)!==todayKey?'½ ':''} 🐾 +${coins}</span>
     <div class="ec-acts">
-      <button class="ec-act" title="编辑" onclick="startEdit(${e.id},'${dk(selDate)}')">✎</button>
-      <button class="ec-act" title="删除" onclick="deleteEntry('${dk(selDate)}',${e.id})">✕</button>
+      <button class="ec-act" title="${t('modal_edit')}" onclick="startEdit(${e.id},'${dk(selDate)}')">✎</button>
+      <button class="ec-act" title="${t('modal_delete')}" onclick="deleteEntry('${dk(selDate)}',${e.id})">✕</button>
     </div>
   </div>`;
   return card;
@@ -1701,7 +1879,7 @@ function buildEditForm(e,p){
   let editPpHTML='';
   if(isMissingProj&&es.showProjPicker){
     editPpHTML=`<div class="proj-picker" style="margin-bottom:8px">
-      <div style="font-size:10px;font-weight:800;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">重新选择 Project / Task</div>
+      <div style="font-size:10px;font-weight:800;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">${t('proj_sel_edit')}</div>
       <div>${projects.filter(pr=>(pr.status||'active')!=='archived').map(pr=>`<div class="pp-item${es.projId===pr.id?' sel':''}" onclick="editState.projId='${pr.id}';editState.showProjPicker=false;renderAll()"><div style="width:8px;height:8px;border-radius:50%;background:${pr.color};flex-shrink:0"></div>${pr.name}</div>`).join('')}</div>
     </div>`;
   }
@@ -1710,45 +1888,44 @@ function buildEditForm(e,p){
     const isSkip=es.skipped[f.id],curVal=es.fields[f.id]||'',isOpen=openDropId===('ed-'+f.id);
     if(f.type==='number'){
       varsHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-        <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div style="display:flex;align-items:center;gap:5px"><input type="number" id="edf-${f.id}" value="${curVal}" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.fields['${f.id}']=this.value">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
+        <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;align-items:center;gap:5px'><input type="number" id="edf-${f.id}" value="${curVal}" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.fields['${f.id}']=this.value">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     } else {
       const esArr=editState.fields[f.id]||[];
-      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):'选择...';
+      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):t('form_select_ph');
       varsHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-        <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
-          <button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'}">${esDisplay}</span><span style="opacity:.4">▾</span></button>
+        <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'}">${esDisplay}</span><span style="opacity:.4">▾</span></button>
           ${isOpen?`<div class="sel-dropdown">
             ${f.options.map(o=>{const arr=editState.fields[f.id]||[];const isSel=Array.isArray(arr)?arr.includes(o):arr===o;return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickEditOpt('${f.id}','${o}')">
               <span>${isSel?'✓ ':''} ${o}</span>
               <span onclick="event.stopPropagation();deleteEditOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
             </div>`;}).join('')}
-            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="添加新选项..." onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">添加</button></div>
+            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">${t('form_save')}</button></div>
           </div>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
     }
   });
   const projBadge=isMissingProj
-    ?`<button class="proj-sel-btn error" onclick="editState.showProjPicker=!editState.showProjPicker;renderAll()" style="animation:none">⚠ 未选择 project <span style="opacity:.5">▾</span></button>`
+    ?`<button class="proj-sel-btn error" onclick="editState.showProjPicker=!editState.showProjPicker;renderAll()" style="animation:none">${t('no_proj_warn')}<span style="opacity:.5">▾</span></button>`
     :`<div class="proj-sel-btn" style="cursor:default;opacity:.7"><div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}</div>`;
   wrap.innerHTML=`
     ${editPpHTML}
     <div class="form-row">
       ${projBadge}
-      <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="今天做了什么..." style="font-weight:700" oninput="editState.title=this.value">
+      <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="editState.title=this.value">
     </div>
     ${varsHTML.length?`<div class="var-rows">${varsHTML}</div>`:''}
     <div class="extras-row">
-      <div class="extra-toggle${es.showNote?' on':''}" onclick="editState.showNote=!editState.showNote;renderAll()">📝 备注</div>
-      <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()">🔗 链接</div>
+      <div class="extra-toggle${es.showNote?' on':''}" onclick="editState.showNote=!editState.showNote;renderAll()">📝 ${t('form_note')}</div>
+      <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()">🔗 ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="补充说明...">${es.note}</textarea>`:''}
-      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.linkLabel=this.value"></div>`:''}
+      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="${t('form_note_ph')}">${es.note}</textarea>`:''}
+      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.linkLabel=this.value"></div>`:''}
     </div>
     <div class="form-btns">
-      <button class="f-cancel" onclick="cancelEdit()">取消</button>
-      <button class="f-save" onclick="saveEdit(${e.id},'${dk(selDate)}')">✓ 保存</button>
+      <button class="f-cancel" onclick="cancelEdit()">${t('form_cancel')}</button>
+      <button class="f-save" onclick="saveEdit(${e.id},'${dk(selDate)}')">✓ ${t('form_save')}</button>
     </div>`;
   return wrap;
 }
@@ -1807,20 +1984,19 @@ function buildNewForm(){
       const isSkip=skippedFields[f.id],curVal=window._fv&&window._fv[f.id]||'',isOpen=openDropId===('new-'+f.id);
       if(f.type==='number'){
         dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-          <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div style="display:flex;align-items:center;gap:5px"><input type="number" id="ff-${f.id}" placeholder="0" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
+          <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;align-items:center;gap:5px'><input type='number' id='ff-${f.id}' placeholder="0" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.25);border-radius:8px;padding:5px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none">${f.unit?`<span style="font-size:12px;color:var(--mid);font-weight:600">${f.unit}</span>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       } else {
         const selArr=(window._fv&&window._fv[f.id])||[];
-        const selDisplay=selArr.length?selArr.join(', '):'选择...';
+        const selDisplay=selArr.length?selArr.join(', '):t('form_select_ph');
         dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-          <div class="var-val">${isSkip?`<span class="skipped-label">已跳过</span>`:`<div class="sel-wrap">
-            <button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4">▾</span></button>
+          <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4">▾</span></button>
             ${isOpen?`<div class="sel-dropdown">
               ${f.options.map(o=>{const isSel=selArr.includes(o);return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickNewOpt('${f.id}','${o}')">
                 <span>${isSel?'✓ ':''} ${o}</span>
                 <span onclick="event.stopPropagation();deleteNewOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
               </div>`;}).join('')}
-              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="添加新选项..." onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">添加</button></div>
+              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">${t('form_save')}</button></div>
             </div>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
       }
@@ -1832,24 +2008,24 @@ function buildNewForm(){
   wrap.innerHTML=`${ppHTML}
     <div class="form-row">
       <button class="proj-sel-btn" onclick="toggleProjPicker()">
-        ${p?`<div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}`:'＋ 选择 project'}
+        ${p?`<div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}`:'＋ '+t('proj_sel_prompt')}
         <span style="opacity:.4;margin-left:2px">▾</span>
       </button>
-      <input type="text" id="f-title" placeholder="今天做了什么..." style="font-weight:700" oninput="formTitle=this.value" autocomplete="off">
+      <input type="text" id="f-title" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="formTitle=this.value" autocomplete="off">
     </div>
     ${dynHTML}
     <div class="extras-row">
-      <div class="extra-toggle${formExtras.note?' on':''}" onclick="toggleExtra('note')">📝 备注</div>
-      <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')">🔗 链接</div>
+      <div class="extra-toggle${formExtras.note?' on':''}" onclick="toggleExtra('note')">📝 ${t('form_note')}</div>
+      <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')">🔗 ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="补充说明、心得..." oninput="formNote=this.value"></textarea>`:''}
-      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="标签" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
+      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="${t('field_note_ph')}" oninput="formNote=this.value"></textarea>`:''}
+      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
     </div>
-    <div class="coin-preview">🐾 预计获得 <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?'<span style="color:var(--pink);font-size:10px;margin-left:6px">（过去日期 ×½）</span>':''}</div>
+    <div class="coin-preview">🐾 ${t('form_earn')} <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?`<span style="color:var(--pink);font-size:10px;margin-left:6px">(${t('form_past')} ×½)</span>`:''}</div>
     <div class="form-btns">
-      <button class="f-cancel" onclick="cancelForm()">取消</button>
-      <button class="f-save" onclick="saveEntry()">✓ 记录下来</button>
+      <button class="f-cancel" onclick="cancelForm()">${t('form_cancel')}</button>
+      <button class="f-save" onclick="saveEntry()">${'✓ '+t('field_record')}</button>
     </div>`;
   return wrap;
 }
@@ -1938,15 +2114,15 @@ function renderModal(){
   const m=modal;
   mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this){modal=null;renderModal()}">
   <div class="modal">
-    <div class="modal-title">${m.mode==='add'?'新建 项目/任务':'编辑 项目/任务'}</div>
-    <div class="modal-lbl">名称</div>
+    <div class="modal-title">${m.mode==='add'?t('modal_new')+' '+t('modal_task'):t('modal_edit')+' '+t('modal_task')}</div>
+    <div class="modal-lbl">${t('modal_name')}</div>
     <input type="text" id="m-name" value="${m.name}" placeholder="Project / Task name" autocomplete="off" oninput="modal.name=this.value;const b=document.getElementById('cp-badge-preview');if(b)b.textContent=this.value||'Project'">
-    <div class="modal-lbl">颜色</div>
+    <div class="modal-lbl">${t('modal_color')}</div>
     <div class="color-picker-wrap" id="cp-wrap-modal">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
           <div id="cp-presets" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"></div>
-          <button class="cp-palette-toggle" id="cp-palette-toggle" onclick="cpTogglePanel()" title="打开调色盘" style="display:flex;align-items:center;gap:5px;width:auto;border-radius:999px;padding:3px 10px 3px 4px;white-space:nowrap">
+          <button class="cp-palette-toggle" id="cp-palette-toggle" onclick="cpTogglePanel()" title="${t('cp_open')}" style="display:flex;align-items:center;gap:5px;width:auto;border-radius:999px;padding:3px 10px 3px 4px;white-space:nowrap">
             <img src="Pictures/cat_paws_colors.png" alt="🎨" onerror="this.style.display='none'" style="width:20px;height:20px;object-fit:contain;flex-shrink:0">
             <span style="font-size:11px;font-weight:600;color:var(--purple);font-family:'Nunito',sans-serif">More Colors</span>
           </button>
@@ -1959,7 +2135,7 @@ function renderModal(){
         <div class="cp-preview-row">
           <div class="cp-preview-swatch" id="cp-preview-swatch"></div>
           <input class="cp-hex-input" id="cp-hex-input" type="text" maxlength="7" placeholder="#000000" spellcheck="false">
-          <button class="cp-save-icon-btn" onclick="cpSaveColor()" title="保存到我的颜色" style="font-size:18px;font-weight:400;color:var(--purple);letter-spacing:0">＋</button>
+          <button class="cp-save-icon-btn" onclick="cpSaveColor()" title="${t('cp_save')}" style="font-size:18px;font-weight:400;color:var(--purple);letter-spacing:0">＋</button>
         </div>
         <div class="cp-color-name" id="cp-color-name"></div>
         <div class="cp-bottom-row">
@@ -1969,29 +2145,29 @@ function renderModal(){
             <div class="cp-rgb-box"><div class="cp-rgb-num" id="cp-b">0</div><div class="cp-rgb-lbl">B</div></div>
           </div>
           <div class="cp-bag-wrap">
-            <button class="cp-bag-btn" id="cp-bag-btn" onclick="cpTogglePalettePopup(event)" title="我的颜色">
+            <button class="cp-bag-btn" id="cp-bag-btn" onclick="cpTogglePalettePopup(event)" title="${t('cp_my')}">
               <img src="Pictures/cat_paw__color_bag.png" alt="🎒" onerror="this.style.display='none';this.parentNode.textContent='🎒'">
             </button>
             <div class="cp-palette-popup" id="cp-palette-popup">
               <div class="cp-palette-popup-header">
-                <span class="cp-palette-popup-title">我的颜色</span>
+                <span class="cp-palette-popup-title">${t('cp_my')}</span>
                 <button class="cp-palette-popup-close" onclick="cpClosePalettePopup()">✕</button>
               </div>
-              <div class="cp-palette-swatches" id="cp-my-swatches"><span class="cp-palette-empty">还没有保存颜色</span></div>
+              <div class="cp-palette-swatches" id="cp-my-swatches"><span class='cp-palette-empty'>${t('cp_none')}</span></div>
             </div>
           </div>
         </div>
         <div class="cp-closest-wrap">
-          <div class="cp-closest-title">近似颜色 — 点击选用</div>
+          <div class="cp-closest-title">${t('cp_nearest')} — ${t('cp_click')}</div>
           <div id="cp-closest-list"></div>
         </div>
       </div>
     </div>
-    <div class="modal-lbl">状态</div>
+    <div class="modal-lbl">${t('export_status')}</div>
     <div style="display:flex;gap:6px;margin-bottom:4px">
-      ${['active','done','archived'].map(s=>{const lbl=s==='active'?'进行中':s==='done'?'已完成':'已归档';return`<div onclick="modal.status='${s}';renderModal()" style="padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;border:0.5px solid ${(m.status||'active')===s?'var(--purple)':'rgba(123,104,238,0.2)'};background:${(m.status||'active')===s?'rgba(123,104,238,0.12)':'rgba(255,255,255,0.5)'};color:${(m.status||'active')===s?'var(--purple)':'var(--mid)'}">${lbl}</div>`;}).join('')}
+      ${['active','done','archived'].map(s=>{const lbl=s==='active'?t('status_active'):s==='done'?t('status_done'):t('status_archived');return`<div onclick="modal.status='${s}';renderModal()" style="padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;border:0.5px solid ${(m.status||'active')===s?'var(--purple)':'rgba(123,104,238,0.2)'};background:${(m.status||'active')===s?'rgba(123,104,238,0.12)':'rgba(255,255,255,0.5)'};color:${(m.status||'active')===s?'var(--purple)':'var(--mid)'}">${lbl}</div>`;}).join('')}
     </div>
-    <div class="modal-lbl">Variables（自定义栏位）</div>
+    <div class="modal-lbl">Variables (${t('field_custom')})</div>
     <div>${m.fields.map((f,i)=>{
       let optHtml='';
       if(f.type==='select'){
@@ -2001,47 +2177,47 @@ function renderModal(){
             <button style="background:none;border:none;color:var(--mid);cursor:pointer;font-size:13px;opacity:.5;padding:2px 4px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.5;this.style.color='var(--mid)'" onclick="removeOption(${i},${oi})">✕</button>
           </div>`).join('')}
           <div style="display:flex;gap:6px;margin-top:4px">
-            <input type="text" id="modal-new-opt-${i}" placeholder="添加新子选项..." style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
+            <input type="text" id="modal-new-opt-${i}" placeholder="${t('form_add_sub')}" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
             <button style="padding:3px 10px;border-radius:6px;border:0.5px solid rgba(123,104,238,0.25);background:rgba(123,104,238,0.08);color:var(--purple);font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif" onclick="addOptionInModal(${i})">＋</button>
           </div>
         </div>`;
       } else {
         optHtml=`<div style="margin:4px 0 4px 14px;display:flex;align-items:center;gap:6px">
-          <span style="font-size:10px;color:var(--mid);flex-shrink:0">单位</span>
+          <span style="font-size:10px;color:var(--mid);flex-shrink:0">${t('modal_unit')}</span>
           <input type="text" value="${f.unit||''}" placeholder="如 min、km、次..."
             style="width:100px;font-size:11px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none"
             oninput="if(modal&&modal.fields[${i}])modal.fields[${i}].unit=this.value.trim()"
             onfocus="this.style.borderColor='var(--purple)'"
             onblur="this.style.borderColor='rgba(123,104,238,0.2)'">
-          <span style="font-size:10px;color:var(--mid);font-style:italic">${f.unit?'显示为「数字 '+f.unit+'」':''}</span>
+          <span style="font-size:10px;color:var(--mid);font-style:italic">${f.unit?t('cp_display_as')+' '+f.unit+'"':''}</span>
         </div>`;
       }
       return`<div class="mfl-item" style="flex-direction:column;align-items:flex-start;gap:2px">
         <div style="display:flex;align-items:center;gap:6px;width:100%">
           <div style="width:6px;height:6px;border-radius:50%;background:${m.color};flex-shrink:0"></div>
-          <input type="text" value="${f.label}" placeholder="栏位名称"
+          <input type="text" value="${f.label}" placeholder="${t('modal_field_name')}"
             style="flex:1;font-size:12px;font-weight:600;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:6px;padding:3px 7px;background:rgba(255,255,255,0.8);color:var(--dark);outline:none;min-width:0"
             onchange="renameField(${i},this.value)"
             onfocus="this.style.borderColor='var(--purple)'"
             onblur="this.style.borderColor='rgba(123,104,238,0.2)'">
-          <span style="font-size:10px;color:var(--mid);flex-shrink:0">${f.type==='select'?'多选':'数字'}</span>
+          <span style="font-size:10px;color:var(--mid);flex-shrink:0">${f.type==='select'?t('modal_sel'):t('modal_num')}</span>
           <button class="mfl-del" onclick="removeField(${i})">✕</button>
         </div>
         ${optHtml}
       </div>`;
     }).join('')}</div>
     <div class="ftype-row">
-      <div class="ftype-btn${m.nft==='number'?' sel':''}" onclick="modal.nft='number';renderModal()">数字</div>
-      <div class="ftype-btn${m.nft==='select'?' sel':''}" onclick="modal.nft='select';renderModal()">选项</div>
+      <div class="ftype-btn${m.nft==='number'?' sel':''}" onclick="modal.nft='number';renderModal()">${t('modal_num')}</div>
+      <div class="ftype-btn${m.nft==='select'?' sel':''}" onclick="modal.nft='select';renderModal()">${t('modal_sel')}</div>
     </div>
     <div class="add-field-row">
-      <input type="text" id="m-field" placeholder="${m.nft==='number'?'如 Sessions、时长':'如 工具、阶段'}" autocomplete="off" oninput="modal.nf=this.value" value="${m.nf}">
-      <button class="add-field-btn" onclick="addField()">＋ 添加</button>
+      <input type="text" id="m-field" placeholder="${m.nft==='number'?t('field_like_num'):t('field_like_sel')}" autocomplete="off" oninput="modal.nf=this.value" value="${m.nf}">
+      <button class="add-field-btn" onclick="addField()">${t('add_field')}</button>
     </div>
     <div class="modal-btns">
-      ${m.mode==='edit'?`<button class="m-delete" onclick="deleteProject('${m.pid}')">删除</button>`:''}
-      <button class="m-cancel" onclick="modal=null;renderModal()">取消</button>
-      <button class="m-save" onclick="saveProject()">保存</button>
+      ${m.mode==='edit'?`<button class="m-delete" onclick="deleteProject('${m.pid}')">${t('modal_delete')}</button>`:''}
+      <button class="m-cancel" onclick="modal=null;renderModal()">${t('modal_cancel')}</button>
+      <button class="m-save" onclick="saveProject()">${t('modal_save')}</button>
     </div>
   </div></div>`;
   setTimeout(()=>cpInitPicker(modal?modal.color:'#7B68EE'),0);
@@ -2077,28 +2253,28 @@ function deleteProject(id){
   const mc=document.getElementById('modal-container');
   mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
   <div class="modal" style="max-width:320px">
-    <div class="modal-title" style="color:var(--pink)">删除「${p.name}」</div>
+    <div class="modal-title" style="color:var(--pink)">${t('del_title')}${p.name}」</div>
     <p style="font-size:13px;color:var(--mid);margin-bottom:16px;line-height:1.6">
-      ${entryCount?`此 project 有 <strong style="color:var(--dark)">${entryCount} 条</strong>记录，请选择处理方式：`:'请选择处理方式：'}
+      ${entryCount?`此 project 有 <strong style="color:var(--dark)">${entryCount} </strong>${t('records_suffix')}，${t('del_choose')}`:t('del_choose')}
     </p>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
       <button onclick="_doDeleteProject('${id}','archive')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(123,104,238,0.3);background:rgba(123,104,238,0.06);cursor:pointer;font-family:'Nunito',sans-serif;text-align:left;width:100%">
         <span style="font-size:18px;flex-shrink:0">📦</span>
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px">保留历史记录，先归档</div>
-          <div style="font-size:11px;color:var(--mid)">Project 和所有记录完整保留，可在「已归档」里复原</div>
+          <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:2px">${t('del_archive_btn')}</div>
+          <div style="font-size:11px;color:var(--mid)">${t('del_archive_desc')}</div>
         </div>
       </button>
       <button onclick="_doDeleteProject('${id}','delete')" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:0.5px solid rgba(255,63,108,0.3);background:rgba(255,63,108,0.05);cursor:pointer;font-family:'Nunito',sans-serif;text-align:left;width:100%">
         <span style="font-size:18px;flex-shrink:0">🗑</span>
         <div>
-          <div style="font-size:13px;font-weight:700;color:var(--pink);margin-bottom:2px">一并删除所有记录</div>
-          <div style="font-size:11px;color:var(--mid)">${entryCount?`Project 和 ${entryCount} 条记录将永久移除`:'Project 将永久移除'}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--pink);margin-bottom:2px">${t('del_perm_btn')}</div>
+          <div style="font-size:11px;color:var(--mid)">${entryCount?t('del_perm_btn'):t('del_perm_btn')}</div>
         </div>
       </button>
     </div>
     <div class="modal-btns" style="border-top:0.5px solid rgba(123,104,238,0.15);padding-top:12px;margin-top:0">
-      <button class="m-cancel" onclick="_closeDelConfirm()">取消</button>
+      <button class="m-cancel" onclick="_closeDelConfirm()">${t('modal_cancel')}</button>
     </div>
   </div></div>`;
 }
@@ -2116,7 +2292,7 @@ function _doDeleteProject(id,action){
     _deletedProj={p,idx,action};
     _closeDelConfirm();
     saveData();renderAll();
-    showUndoToast('已归档「'+p.name+'」');
+    showUndoToast(t('archived_toast')+'"'+p.name+'」');
   } else {
     const affectedEntries={};
     Object.entries(entries).forEach(([dk2,arr])=>{
@@ -2131,7 +2307,7 @@ function _doDeleteProject(id,action){
     _closeDelConfirm();
     saveData();renderAll();
     const total=Object.values(affectedEntries).flat().length;
-    showUndoToast('已删除「'+p.name+'」'+(total?' 及 '+total+' 条记录':''));
+    showUndoToast(t('deleted')+'"'+p.name+'」'+(total?' '+t('records_suffix')+' '+total+' '+t('records_suffix'):''));
   }
 }
 
@@ -2145,16 +2321,16 @@ function confirmPermDelete(id,name){
   const mc=document.getElementById('modal-container');
   mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
   <div class="modal" style="max-width:300px">
-    <div class="modal-title" style="color:var(--pink)">永久删除</div>
+    <div class="modal-title" style="color:var(--pink)">${t('del_perm_title')}</div>
     <p style="font-size:13px;color:var(--mid);margin-bottom:6px;line-height:1.6">
-      确定要永久删除「<strong style="color:var(--dark)">${name}</strong>」吗？
+      ${t('del_confirm_q')}<strong style="color:var(--dark)">${name}</strong>${t('del_confirm_q2')}
     </p>
     <p style="font-size:12px;color:var(--pink);margin-bottom:16px;line-height:1.5">
-      ⚠️ 此操作无法撤销，project 和所有记录将被彻底移除。
+      ${t('del_perm_warn')}project ${t('del_perm_warn2')}
     </p>
     <div class="modal-btns" style="border-top:0.5px solid rgba(123,104,238,0.15);padding-top:12px;margin-top:0">
-      <button class="m-cancel" onclick="_closeDelConfirm()">取消</button>
-      <button class="m-save" style="background:var(--pink)" onclick="_permDeleteProject('${id}')">确认永久删除</button>
+      <button class="m-cancel" onclick="_closeDelConfirm()">${t('modal_cancel')}</button>
+      <button class="m-save" style="background:var(--pink)" onclick="_permDeleteProject('${id}')">${t('del_perm_confirm')}</button>
     </div>
   </div></div>`;
 }
@@ -2166,14 +2342,14 @@ function _permDeleteProject(id){
   projects=projects.filter(x=>x.id!==id);
   _closeDelConfirm();
   saveData();renderAll();
-  showUndoToast('已永久删除「'+p.name+'」'+(entryCount?' 及 '+entryCount+' 条记录':''));
+  showUndoToast(t('perm_deleted')+'"'+p.name+'」'+(entryCount?' '+t('records_suffix')+' '+entryCount+' '+t('records_suffix'):''));
 }
 
 function showUndoToast(msg){
   clearTimeout(_delTimer);
   let t=document.getElementById('undo-toast');
   if(!t){t=document.createElement('div');t.id='undo-toast';t.className='undo-toast';document.body.appendChild(t);}
-  t.innerHTML=msg+' <button class="undo-btn" onclick="undoDelete()">撤销 (Ctrl+Z)</button>';
+  t.innerHTML=msg+' <button class="undo-btn" onclick="undoDelete()">'+t('undo')+'</button>';
   t.style.display='flex';
   _delTimer=setTimeout(()=>{t.style.display='none';_deletedProj=null;},5000);
 }
@@ -2199,7 +2375,7 @@ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'&&
 
 // STATS
 function renderStats(){
-  const _pd=document.getElementById('page-date');if(_pd)_pd.textContent='周报告';
+  const _pd=document.getElementById('page-date');if(_pd)_pd.textContent=t('btn_weekly');
   const area=document.getElementById('main-area');area.innerHTML='';
   const ws=getWeekStart();
   const perDay=[];let totalE=0,totalC=0;const projStats={};
@@ -2223,7 +2399,7 @@ function renderStats(){
   const maxC=Math.max(...perDay.map(x=>x.cnt),1);
   const todayI=perDay.findIndex(x=>dk(x.d)===todayKey);
   const cat=document.createElement('div');cat.className='cat66-bar';
-  cat.innerHTML=`<span style="font-size:24px">${totalE>=10?'(=^▽^=)':totalE>=5?'ᓚᘏᗢ':'=^.^='}</span><div>这周完成了 <strong>${totalE}</strong> 条记录，共赚了 <strong>${totalC}</strong> Cat Token<br><span style="font-size:11px">66 为你骄傲！</span></div>`;
+  cat.innerHTML=`<span style="font-size:24px">${totalE>=10?'(=^▽^=)':totalE>=5?'ᓚᘏᗢ':'=^.^='}</span><div>${t('weekly_done')} <strong>${totalE}</strong> ${t('weekly_suffix')} <strong>${totalC}</strong> Cat Token<br><span style='font-size:11px'>66 ${t('weekly_proud')}</span></div>`;
   area.appendChild(cat);
   const wb=document.createElement('div');wb.className='stats-bars';
   perDay.forEach((x,i)=>{
@@ -2233,7 +2409,7 @@ function renderStats(){
     wb.appendChild(col);
   });
   area.appendChild(wb);
-  const sl=document.createElement('div');sl.className='sec-label';sl.textContent='Projects 统计';area.appendChild(sl);
+  const sl=document.createElement('div');sl.className='sec-label';sl.textContent='Projects '+t('cb_stats');area.appendChild(sl);
   const maxP=Math.max(...Object.values(projStats).map(x=>x.count),1);
   Object.keys(projStats).forEach(pid=>{
     const p=proj(pid),ps=projStats[pid];
@@ -2486,7 +2662,7 @@ function cpRemoveColor(hex){cpMyPalette=cpMyPalette.filter(c=>c!==hex);localStor
 function cpRenderMyPalette(){
   const el=document.getElementById('cp-my-swatches');if(!el)return;
   const curHex=(modal&&modal.color?modal.color:'').toUpperCase();
-  if(!cpMyPalette.length){el.innerHTML='<span class="cp-palette-empty">还没有保存颜色</span>';return;}
+  if(!cpMyPalette.length){el.innerHTML='<span class="cp-palette-empty">'+t('cp_none')+'</span>';return;}
   el.innerHTML=cpMyPalette.map(c=>`<div class="cp-my-swatch${curHex===c?' active':''}" style="background:${c}" onclick="cpSetFromHex('${c}')" title="${c}"><div class="cp-my-del" onclick="event.stopPropagation();cpRemoveColor('${c}')">✕</div></div>`).join('');
 }
 function cpSaveColor(){
@@ -2576,6 +2752,9 @@ document.addEventListener('mouseup',()=>{cpDraggingSat=false;cpDraggingHue=false
 document.addEventListener('touchend',()=>{cpDraggingSat=false;cpDraggingHue=false;});
 
 // INIT
+const _savedLang=localStorage.getItem('cj_lang');
+if(_savedLang&&I18N[_savedLang])lang=_savedLang;
+
 document.getElementById('new-entry-btn').onclick=openForm;
 document.getElementById('stats-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
 document.getElementById('stats-nav-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
@@ -2586,7 +2765,11 @@ document.getElementById('next-week').onclick=()=>{if(weekOffset<0){weekOffset++;
 document.getElementById('cal-icon-btn').onclick=(e)=>{e.stopPropagation();openCalPicker()};
 
 const d=new Date();
-document.getElementById('page-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+WD[d.getDay()]+' · 今天';
+const _wd=t('weekdays')[d.getDay()];
+const _dateStr=lang==='zh'
+  ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+_wd+' · '+t('today')
+  :_wd+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' · '+t('today');
+document.getElementById('page-date').textContent=_dateStr;
 
 renderAll();
 </script>
