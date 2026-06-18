@@ -231,3 +231,61 @@ i18n_end = content.find('\nlet lang=', i18n_start)
 - `border-radius:999px` 保留例外：`.coin-pill` / `.proj-badge` / color 色点 / `#lang-zh` `#lang-en`
 - 改颜色先改 `--purple` 等变量的值，不删变量名，全部验证后再清理
 - 每次大改后用 Node `--check` 验证 script 块语法无误再输出
+
+---
+
+## 十五、新拟态（Neumorphism）开发规则
+
+⚠️ 凹陷容器内子元素 box-shadow 失效是高频踩坑，务必遵守：
+
+**凹陷容器内的 box-shadow 规则**
+父容器为 `inset` 阴影时，子元素的凸起 `box-shadow` 视觉上会被抵消。
+正确做法：子元素阴影参数缩小（3px 而非 6px），背景色保持 `var(--lavender)` 不变：
+```css
+/* 凹陷容器内子元素 — 轻凸起 */
+box-shadow: 3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF;
+/* 凹陷容器内子元素 — hover 加强 */
+box-shadow: 4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF;
+/* 凹陷容器内子元素 — active / selected 凹陷 */
+box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF;
+```
+
+**蓝底按钮 active 不用白色高光**
+蓝底（`var(--purple)`）按钮的 active 状态禁止使用双向 inset（会出现白色穿帮反光）。
+正确做法：只用单向深蓝 inset，不加白色那层：
+```css
+/* ✅ 正确 */
+box-shadow: inset 4px 4px 9px #2a4f6e;
+/* ❌ 错误 — 白色高光在蓝底上穿帮 */
+box-shadow: inset 4px 4px 9px #2a4f6e, inset -4px -4px 9px #FFFFFF;
+```
+
+**阴影数值唯一来源**
+全站阴影数值以 `catvweb-design-system.md` 第二节为准，不得凭记忆自行填写。
+
+---
+
+## 十六、SVG 图标规则
+
+涉及箭头或日历图标修改时，必须先读取 `catvweb-design-system.md` 第三节「SVG 图标系统」确认定案数据，不得凭训练数据自行生成 SVG。
+
+**定案图标速查：**
+
+| 图标 | 尺寸 | 关键数据 |
+|---|---|---|
+| 左箭头 | `14×12` | path: `M8 1L2 6L8 11M2 6H13`，stroke `#266ea7`，width 2 |
+| 右箭头 | `14×12` | path: `M6 1L12 6L6 11M12 6H1`，stroke `#266ea7`，width 2 |
+| 日历 | `26×26` | 顶栏 h=5，横线 y=9，数字 x=13 y=17，`dominant-baseline="central"` |
+
+**图标阴影（统一）：**
+```css
+/* 默认 */
+filter: drop-shadow(2.5px 2.5px 3px rgba(38,110,167,.6)) drop-shadow(-1.5px -1.5px 2px #fff);
+/* hover */
+filter: drop-shadow(3.5px 3.5px 5px rgba(38,110,167,.8)) drop-shadow(-2px -2px 3px #fff);
+/* active */
+filter: drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .5px rgba(255,255,255,.7));
+```
+
+**日历日期动态注入：**
+`id="cal-icon-day"` 在 `renderAll()` 内写入 `today.getDate()`，不得硬编码数字。
