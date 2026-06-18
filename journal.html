@@ -19,8 +19,15 @@ window.addEventListener('load', function(){
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --lavender:#eae8f5; --dark:#2d2b3d; --mid:#5a5870;
-  --pink:#FF3F6C; --purple:#7B68EE; --cyan:#42C6FF;
+  --lavender:#E8EBF1;
+  --dark:#2d2b3d; --mid:#888888;
+  --pink:#E53935; --purple:#266ea7; --cyan:#42C6FF;
+  /* ── Neumorphism shadows (唯一来源，全站统一) ── */
+  --neu-raised: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF;
+  --neu-inset:  6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF;
+  --neu-inset-val: inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF;
+  /* 删除按钮红 */
+  --danger:#E53935;
 }
 body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-serif; color:var(--dark); }
 
@@ -28,15 +35,15 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 #site-nav {
   position:fixed; top:0; left:0; right:0; height:52px;
   display:flex; align-items:center; justify-content:space-between; padding:0 28px;
-  background:rgba(234,232,245,0.88); backdrop-filter:blur(14px);
-  border-bottom:0.5px solid rgba(123,104,238,0.2); z-index:200;
+  background:var(--lavender); box-shadow:0 4px 10px #C8C8D8, 0 -2px 6px #FFFFFF;
+  z-index:200;
 }
 .nav-logo { font-weight:800; font-size:15px; color:var(--dark); display:flex; align-items:center; gap:7px; text-decoration:none; }
 .nav-pip { width:7px; height:7px; border-radius:50%; background:var(--purple); }
 .nav-right { display:flex; align-items:center; gap:10px; }
-.nav-back { font-size:13px; font-weight:600; color:var(--mid); text-decoration:none; background:rgba(123,104,238,0.09); border:0.5px solid rgba(123,104,238,0.3); border-radius:999px; padding:6px 14px; transition:background .2s; }
-.nav-back:hover { background:rgba(123,104,238,0.18); }
-.coin-pill { display:flex; align-items:center; gap:5px; background:#FAEEDA; border:0.5px solid #FAC775; border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; color:#633806; }
+.nav-back { font-size:13px; font-weight:600; color:var(--mid); text-decoration:none; background:var(--lavender); border:none; border-radius:999px; padding:6px 14px; box-shadow:var(--neu-raised); transition:box-shadow .15s; }
+.nav-back:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
+.coin-pill { display:flex; align-items:center; gap:5px; background:#FAEEDA; border:none; border-radius:999px; padding:5px 12px; font-size:12px; font-weight:700; color:#633806; box-shadow:var(--neu-raised); }
 
 /* LAYOUT */
 .page { padding:72px 0 60px; max-width:860px; margin:0 auto; padding-left:20px; padding-right:20px; }
@@ -45,52 +52,68 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
 .page-title { font-family:'ZCOOL XiaoWei',sans-serif; font-size:28px; color:var(--dark); }
 .page-date { font-size:12px; color:var(--mid); margin-top:4px; }
-.new-btn { display:flex; align-items:center; gap:6px; background:var(--purple); color:#fff; border:none; border-radius:999px; padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; transition:opacity .2s; }
-.new-btn:hover { opacity:.85; }
+.new-btn { display:flex; align-items:center; gap:6px; background:var(--purple); color:#fff; border:none; border-radius:999px; padding:10px 22px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:6px 6px 14px #43688e, -6px -6px 14px #FFFFFF; transition:box-shadow .15s, transform .15s; }
+.new-btn:hover { box-shadow:8px 8px 18px #43688e, -8px -8px 18px #FFFFFF; transform:translateY(-1px); }
+.new-btn:active { box-shadow:inset 4px 4px 9px #2a4f6e; transform:translateY(0); }
 
 /* STATS */
-.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
-.stat-card { background:rgba(255,255,255,0.6); border:0.5px solid rgba(123,104,238,0.2); border-radius:12px; padding:12px 14px; text-align:center; }
-.stat-n { font-family:'Lilita One',cursive; font-size:24px; color:var(--purple); }
-.stat-l { font-size:11px; color:var(--mid); margin-top:2px; }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
+.stat-card { background:var(--lavender); border:none; border-radius:20px; padding:16px 14px; text-align:center; box-shadow:var(--neu-raised); }
+.stat-n { font-family:'Lilita One',cursive; font-size:28px; color:var(--purple); }
+.stat-l { font-size:11px; color:var(--mid); margin-top:4px; }
 
 /* TWO-COL LAYOUT */
 .main-layout { display:grid; grid-template-columns:200px 1fr; gap:16px; }
 @media(max-width:600px){ .main-layout { grid-template-columns:1fr; } }
 
 /* SIDEBAR */
-.sidebar { background:rgba(255,255,255,0.55); border:0.5px solid rgba(123,104,238,0.15); border-radius:14px; padding:14px; height:fit-content; }
-.sb-label { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin-bottom:8px; }
-.week-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.sidebar { background:var(--lavender); border:none; border-radius:20px; padding:16px; height:fit-content; box-shadow:var(--neu-inset-val); }
+.sb-label { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin-bottom:0; }
+.week-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .week-range { font-size:11px; font-weight:600; color:var(--dark); }
-.wnav-btn { background:none; border:none; color:var(--mid); cursor:pointer; font-size:14px; padding:2px 5px; border-radius:4px; }
-.wnav-btn:hover { background:rgba(123,104,238,0.12); }
-.day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; }
-.day-item:hover { background:rgba(123,104,238,0.08); }
-.day-item.active { background:#FAEEDA; }
-.day-dot { width:5px; height:5px; border-radius:50%; background:rgba(123,104,238,0.2); flex-shrink:0; }
+/* 左右箭头 — 实心填充箭头，蓝色，drop-shadow 贴合 */
+.wnav-btn { background:none; border:none; cursor:pointer; padding:3px 4px; display:flex; align-items:center; justify-content:center; filter:drop-shadow(2.5px 2.5px 3px rgba(38,110,167,0.6)) drop-shadow(-1.5px -1.5px 2px rgba(255,255,255,1)); transition:filter .15s; }
+.wnav-btn:hover { filter:drop-shadow(3.5px 3.5px 5px rgba(38,110,167,0.8)) drop-shadow(-2px -2px 3px rgba(255,255,255,1)); }
+.wnav-btn:active { filter:drop-shadow(0.5px 0.5px 1px rgba(38,110,167,0.3)) drop-shadow(-0.5px -0.5px 0.5px rgba(255,255,255,0.7)); }
+/* 日历图标 — 无方框，SVG线条，蓝色 drop-shadow */
+.cal-icon-btn { background:none; border:none; cursor:pointer; padding:3px 4px; display:flex; align-items:center; justify-content:center; filter:drop-shadow(2.5px 2.5px 3px rgba(38,110,167,0.6)) drop-shadow(-1.5px -1.5px 2px rgba(255,255,255,1)); transition:filter .15s; }
+.cal-icon-btn:hover { filter:drop-shadow(3.5px 3.5px 5px rgba(38,110,167,0.8)) drop-shadow(-2px -2px 3px rgba(255,255,255,1)); }
+.cal-icon-btn:active { filter:drop-shadow(0.5px 0.5px 1px rgba(38,110,167,0.3)) drop-shadow(-0.5px -0.5px 0.5px rgba(255,255,255,0.7)); }
+/* 本周标题行：文字和日期同一行 */
+.week-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.week-header-row .sb-label { margin-bottom:0; }
+.week-header-row .week-range { font-size:11px; font-weight:600; color:var(--mid); }
+/* day-item — 凹陷容器内，hover 轻凸起，active 凹陷，selected 凹陷 */
+.day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:10px; cursor:pointer; margin-bottom:2px; transition:box-shadow .15s; }
+.day-item:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
+.day-item.active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.day-item:not(.active):active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.day-dot { width:5px; height:5px; border-radius:50%; background:rgba(38,110,167,0.2); flex-shrink:0; }
 .day-dot.has { background:var(--purple); }
 .day-name { font-size:12px; color:var(--mid); flex:1; }
-.day-item.active .day-name { color:#633806; font-weight:700; }
+.day-item.active .day-name { color:var(--purple); font-weight:700; }
 .day-cnt { font-size:10px; color:var(--mid); }
-.sb-divider { border:none; border-top:0.5px solid rgba(123,104,238,0.15); margin:12px 0; }
-.proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:2px; transition:background .1s; user-select:none; }
-.proj-item:hover { background:rgba(123,104,238,0.08); }
+/* 雕刻分隔线 */
+.sb-divider { border:none; margin:10px 0; height:2px; background:transparent; box-shadow:0 1px 0 #FFFFFF, 0 -1px 0 #C8C8D8; }
+.proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:10px; cursor:pointer; margin-bottom:2px; transition:box-shadow .15s; user-select:none; position:relative; }
+.proj-item:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
+.proj-item:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .proj-item.dragging { opacity:.35; }
-.proj-item.drag-over { background:rgba(123,104,238,0.15); box-shadow:0 -2px 0 var(--purple); }
+.proj-item.drag-over { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .proj-drag-handle { font-size:13px; color:var(--mid); opacity:.3; cursor:grab; flex-shrink:0; padding:0 1px; line-height:1; }
 .proj-drag-handle:hover { opacity:.7; }
 .proj-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .proj-name { font-size:12px; color:var(--mid); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.proj-item { position:relative; }
 .proj-item:hover .proj-tooltip { display:block; }
 .proj-tooltip { display:none; position:absolute; left:calc(100% + 6px); top:50%; transform:translateY(-50%); background:var(--dark); color:#fff; font-size:11px; font-weight:500; padding:4px 10px; border-radius:7px; white-space:nowrap; z-index:50; pointer-events:none; font-family:'Nunito',sans-serif; }
 .proj-tooltip::before { content:''; position:absolute; right:100%; top:50%; transform:translateY(-50%); border:5px solid transparent; border-right-color:var(--dark); }
 .proj-cnt { font-size:10px; color:var(--mid); }
-.add-proj-btn { display:flex; align-items:center; gap:5px; width:100%; padding:6px 7px; border-radius:8px; border:0.5px dashed rgba(123,104,238,0.35); background:none; color:var(--mid); font-size:12px; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:4px; }
-.add-proj-btn:hover { background:rgba(123,104,238,0.08); color:var(--dark); }
-.sb-nav-btn { display:flex; align-items:center; gap:6px; width:100%; padding:7px; border-radius:8px; border:none; background:none; color:var(--mid); font-size:12px; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:2px; }
-.sb-nav-btn:hover { background:rgba(123,104,238,0.08); color:var(--dark); }
+.add-proj-btn { display:flex; align-items:center; gap:5px; width:100%; padding:6px 7px; border-radius:10px; border:none; background:var(--lavender); color:var(--purple); font-size:12px; font-weight:700; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:6px; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s; }
+.add-proj-btn:hover { box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; }
+.add-proj-btn:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.sb-nav-btn { display:flex; align-items:center; gap:6px; width:100%; padding:7px 9px; border-radius:10px; border:none; background:var(--lavender); color:var(--mid); font-size:12px; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:4px; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s; }
+.sb-nav-btn:hover { box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; color:var(--dark); }
+.sb-nav-btn:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 
 /* MAIN AREA */
 .main-area { min-height:400px; }
@@ -308,9 +331,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 
 /* Calendar picker */
 .cal-picker-wrap { position:relative; display:inline-block; }
-.cal-icon-btn { background:none; border:none; cursor:pointer; font-size:14px; padding:2px 5px; border-radius:4px; color:var(--mid); opacity:.7; }
-.cal-icon-btn:hover { opacity:1; background:rgba(123,104,238,0.1); }
-.cal-popup { position:absolute; top:28px; left:50%; transform:translateX(-50%); background:rgba(234,232,245,0.98); border:0.5px solid rgba(123,104,238,0.3); border-radius:14px; padding:14px; z-index:300; width:240px; box-shadow:0 8px 32px rgba(45,43,61,0.18); }
+.cal-popup { position:absolute; top:32px; right:0; background:var(--lavender); border:none; border-radius:14px; padding:14px; z-index:300; width:240px; box-shadow:var(--neu-raised); }
 .cal-popup-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .cal-popup-title { font-size:13px; font-weight:700; color:var(--dark); }
 .cal-nav { background:none; border:none; cursor:pointer; font-size:15px; color:var(--mid); padding:2px 6px; border-radius:4px; }
@@ -414,10 +435,10 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <div style="display:flex;background:rgba(123,104,238,0.1);border-radius:999px;padding:2px;gap:2px" id="lang-toggle">
-        <button onclick="setLang('zh')" id="lang-zh" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--purple);color:#fff;transition:all .15s">中</button>
-        <button onclick="setLang('en')" id="lang-en" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:transparent;color:var(--purple);transition:all .15s">EN</button>
+        <button onclick="setLang('zh')" id="lang-zh" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:var(--purple);transition:box-shadow .15s">中</button>
+        <button onclick="setLang('en')" id="lang-en" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:var(--mid);transition:box-shadow .15s">EN</button>
       </div>
-      <button class="new-btn" id="stats-btn" style="background:rgba(123,104,238,0.15);color:var(--purple);font-size:12px;padding:8px 14px">📊 <span id="weekly-btn-label">周报告</span></button>
+      <button class="new-btn" id="stats-btn" style="background:var(--lavender);color:var(--dark);font-size:12px;padding:8px 14px;box-shadow:4px 4px 9px #c8cedb,-4px -4px 9px #FFFFFF">📊 <span id="weekly-btn-label">周报告</span></button>
       <button class="new-btn" id="new-entry-btn">✦ <span id="new-btn-label">新记录</span></button>
     </div>
   </div>
@@ -430,14 +451,33 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 
   <div class="main-layout">
     <div class="sidebar">
-      <div class="sb-label" id="sb-this-week">本周</div>
-      <div class="week-nav">
+      <div class="week-header-row">
+        <span class="sb-label" id="sb-this-week">本周</span>
         <span class="week-range" id="week-range"></span>
-        <div style="display:flex;gap:2px;align-items:center">
-          <button class="wnav-btn" id="prev-week">‹</button>
-          <button class="wnav-btn" id="next-week">›</button>
+      </div>
+      <div class="week-nav">
+        <div style="display:flex;gap:4px;align-items:center;margin-left:auto">
+          <button class="wnav-btn" id="prev-week" title="上一周">
+            <svg width="14" height="12" viewBox="0 0 14 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 1L2 6L8 11M2 6H13" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="wnav-btn" id="next-week" title="下一周">
+            <svg width="14" height="12" viewBox="0 0 14 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 1L12 6L6 11M12 6H1" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <div class="cal-picker-wrap">
-            <button class="cal-icon-btn" id="cal-icon-btn" title="选择日期">📅</button>
+            <button class="cal-icon-btn" id="cal-icon-btn" title="选择日期">
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="22" height="20" rx="3" stroke="#266ea7" stroke-width="1.8"/>
+                <rect x="2" y="4" width="22" height="5" rx="2" fill="#266ea7"/>
+                <line x1="2" y1="9" x2="24" y2="9" stroke="#266ea7" stroke-width="1.8"/>
+                <line x1="8" y1="2" x2="8" y2="6" stroke="#266ea7" stroke-width="2" stroke-linecap="round"/>
+                <line x1="18" y1="2" x2="18" y2="6" stroke="#266ea7" stroke-width="2" stroke-linecap="round"/>
+                <text id="cal-icon-day" x="13" y="17" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="800" fill="#266ea7" font-family="Nunito,sans-serif"></text>
+              </svg>
+            </button>
             <div class="cal-popup" id="cal-popup" style="display:none"></div>
           </div>
         </div>
@@ -1726,10 +1766,10 @@ function updateStaticI18N(){
   const zh=document.getElementById('lang-zh');
   const en=document.getElementById('lang-en');
   if(zh&&en){
-    zh.style.background=lang==='zh'?'var(--purple)':'transparent';
-    zh.style.color=lang==='zh'?'#fff':'var(--purple)';
-    en.style.background=lang==='en'?'var(--purple)':'transparent';
-    en.style.color=lang==='en'?'#fff':'var(--purple)';
+    zh.style.boxShadow=lang==='zh'?'inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF':'3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF';
+    zh.style.color=lang==='zh'?'var(--purple)':'var(--mid)';
+    en.style.boxShadow=lang==='en'?'inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF':'3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF';
+    en.style.color=lang==='en'?'var(--purple)':'var(--mid)';
   }
 }
 
@@ -1749,6 +1789,8 @@ function renderAll(){
   if(elLink&&formLink)elLink.value=formLink;
   const elLabel=document.getElementById('f-linklabel');
   if(elLabel&&formLinkLabel)elLabel.value=formLinkLabel;
+  const cd=document.getElementById('cal-icon-day');
+  if(cd)cd.textContent=today.getDate();
 }
 
 function renderDayStats(){
@@ -1761,7 +1803,9 @@ function renderDayStats(){
 
 function renderSidebar(){
   const ws=getWeekStart(),we=new Date(ws);we.setDate(we.getDate()+6);
-  document.getElementById('week-range').textContent=(ws.getMonth()+1)+'月'+ws.getDate()+'–'+(we.getMonth()+1)+'月'+we.getDate();
+  document.getElementById('week-range').textContent=lang==='zh'
+    ?(ws.getMonth()+1)+'月'+ws.getDate()+'–'+(we.getMonth()+1)+'月'+we.getDate()
+    :(ws.getMonth()+1)+'/'+ws.getDate()+'–'+(we.getMonth()+1)+'/'+we.getDate();
   const dl=document.getElementById('day-list');dl.innerHTML='';
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(d.getDate()+i);
