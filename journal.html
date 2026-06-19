@@ -564,7 +564,7 @@ const I18N={
     cb_export_warn:'已选择「加入图表」但尚未选择任何图表变量，请取消图表选项或先选择变量',
     cb_export_docx:'⬇ 导出 DOCX',cb_export_pdf:'🖨 打印/PDF',
     cb_added:'已选中',cb_add:'加入导出',
-    cb_total:'合计：',cb_detail:'详细记录',cb_chart_title:'统计图表',
+    cb_total:'合计：',cb_detail:'详细记录',cb_chart_title:'统计图表',cb_times:'次',cb_unit_suffix:'次',
     cp_open:'打开调色盘',cp_my:'我的颜色',cp_none:'还没有保存颜色',
     cp_save:'保存到我的颜色',cp_nearest:'近似颜色',cp_drag:'拖动排序',cp_click:'点击选用',
     cp_display_as:'显示为「数字',
@@ -632,11 +632,11 @@ const I18N={
     cb_inner:'Inner',cb_outer:'Outer',cb_data_stats:'Data Stats',cb_chart_img:'Project Chart',
     cb_no_fields:'No custom fields for this project',cb_no_chart:'No chart selected',
     cb_export_label:'Export:',cb_export_text:'Text Records',
-    cb_export_chart:'+ Add Chart',cb_export_chart_on:'Chart Added',
+    cb_export_chart:'Add Chart',cb_export_chart_on:'Chart Added',
     cb_export_warn:'Chart export selected but no variables chosen. Please deselect or choose variables first.',
     cb_export_docx:'Export DOCX',cb_export_pdf:'Print/PDF',
     cb_added:'Added',cb_add:'+ Add to Export',
-    cb_total:'Total: ',cb_detail:'Detailed Records',cb_chart_title:'Statistics Chart',
+    cb_total:'Total: ',cb_detail:'Detailed Records',cb_chart_title:'Statistics Chart',cb_times:'times',
     cp_open:'Open Color Picker',cp_my:'My Colors',cp_none:'No saved colors yet',
     cp_save:'Save Color',cp_nearest:'Similar color',cp_drag:'Drag to reorder',cp_click:'Click to use',
     cp_display_as:'Shown as number',
@@ -987,7 +987,8 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         const r=(arc.outerRadius+arc.innerRadius)/2;
         ctx.save();ctx.font='500 10px sans-serif';
         ctx.fillStyle='rgba(255,255,255,.65)';ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(v+'\u6b21('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
+        const cntLabel=lang==='en'?('x'+v):(v+t('cb_unit_suffix'));
+        ctx.fillText(cntLabel+'('+pct+'%)',cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);ctx.restore();
       } else {
         if(span<0.12)return;
         const name=dsLabels[i]||'';
@@ -995,7 +996,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
         const outerR=arc.outerRadius;
         const initMaxW=maxBoxW(angle,outerR,28);
         const nameLines=wrapText(name,initMaxW);
-        const pctLine=v+'\u6b21 ('+pct+'%)';
+        const pctLine=(lang==='en'?('x'+v):(v+t('cb_unit_suffix')))+' ('+pct+'%)';
         const allLines=[...nameLines,pctLine];
         const boxW=Math.max(...allLines.map(l=>measureW(l)))+10;
         const boxH=allLines.length*LINE_H+4;
@@ -1060,7 +1061,7 @@ const CB_DonutPlugin={id:'cbDonutPlugin',afterDatasetsDraw(ch){
   allItems.forEach(it=>{
     const mxW=maxBoxW(it.angle,it.outerR,it.ext);
     const nameLines=wrapText(it.name,mxW);
-    const pctLine=it.v+'\u6b21 ('+it.pct+'%)';
+    const pctLine=(lang==='en'?('x'+it.v):(it.v+t('cb_unit_suffix')))+' ('+it.pct+'%)';
     it.allLines=[...nameLines,pctLine];
     it.boxW=Math.max(...it.allLines.map(l=>measureW(l)))+10;
     it.boxH=it.allLines.length*LINE_H+4;
@@ -1162,7 +1163,13 @@ function initChartBuilder(pid,p,pe){
   const s=getCBState(pid);
   // Only show actual project fields (no _date, no _title in selector)
   const vars=[];
-  (p.fields||[]).forEach(f=>vars.push({key:f.id,label:f.label,field:f}));
+  (p.fields||[]).forEach(f=>{
+    if(f.type==='number'&&f.units&&f.units.length>1){
+      f.units.forEach(u=>vars.push({key:f.id+'::'+u,label:f.label+' ('+u+')',field:f,unit:u}));
+    } else {
+      vars.push({key:f.id,label:f.label,field:f});
+    }
+  });
   s._vars=vars;s._pe=pe;s._p=p;
   // X axis = sorted dates
   s._dates=[...new Set(pe.map(e=>e.dateKey))].sort();
@@ -1177,7 +1184,7 @@ function initChartBuilder(pid,p,pe){
   vars.forEach(v=>{
     const f=v.field;
     if(f&&f.type==='number'){
-      // number: sum per date
+      // number: sum per date. If v.unit is set, only sum that unit's values (split mode).
       const perDate={};
       s._dates.forEach(dk=>{
         const dayEntries=(entries[dk]||[]).filter(e=>e.projId===p.id);
@@ -1185,11 +1192,19 @@ function initChartBuilder(pid,p,pe){
         dayEntries.forEach(e=>{
           if(e.skipped&&e.skipped[f.id])return;
           const val=e.fields&&e.fields[f.id];
-          if(val!==undefined&&val!=='')total+=parseFloat(val)||0;
+          if(val===undefined||val==='')return;
+          if(Array.isArray(val)){
+            val.forEach(o=>{
+              if(v.unit&&o.unit!==v.unit)return;
+              const n=parseFloat(o.val);if(!isNaN(n))total+=n;
+            });
+          } else if(!v.unit){
+            total+=parseFloat(val)||0;
+          }
         });
         perDate[dk]=total;
       });
-      s._varData[v.key]={type:'number',perDate};
+      s._varData[v.key]={type:'number',perDate,unit:v.unit||f.unit||''};
     } else {
       // select: count each option per date
       const options=new Set();
@@ -1237,9 +1252,11 @@ function initChartBuilder(pid,p,pe){
     };
     varRow.appendChild(chip);
   });
-  // Default: select all variables
+  // Default: select all variables, except units split from a multi-unit number field
   if(!s.varKeys.length){
     vars.forEach(v=>{
+      const isMultiUnitSplit=v.unit&&v.field&&v.field.units&&v.field.units.length>1;
+      if(isMultiUnitSplit)return;
       s.varKeys.push(v.key);
       const chip=varRow.querySelector('[data-key="'+v.key+'"]');
       if(chip)chip.classList.add('on');
@@ -1385,7 +1402,7 @@ function cbRenderBar(pid){
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{
         title:ctx=>dateLabels[ctx[0]?.dataIndex],
-        label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+(s._varData[s.varKeys[0]]?.type==='number'?'':' 次')
+        label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+(s._varData[s.varKeys[0]]?.type==='number'?'':' '+t('cb_times'))
       }}},
       scales:{
         x:{stacked:type==='stacked',grid:{display:false},ticks:{font:{size:10,family:"'Nunito',sans-serif"},color:'#999',maxRotation:30}},
@@ -1455,7 +1472,7 @@ function cbRenderDonut(pid){
     type:'doughnut',data:{labels:allLabels,datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,cutout:'30%',
       layout:{padding:pad},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return' '+ctx.label+': '+ctx.parsed+'次('+Math.round(ctx.parsed/t*100)+'%)';}}}}
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const total2=ctx.dataset.data.reduce((a,b)=>a+b,0);return' '+ctx.label+': '+ctx.parsed+t('cb_times')+'('+Math.round(ctx.parsed/total2*100)+'%)';}}}}
     },plugins:[CB_DonutPlugin]
   });
   window.charts[pid]._cbDonutNums=s.showDonutNums;
@@ -1620,7 +1637,7 @@ function cbExportDocx(pid){
             const dotColor=optColors[oi%optColors.length].replace('#','');
             children.push(new Paragraph({children:[
               new TextRun({text:'■ ',size:18,color:dotColor,font:'Arial'}),
-              new TextRun({text:stripEmoji(o)+'：'+cnt+' 次  '+pct+'%',size:18,color:MID,font:'Arial'})
+              new TextRun({text:stripEmoji(o)+'：'+cnt+' '+t('cb_times')+'  '+pct+'%',size:18,color:MID,font:'Arial'})
             ],spacing:{before:6,after:6}}));
           });
         }
@@ -2571,7 +2588,7 @@ function renderStats(){
   Object.keys(projStats).forEach(pid=>{
     const p=proj(pid),ps=projStats[pid];
     const row=document.createElement('div');row.className='proj-stat-row';
-    let val=`${ps.count} 次`;
+    let val=`${ps.count} ${t('cb_times')}`;
     const ex=[];
     Object.values(ps.fields).forEach(fs=>{
       if(fs.total!==undefined)ex.push(`${fs.label} ${Math.round(fs.total)}`);
