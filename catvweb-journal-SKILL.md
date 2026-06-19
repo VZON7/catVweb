@@ -347,12 +347,26 @@ grep -nE "\\\\u[0-9a-fA-F]{4}" journal.html
 
 ## 十九、Script 块语法检查固定流程
 
-⚠️ journal.html 含多个 `<script>` 标签（CDN 引用 + 主逻辑块 + 字符串内嵌的打印脚本），每次现场摸索 `sed` 行号偏移浪费 token。固定用锚点变量提取，不再重新试错：
+⚠️ journal.html 含 4 处 `<script>` 标签：CDN 引用小脚本（docx包装）、主逻辑块、以及**字符串内嵌**的 print 用假标签（在 cbExportPdf/exportTracker 函数里，不是真正的 HTML 标签）。
+
+**注意：主逻辑块不是最后一对**——字符串内嵌的假标签在文件更后面，`tail -1` 会抓错。
+**注意：文件是 CRLF 换行**（`\r\n`），纯 `grep -n "^<script>$"` 在部分环境下会因 `\r` 卡住匹配不到，必须用 `-P` 模式 + `\r?$`。
+
+正确做法：取第 2 个 `<script>`（独立一行，排除带 `src=` 的引用行）作为起点，取第 2 个 `</script>` 作为终点（第 1 个 `</script>` 是 CDN 包装小脚本的结尾，不是主逻辑块）：
 
 ```bash
-START=$(grep -n "^<script>$" journal.html | tail -1 | cut -d: -f1)
-END=$(grep -n "^</script>$" journal.html | tail -1 | cut -d: -f1)
-sed -n "$((START+1)),$((END-1))p" journal.html > /tmp/check.js && node --check /tmp/check.js
+START=$(grep -nP "^<script>\r?$" journal.html | sed -n '2p' | cut -d: -f1)
+END=$(grep -nP "^</script>\r?$" journal.html | sed -n '2p' | cut -d: -f1)
+sed -n "$((START+1)),$((END-1))p" journal.html | tr -d '\r' > /tmp/check.js && node --check /tmp/check.js
 ```
 
-此脚本定位的是**最后一对** `<script>...</script>`（即主逻辑块），不是 CDN 引用行或字符串内嵌的 print 脚本。每次大改后用此固定流程跑一次，不必每次重新计算行号。
+每次大改后用此固定流程跑一次，不必每次重新计算行号。如果文件结构发生变化（比如又加了新的内嵌脚本或 CDN 引用），先用 `grep -nP "<script>"` 重新核对一遍标签数量和位置，再调整 `sed -n` 的取值序号。
+
+---
+
+## 二十、已知的「看起来像 bug 但其实是设计」清单
+
+避免下次对话误判成缺陷去"修复"：
+
+- **`cb_unit_suffix` 只有 zh key，没有 en key**——英文版数字格式走 `lang==='en'?('x'+v):...` 分支，直接拼 `'x'`，不调用这个 key，所以英文不需要对应翻译。不是双语缺失。
+- **`f.unit`（旧字符串单位）仍保留在多处代码里，与新的 `f.units`（数组）共存**——这是向后兼容设计，旧项目数据没有 `units` 时回退用 `unit`。不要删除 `f.unit` 相关代码。
