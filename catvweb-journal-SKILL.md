@@ -289,3 +289,70 @@ filter: drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .
 
 **日历日期动态注入：**
 `id="cal-icon-day"` 在 `renderAll()` 内写入 `today.getDate()`，不得硬编码数字。
+
+---
+
+## 十七、多单位数字字段规则
+
+数字字段（`type:'number'`）可以拥有多个子单位（如 time → min / hour），数据结构和改动范围分散在 5 处，改动前必须确认全部位置：
+
+**数据结构：**
+```js
+f.units = ['min','hour']   // 字段定义，数组，可为空
+f.unit = ''                 // 旧版单一字符串，保留向后兼容，不删
+```
+
+**记录值存储格式：**
+- 单单位 / 旧数据：`fields[f.id] = "30"`（字符串）
+- 多单位（`f.units.length > 1`）：`fields[f.id] = [{unit:'min',val:'30'}, {unit:'hour',val:'1'}]`（数组）
+
+**改动涉及的 5 个位置，缺一不可：**
+1. **项目设置 Modal**（renderModal）— 单位列表 UI：`addUnitInModal` / `removeUnit` / `renameUnit`
+2. **填写记录表单**（buildNewForm / saveEntry）— 每个单位一行独立 input，保存时遍历 units 收集数组
+3. **Inline Edit**（buildInlineEdit / saveEdit）— 同上，从 DOM 读取多个 `edf-${f.id}-${unit}` input
+4. **显示层**（Entry Card / Tracker 卡片）— 数组必须 `.map(o=>o.val+' '+o.unit).join(' · ')`，禁止直接 `${v}` 插值（会变成 `[object Object]`）
+5. **统计/计算**（calcCoins / Weekly Stats projStats / Chart Builder `_varData`）— 必须判断 `Array.isArray(v)`，按单位分别处理，不可不同单位直接相加
+
+**Chart Builder 专属规则：**
+多单位字段在 `initChartBuilder` 的 `vars` 构建时，拆分成多个独立变量，`key = f.id+'::'+unit`，`label = f.label+' ('+unit+')'`，让颜色分配/图例/统计天然走现有单变量逻辑，不需要改下游渲染代码。
+
+**默认勾选规则：**
+- 字段只有 1 个或 0 个单位 → 默认勾选（不变）
+- 字段有 ≥2 个单位（拆分后的每个子变量）→ 不默认勾选，用户手动选
+
+**每次改动后必须 grep 确认：**
+```bash
+grep -n "f.id\]" journal.html   # 确认所有读取点都判断了 Array.isArray
+```
+
+---
+
+## 十八、Unicode 转义排查规则
+
+⚠️ 硬编码中文文字可能以 Unicode 转义形式存在（如 `'\u6b21'` = 「次」），**普通 grep 中文字符搜不到**，必须额外排查。
+
+**排查双语硬编码时，同时跑两次搜索：**
+```bash
+grep -n "次" journal.html          # 搜原始字符
+grep -n "u6b21\|u..../u" journal.html  # 搜常见转义形式（按需替换 unicode code point）
+```
+
+或更通用，直接搜索转义模式本身：
+```bash
+grep -nE "\\\\u[0-9a-fA-F]{4}" journal.html
+```
+找到后人工确认是否为中文转义，逐一替换为 `t('key')`。
+
+---
+
+## 十九、Script 块语法检查固定流程
+
+⚠️ journal.html 含多个 `<script>` 标签（CDN 引用 + 主逻辑块 + 字符串内嵌的打印脚本），每次现场摸索 `sed` 行号偏移浪费 token。固定用锚点变量提取，不再重新试错：
+
+```bash
+START=$(grep -n "^<script>$" journal.html | tail -1 | cut -d: -f1)
+END=$(grep -n "^</script>$" journal.html | tail -1 | cut -d: -f1)
+sed -n "$((START+1)),$((END-1))p" journal.html > /tmp/check.js && node --check /tmp/check.js
+```
+
+此脚本定位的是**最后一对** `<script>...</script>`（即主逻辑块），不是 CDN 引用行或字符串内嵌的 print 脚本。每次大改后用此固定流程跑一次，不必每次重新计算行号。
