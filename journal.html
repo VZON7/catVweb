@@ -50,7 +50,9 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 
 /* HEADER */
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
-.page-title { font-family:'ZCOOL XiaoWei',sans-serif; font-size:28px; color:var(--dark); }
+.page-title { font-family:'ZCOOL XiaoWei',sans-serif; font-size:28px; color:var(--dark); cursor:pointer; display:inline-block; filter:drop-shadow(2.5px 2.5px 3px rgba(38,110,167,0.55)) drop-shadow(-1.5px -1.5px 2px rgba(255,255,255,1)); transition:filter .15s, color .15s; }
+.page-title:hover { color:var(--purple); filter:drop-shadow(3.5px 3.5px 5px rgba(38,110,167,0.75)) drop-shadow(-2px -2px 3px rgba(255,255,255,1)); }
+.page-title:active { filter:drop-shadow(0.5px 0.5px 1px rgba(38,110,167,0.3)) drop-shadow(-0.5px -0.5px 0.5px rgba(255,255,255,0.7)); }
 .page-date { font-size:12px; color:var(--mid); margin-top:4px; }
 .new-btn { display:flex; align-items:center; gap:6px; background:var(--purple); color:#fff; border:none; border-radius:999px; padding:10px 22px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:6px 6px 14px #43688e, -6px -6px 14px #FFFFFF; transition:box-shadow .15s, transform .15s; }
 .new-btn:hover { box-shadow:8px 8px 18px #43688e, -8px -8px 18px #FFFFFF; transform:translateY(-1px); }
@@ -87,7 +89,6 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:10px; cursor:pointer; margin-bottom:2px; transition:box-shadow .15s; }
 .day-item:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
 .day-item.active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
-.day-item:not(.active):active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .day-dot { width:5px; height:5px; border-radius:50%; background:rgba(38,110,167,0.2); flex-shrink:0; }
 .day-dot.has { background:var(--purple); }
 .day-name { font-size:12px; color:var(--mid); flex:1; }
@@ -111,9 +112,10 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .add-proj-btn { display:flex; align-items:center; gap:5px; width:100%; padding:6px 7px; border-radius:10px; border:none; background:var(--lavender); color:var(--purple); font-size:12px; font-weight:700; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:6px; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s; }
 .add-proj-btn:hover { box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; }
 .add-proj-btn:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
-.sb-nav-btn { display:flex; align-items:center; gap:6px; width:100%; padding:7px 9px; border-radius:10px; border:none; background:var(--lavender); color:var(--mid); font-size:12px; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:4px; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s; }
-.sb-nav-btn:hover { box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; color:var(--dark); }
+.sb-nav-btn { display:flex; align-items:center; gap:6px; width:100%; padding:7px 9px; border-radius:10px; border:none; background:var(--lavender); color:var(--mid); font-size:12px; font-family:'Nunito',sans-serif; cursor:pointer; margin-top:4px; box-shadow:none; transition:box-shadow .15s; }
+.sb-nav-btn:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; color:var(--dark); }
 .sb-nav-btn:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.sb-nav-btn.active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; color:var(--purple); font-weight:700; }
 
 /* MAIN AREA */
 .main-area { min-height:400px; }
@@ -430,7 +432,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 <div class="page" id="app">
   <div class="page-header">
     <div>
-      <div class="page-title" id="page-title">项目日记</div>
+      <div class="page-title" id="page-title" onclick="view='journal';showForm=false;renderAll()">项目日记</div>
       <div class="page-date" id="page-date"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
@@ -749,11 +751,11 @@ function renderTracker(){
     const totalC=pe.reduce((s,e)=>s+calcCoins(e,e.dateKey),0);
     const days=new Set(pe.map(e=>e.dateKey)).size;
     const card=document.createElement('div');card.className='tracker-proj-card';
-    const isOpen=window._trackerOpen&&window._trackerOpen[p.id];
+    const isOpen=window._trackerOpenId===p.id;
     const isArchived=(p.status||'active')==='archived';
       const hdr=document.createElement('div');hdr.className='tracker-proj-header';
     hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+getStatusLabels()[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' </span><span>📅 '+days+'</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ '+t('restore')+'</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 '+t('perm_delete')+'</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
-    hdr.onclick=()=>{if(!window._trackerOpen)window._trackerOpen={};window._trackerOpen[p.id]=!window._trackerOpen[p.id];renderTracker();};
+    hdr.onclick=()=>{window._trackerOpenId=(window._trackerOpenId===p.id)?null:p.id;renderTracker();};
     card.appendChild(hdr);
     if(isOpen){
       const body=document.createElement('div');body.className='tracker-proj-body';
@@ -845,7 +847,7 @@ if(window.Chart){
 }
 function getCBState(pid){
   if(!_cbState[pid])_cbState[pid]={
-    chartType:'stacked',varKeys:[],showNums:true,showTitles:true,showPanel:false,
+    chartType:'stacked',varKeys:[],showNums:false,showTitles:true,showPanel:false,
     showDonutNums:true,donutMode:'direct',
     displayTitles:{},selected:[],charts:{}
   };
@@ -1114,7 +1116,7 @@ function buildChartBuilderHTML(pid){
       <button class="cb-type-btn" id="cb-t-donut-${pid}" onclick="cbSetType('${pid}','donut')">${t('cb_donut')}</button>
     </div>
     <div id="cb-ctrl-bar-${pid}" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="cb-tog on" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')">🔢 ${t('cb_nums')}</button>
+      <button class="cb-tog" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')">🔢 ${t('cb_nums')}</button>
       <button class="cb-tog on" id="cb-titles-${pid}" onclick="cbTogTitles('${pid}')">✅ ${t('cb_title')}</button>
       <button class="cb-tog" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')">${t('cb_stats')}</button>
     </div>
@@ -1228,6 +1230,8 @@ function initChartBuilder(pid,p,pe){
       if(chip)chip.classList.add('on');
     });
   }
+  document.getElementById('cb-nums-'+pid)?.classList.toggle('on',s.showNums);
+  document.getElementById('cb-titles-'+pid)?.classList.toggle('on',s.showTitles);
   cbRenderFull(pid);
 }
 
@@ -1791,6 +1795,10 @@ function renderAll(){
   if(elLabel&&formLinkLabel)elLabel.value=formLinkLabel;
   const cd=document.getElementById('cal-icon-day');
   if(cd)cd.textContent=today.getDate();
+  const statsNav=document.getElementById('stats-nav-btn');
+  const trackerNav=document.getElementById('tracker-nav-btn');
+  if(statsNav)statsNav.classList.toggle('active',view==='stats');
+  if(trackerNav)trackerNav.classList.toggle('active',view==='tracker');
 }
 
 function renderDayStats(){
@@ -1809,7 +1817,7 @@ function renderSidebar(){
   const dl=document.getElementById('day-list');dl.innerHTML='';
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(d.getDate()+i);
-    const key=dk(d),isSel=key===dk(selDate),isT=key===todayKey,isFut=d>today,cnt=(entries[key]||[]).length;
+    const key=dk(d),isSel=key===dk(selDate)&&view==='journal',isT=key===todayKey,isFut=d>today,cnt=(entries[key]||[]).length;
     const div=document.createElement('div');div.className='day-item'+(isSel?' active':'');div.style.opacity=isFut?.4:1;
     if(!isFut)div.onclick=()=>{selDate=new Date(d);view='journal';editingId=null;renderAll()};
     const dm=(d.getMonth()+1)+'/'+d.getDate();
