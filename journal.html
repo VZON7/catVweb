@@ -547,7 +547,7 @@ const I18N={
     cb_vars:'选择要统计的',cb_multi:'（可多选）',
     cb_tone:'色调',cb_warm:'亮色系',cb_cool:'冷色系',
     cb_type:'图表类型',cb_stacked:'堆叠柱状',cb_grouped:'并排柱状',cb_donut:'嵌套环形',
-    cb_nums:'显示数字',cb_direct:'直接显示',cb_line:'连接线',cb_stats:'统计',cb_title:'标题',
+    cb_nums:'显示数字',cb_direct:'直接显示',cb_line:'连接线',cb_stats:'数据统计',cb_title:'标题',
     cb_inner:'内圈',cb_outer:'外圈',cb_data_stats:'数据统计',cb_chart_img:'项目统计图',
     cb_no_fields:'这个项目还没有自定义栏位',cb_no_chart:'还没有选择图表',
     cb_export_label:'导出内容：',cb_export_text:'文字记录',
@@ -616,7 +616,7 @@ const I18N={
     cb_vars:'Select variables',cb_multi:'(multi-select)',
     cb_tone:'Palette',cb_warm:'Warm',cb_cool:'Cool',
     cb_type:'Chart Type',cb_stacked:'Stacked Bar',cb_grouped:'Grouped Bar',cb_donut:'Nested Donut',
-    cb_nums:'Show Numbers',cb_direct:'Direct',cb_line:'Line',cb_stats:'Stats',cb_title:'Title',
+    cb_nums:'Show Numbers',cb_direct:'Direct',cb_line:'Line',cb_stats:'Data Stats',cb_title:'Title',
     cb_inner:'Inner',cb_outer:'Outer',cb_data_stats:'Data Stats',cb_chart_img:'Project Chart',
     cb_no_fields:'No custom fields for this project',cb_no_chart:'No chart selected',
     cb_export_label:'Export:',cb_export_text:'Text Records',
@@ -847,7 +847,7 @@ if(window.Chart){
 }
 function getCBState(pid){
   if(!_cbState[pid])_cbState[pid]={
-    chartType:'stacked',varKeys:[],showNums:false,showTitles:true,showPanel:false,
+    chartType:'stacked',varKeys:[],showNums:false,showTitles:true,showPanel:true,
     showDonutNums:true,donutMode:'direct',
     displayTitles:{},selected:[],charts:{}
   };
@@ -1232,6 +1232,9 @@ function initChartBuilder(pid,p,pe){
   }
   document.getElementById('cb-nums-'+pid)?.classList.toggle('on',s.showNums);
   document.getElementById('cb-titles-'+pid)?.classList.toggle('on',s.showTitles);
+  document.getElementById('cb-panel-'+pid)?.classList.toggle('on',s.showPanel);
+  document.getElementById('cb-dpanel-'+pid)?.classList.toggle('on',s.showPanel);
+  document.getElementById('cb-statpanel-'+pid)?.classList.toggle('show',s.showPanel);
   cbRenderFull(pid);
 }
 
@@ -1670,7 +1673,7 @@ function cbExportPdf(pid){
               const cnt=vd.totals[o]||0;
               const pct=grandTotal?Math.round(cnt/grandTotal*100):0;
               const dotColor=optColors[oi%optColors.length];
-              imgTag+=`<tr style="border-bottom:.5px solid #f0f0f0"><td style="padding:4px 0;color:#444;width:60%"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${dotColor};margin-right:6px;vertical-align:middle"></span>${o}</td><td style="padding:4px;font-weight:700;color:#222;text-align:right">${cnt}</td><td style="padding:4px;color:#aaa;text-align:right">${pct}%</td></tr>`;
+              imgTag+=`<tr style="border-bottom:.5px solid #f0f0f0"><td style="padding:4px 0;color:#444;width:60%"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${dotColor};margin-right:6px;vertical-align:middle;-webkit-print-color-adjust:exact;print-color-adjust:exact"></span>${o}</td><td style="padding:4px;font-weight:700;color:#222;text-align:right">${cnt}</td><td style="padding:4px;color:#aaa;text-align:right">${pct}%</td></tr>`;
             });
             imgTag+='</table>';
           }
@@ -1680,7 +1683,7 @@ function cbExportPdf(pid){
   }
 
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}
+    body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px;margin-bottom:4px}
     .meta{font-size:12px;color:#888;margin-bottom:20px}
     .entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:8px 0;background:#f9f9ff;border-radius:0 8px 8px 0}
@@ -1688,7 +1691,7 @@ function cbExportPdf(pid){
     .title{font-size:14px;font-weight:600;margin:3px 0}
     .tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
     .note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}
-    @media print{body{padding:20px}img{max-width:100%!important}}
+    @media print{body{padding:20px}img{max-width:100%!important}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
   </style></head><body>
     <h1>${p.name}</h1>
     <div class="meta">${t('export_status')}: ${getStatusLabels()[p.status||'active']} | ${t('export_total')}: ${pe.length} | ${new Date().toLocaleDateString()}</div>
