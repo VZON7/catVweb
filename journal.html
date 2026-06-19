@@ -123,42 +123,48 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .sec-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
 
 /* ENTRY CARD */
-.entry-card { background:rgba(255,255,255,0.65); border:0.5px solid rgba(123,104,238,0.18); border-radius:12px; margin-bottom:8px; transition:border-color .15s; }
-.entry-card:hover { border-color:rgba(123,104,238,0.4); }
-.entry-card.editing { border-color:var(--purple); background:rgba(255,255,255,0.9); }
+.entry-card { background:var(--lavender); border:none; border-radius:14px; margin-bottom:10px; box-shadow:var(--neu-raised); transition:box-shadow .15s; }
+.entry-card:hover { box-shadow:8px 8px 16px #C8C8D8, -8px -8px 16px #FFFFFF; }
+.entry-card.editing { box-shadow:inset 4px 4px 9px #C8C8D8, inset -4px -4px 9px #FFFFFF; }
 .ec-inner { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; }
-.proj-badge { display:flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; flex-shrink:0; margin-top:1px; }
+.proj-badge-wrap { display:inline-block; background:var(--lavender); padding:4px; border-radius:999px; box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; flex-shrink:0; margin-top:1px; }
+.proj-badge { display:flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; }
 .ec-body { flex:1; min-width:0; }
 .ec-title { font-size:13px; font-weight:700; color:var(--dark); line-height:1.4; }
 .ec-meta { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:5px; }
 .ec-field { font-size:11px; color:var(--mid); display:flex; align-items:center; gap:3px; }
-.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:rgba(123,104,238,0.1); border:0.5px solid rgba(123,104,238,0.25); color:var(--dark); }
-.ec-note { font-size:12px; color:var(--mid); margin-top:5px; line-height:1.5; padding-top:5px; border-top:0.5px solid rgba(123,104,238,0.12); }
+.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:var(--lavender); box-shadow:inset 2px 2px 4px #C8C8D8, inset -2px -2px 4px #FFFFFF; color:var(--dark); }
+.ec-note { font-size:12px; color:var(--mid); margin-top:6px; line-height:1.5; padding-top:6px; box-shadow:0 1px 0 #FFFFFF, 0 -1px 0 #C8C8D8; }
 .ec-coin { font-size:10px; color:#854F0B; background:#FAEEDA; border-radius:999px; padding:2px 7px; white-space:nowrap; flex-shrink:0; font-weight:700; }
-.ec-acts { display:flex; gap:2px; flex-shrink:0; }
-.ec-act { background:none; border:none; color:var(--mid); cursor:pointer; font-size:13px; padding:4px; border-radius:4px; opacity:.4; }
-.ec-act:hover { opacity:1; background:rgba(123,104,238,0.1); }
+.ec-acts { display:flex; gap:6px; flex-shrink:0; align-items:center; }
+.ec-act { background:none; border:none; color:var(--mid); cursor:pointer; padding:3px; display:flex; align-items:center; justify-content:center; transition:color .15s, filter .15s; filter:drop-shadow(1.5px 1.5px 2px rgba(0,0,0,0.12)); }
+.ec-edit:hover { color:#266ea7; filter:drop-shadow(2px 2px 3px rgba(38,110,167,.5)); }
+.ec-del:hover { color:#266ea7; filter:drop-shadow(2px 2px 3px rgba(38,110,167,.5)); }
+body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rgba(229,57,53,.5)); }
 
 /* INLINE EDIT */
 .inline-edit { padding:0 14px 12px; }
-.ie-title input { width:100%; font-size:13px; font-weight:700; margin-bottom:8px; font-family:'Nunito',sans-serif; background:rgba(255,255,255,0.8); border:0.5px solid rgba(123,104,238,0.3); border-radius:8px; padding:7px 10px; color:var(--dark); }
+.ie-title input { width:100%; font-size:13px; font-weight:700; margin-bottom:8px; font-family:'Nunito',sans-serif; background:var(--lavender); border:none; border-radius:10px; padding:8px 12px; color:var(--dark); box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .ie-var-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
 .ie-var-label { font-size:12px; color:var(--mid); min-width:72px; flex-shrink:0; }
 .ie-var-val { flex:1; position:relative; }
-.ie-skip-btn { width:26px; height:26px; border-radius:50%; border:0.5px solid rgba(123,104,238,0.3); background:rgba(255,255,255,0.7); color:var(--mid); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.ie-skip-btn:hover { border-color:var(--pink); color:var(--pink); }
-.ie-skip-btn.skipped { background:rgba(255,63,108,0.1); border-color:var(--pink); color:var(--pink); }
+.ie-skip-btn { width:26px; height:26px; border-radius:50%; border:none; background:var(--lavender); color:var(--mid); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s, color .15s; }
+.ie-skip-btn:hover { color:var(--pink); }
+.ie-skip-btn.skipped { color:var(--pink); box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .skipped-label { font-size:12px; color:var(--mid); font-style:italic; padding:0 8px; }
 .ie-extras { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
-.ie-toggle { display:flex; align-items:center; gap:4px; padding:4px 10px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.2); background:rgba(255,255,255,0.5); color:var(--mid); font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; }
-.ie-toggle:hover { border-color:rgba(123,104,238,0.4); }
-.ie-toggle.on { border-color:var(--purple); background:rgba(123,104,238,0.1); color:var(--purple); font-weight:700; }
+.ie-toggle { display:flex; align-items:center; gap:4px; padding:5px 12px; border-radius:999px; border:none; background:var(--lavender); color:var(--mid); font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s, color .15s; }
+.ie-toggle:hover { box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; }
+.ie-toggle.on { color:var(--purple); font-weight:700; box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .ie-dyn { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-.ie-textarea { width:100%; font-size:12px; resize:none; border-radius:8px; border:0.5px solid rgba(123,104,238,0.2); padding:7px 10px; background:rgba(255,255,255,0.8); color:var(--dark); font-family:'Nunito',sans-serif; line-height:1.5; }
-.ie-btns { display:flex; gap:6px; justify-content:flex-end; margin-top:4px; }
-.ie-cancel { padding:6px 12px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.3); background:rgba(255,255,255,0.7); color:var(--mid); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; }
-.ie-save { padding:6px 16px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; }
-.ie-save:hover { opacity:.85; }
+.ie-textarea { width:100%; font-size:12px; resize:none; border-radius:10px; border:none; padding:8px 12px; background:var(--lavender); color:var(--dark); font-family:'Nunito',sans-serif; line-height:1.5; box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.ie-btns { display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
+.ie-cancel { padding:7px 16px; border-radius:999px; border:none; background:var(--lavender); color:var(--mid); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:var(--neu-raised); transition:box-shadow .15s; }
+.ie-cancel:hover { box-shadow:8px 8px 16px #C8C8D8, -8px -8px 16px #FFFFFF; }
+.ie-cancel:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.ie-save { padding:7px 20px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:6px 6px 14px #43688e, -6px -6px 14px #FFFFFF; transition:box-shadow .15s; }
+.ie-save:hover { box-shadow:8px 8px 18px #43688e, -8px -8px 18px #FFFFFF; }
+.ie-save:active { box-shadow:inset 4px 4px 9px #2a4f6e; }
 
 /* FORM */
 .form-card { background:rgba(255,255,255,0.85); border:0.5px solid rgba(123,104,238,0.35); border-radius:14px; padding:14px; margin-bottom:12px; }
@@ -537,6 +543,9 @@ const I18N={
     del_perm_title:'永久删除',del_perm_confirm:'确认永久删除',
     del_perm_warn:'此操作无法撤销，',del_perm_warn2:'和所有记录将被彻底移除。',
     del_confirm_q:'确定要永久删除「',del_confirm_q2:'吗？',
+    del_entry_title:'删除记录',del_entry_q:'确定要删除这个记录吗？',
+    del_entry_hint:'提示：你可以按住 Shift 键再点选 ✕ 就能直接删除并跳过此确认步骤',
+    del_entry_confirm:'确认删除',
     del_choose:'请选择处理方式：',del_perm_remove:'将永久移除',
     tracker_empty:'这个分类还没有项目',
     restore:'复原',perm_delete:'永久删除',
@@ -606,6 +615,9 @@ const I18N={
     del_perm_title:'Permanent Delete',del_perm_confirm:'Confirm Delete',
     del_perm_warn:'This cannot be undone. ',del_perm_warn2:'and all records will be permanently removed.',
     del_confirm_q:'Permanently delete "',del_confirm_q2:'"?',
+    del_entry_title:'Delete Record',del_entry_q:'Are you sure you want to delete this record?',
+    del_entry_hint:'Tip: hold Shift while clicking \u2715 to delete instantly and skip this confirmation',
+    del_entry_confirm:'Confirm Delete',
     del_choose:'Choose an action:',del_perm_remove:'will be permanently removed',
     tracker_empty:'No projects yet',
     restore:'Restore',perm_delete:'Delete',
@@ -1901,7 +1913,7 @@ function buildCard(e,p){
   card.innerHTML=`<div class="ec-inner">
     <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-top:1px">
       ${isArchived?`<span style="font-size:12px;font-weight:500;color:#A32D2D;background:transparent;border:1.5px solid #A32D2D;border-radius:3px;padding:2px 7px;white-space:nowrap;letter-spacing:.1em;text-transform:uppercase;opacity:.75;transform:rotate(-7deg);display:inline-flex;align-items:center;flex-shrink:0;margin-top:2px">${t('archived_stamp')}</span>`:''}
-      <div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.12);color:${p.color};border:0.5px solid rgba(${hexRgb(p.color)},.3)">${p.name}</div>
+      <div class="proj-badge-wrap"><div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.16);color:${p.color};border:1.5px solid ${p.color};box-shadow:inset 1.5px 1.5px 3px rgba(0,0,0,.12), inset -1px -1px 2px rgba(255,255,255,.5)">${p.name}</div></div>
     </div>
     <div class="ec-body">
       ${e.title&&e.title.trim()?`<div class="ec-title">${e.title}</div>`:''}
@@ -1910,8 +1922,12 @@ function buildCard(e,p){
     </div>
     <span class="ec-coin">${dk(selDate)!==todayKey?'½ ':''} 🐾 +${coins}</span>
     <div class="ec-acts">
-      <button class="ec-act" title="${t('modal_edit')}" onclick="startEdit(${e.id},'${dk(selDate)}')">✎</button>
-      <button class="ec-act" title="${t('modal_delete')}" onclick="deleteEntry('${dk(selDate)}',${e.id})">✕</button>
+      <button class="ec-act ec-edit" title="${t('modal_edit')}" onclick="startEdit(${e.id},'${dk(selDate)}')">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg>
+      </button>
+      <button class="ec-act ec-del" title="${t('modal_delete')}" onclick="deleteEntry('${dk(selDate)}',${e.id},event)">
+        <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+      </button>
     </div>
   </div>`;
   return card;
@@ -2027,10 +2043,31 @@ function saveEdit(id,key){
   e.note=editState.note||'';e.link=editState.link||'';e.linkLabel=editState.linkLabel||'';
   editingId=null;editState={};openDropId=null;saveData();renderAll();
 }
-function deleteEntry(key,id){
+function deleteEntry(key,id,evt){
+  if(evt&&evt.shiftKey){_doDeleteEntry(key,id);return;}
+  confirmDeleteEntry(key,id);
+}
+function _doDeleteEntry(key,id){
   entries[key]=(entries[key]||[]).filter(e=>e.id!==id);
   if(editingId===id){editingId=null;editState={};}
   saveData();renderAll();
+}
+function confirmDeleteEntry(key,id){
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  <div class="modal" style="max-width:300px">
+    <div class="modal-title" style="color:var(--pink)">${t('del_entry_title')}</div>
+    <p style="font-size:13px;color:var(--mid);margin-bottom:10px;line-height:1.6">
+      ${t('del_entry_q')}
+    </p>
+    <p style="font-size:11px;color:var(--mid);margin-bottom:16px;line-height:1.5;font-style:italic">
+      ${t('del_entry_hint')}
+    </p>
+    <div class="modal-btns" style="border-top:0.5px solid #C8C8D8;padding-top:12px;margin-top:0">
+      <button class="m-cancel" onclick="_closeDelConfirm()">${t('modal_cancel')}</button>
+      <button class="m-save" style="background:var(--pink)" onclick="_doDeleteEntry('${key}',${id});_closeDelConfirm()">${t('del_entry_confirm')}</button>
+    </div>
+  </div></div>`;
 }
 
 function buildNewForm(){
@@ -2836,6 +2873,9 @@ const _dateStr=lang==='zh'
 document.getElementById('page-date').textContent=_dateStr;
 
 renderAll();
+document.addEventListener('keydown',e=>{if(e.key==='Shift')document.body.classList.add('shift-down')});
+document.addEventListener('keyup',e=>{if(e.key==='Shift')document.body.classList.remove('shift-down')});
+window.addEventListener('blur',()=>document.body.classList.remove('shift-down'));
 </script>
 </body>
 </html>
