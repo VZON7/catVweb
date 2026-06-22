@@ -54,9 +54,9 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .page-title:hover { color:var(--purple); filter:drop-shadow(3.5px 3.5px 5px rgba(38,110,167,0.75)) drop-shadow(-2px -2px 3px rgba(255,255,255,1)); }
 .page-title:active { filter:drop-shadow(0.5px 0.5px 1px rgba(38,110,167,0.3)) drop-shadow(-0.5px -0.5px 0.5px rgba(255,255,255,0.7)); }
 .page-date { font-size:12px; color:var(--mid); margin-top:4px; }
-.new-btn { display:flex; align-items:center; gap:6px; background:var(--purple); color:#fff; border:none; border-radius:999px; padding:10px 22px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:6px 6px 14px #43688e, -6px -6px 14px #FFFFFF; transition:box-shadow .15s, transform .15s; }
-.new-btn:hover { box-shadow:8px 8px 18px #43688e, -8px -8px 18px #FFFFFF; transform:translateY(-1px); }
-.new-btn:active { box-shadow:inset 4px 4px 9px #2a4f6e; transform:translateY(0); }
+.new-btn { display:flex; align-items:center; gap:6px; background:var(--purple); color:#fff; border:none; border-radius:999px; padding:10px 22px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:5px 5px 10px #B8BEC8, -5px -5px 10px #FFFFFF; transition:box-shadow .15s; }
+.new-btn:hover { box-shadow:10px 10px 18px #B0B8C4, -10px -10px 18px #FFFFFF; }
+.new-btn:active { box-shadow:inset 4px 4px 9px #1e5a8a, inset -2px -2px 5px rgba(255,255,255,0.15); }
 
 /* STATS */
 .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
@@ -125,7 +125,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 /* ENTRY CARD */
 .entry-card { background:var(--lavender); border:none; border-radius:14px; margin-bottom:10px; box-shadow:var(--neu-raised); transition:box-shadow .15s; }
 .entry-card:hover { box-shadow:8px 8px 16px #C8C8D8, -8px -8px 16px #FFFFFF; }
-.entry-card.editing { box-shadow:inset 4px 4px 9px #C8C8D8, inset -4px -4px 9px #FFFFFF; }
+.entry-card.editing { box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; }
 .ec-inner { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; }
 .proj-badge-wrap { display:inline-block; background:var(--lavender); padding:4px; border-radius:999px; box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; flex-shrink:0; margin-top:1px; }
 .proj-badge { display:flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:700; white-space:nowrap; }
@@ -133,9 +133,15 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .ec-title { font-size:13px; font-weight:700; color:var(--dark); line-height:1.4; }
 .ec-meta { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:5px; }
 .ec-field { font-size:11px; color:var(--mid); display:flex; align-items:center; gap:3px; }
-.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:var(--lavender); box-shadow:inset 2px 2px 4px #C8C8D8, inset -2px -2px 4px #FFFFFF; color:var(--dark); }
-.ec-note { font-size:12px; color:var(--mid); margin-top:6px; line-height:1.5; padding-top:6px; box-shadow:0 1px 0 #FFFFFF, 0 -1px 0 #C8C8D8; }
-.ec-coin { font-size:10px; color:#854F0B; background:#FAEEDA; border-radius:999px; padding:2px 7px; white-space:nowrap; flex-shrink:0; font-weight:700; }
+.ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:var(--lavender); box-shadow:inset 2px 2px 4px #C8C8D8, inset -2px -2px 4px #F4F6FA; font-weight:550; }
+.ec-selval-f0 { color:#2E6090; }
+.ec-selval-f1 { color:#5887A8; }
+.ec-selval-f2 { color:#7FA4BE; }
+.ec-selval-f3 { color:#3A7A9C; }
+.ec-vdivider { width:0; height:14px; flex-shrink:0; align-self:center; border-left:1px solid #C9D0DC; border-right:1px solid #FFFFFF; }
+.ec-note { font-size:11px; font-style:italic; color:#9EA8B8; margin-top:6px; line-height:1.5; display:flex; align-items:flex-start; gap:5px; }
+.ec-note-icon { flex-shrink:0; margin-top:1px; color:#7FA4BE; }
+.ec-coin { font-size:10px; color:#2E6090; background:#E8EBF1; border-radius:999px; padding:4px 14px; white-space:nowrap; flex-shrink:0; font-weight:700; box-shadow:4px 4px 10px #C0C8D8, -4px -4px 10px #FFFFFF, inset 0 3px 8px rgba(180,190,210,0.55), inset 0 -1px 3px rgba(255,255,255,0.9); }
 .ec-acts { display:flex; gap:6px; flex-shrink:0; align-items:center; }
 .ec-act { background:none; border:none; color:var(--mid); cursor:pointer; padding:3px; display:flex; align-items:center; justify-content:center; transition:color .15s, filter .15s; filter:drop-shadow(1.5px 1.5px 2px rgba(0,0,0,0.12)); }
 .ec-edit:hover { color:#266ea7; filter:drop-shadow(2px 2px 3px rgba(38,110,167,.5)); }
@@ -148,6 +154,9 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .ie-var-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
 .ie-var-label { font-size:12px; color:var(--mid); min-width:72px; flex-shrink:0; }
 .ie-var-val { flex:1; position:relative; }
+.weekly-btn { box-shadow:4px 4px 9px #c8cedb, -4px -4px 9px #FFFFFF; }
+.weekly-btn:hover { box-shadow:8px 8px 18px #B2B7C4, -8px -8px 18px #FFFFFF; }
+.weekly-btn:active { box-shadow:inset 3px 3px 7px #c8cedb, inset -3px -3px 7px #FFFFFF; }
 .ie-skip-btn { width:26px; height:26px; border-radius:50%; border:none; background:var(--lavender); color:var(--mid); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s, color .15s; }
 .ie-skip-btn:hover { color:var(--pink); }
 .ie-skip-btn.skipped { color:var(--pink); box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
@@ -167,27 +176,37 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .ie-save:active { box-shadow:inset 4px 4px 9px #2a4f6e; }
 
 /* FORM */
-.form-card { background:rgba(255,255,255,0.85); border:0.5px solid rgba(123,104,238,0.35); border-radius:14px; padding:14px; margin-bottom:12px; }
+.form-card { background:var(--lavender); border:none; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; }
 .form-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-.form-row input { flex:1; font-size:13px; font-family:'Nunito',sans-serif; background:rgba(255,255,255,0.9); border:0.5px solid rgba(123,104,238,0.25); border-radius:8px; padding:8px 12px; color:var(--dark); outline:none; }
-.form-row input:focus { border-color:var(--purple); }
+.form-row input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; background:var(--lavender); border:none; border-radius:8px; padding:6px 10px; color:var(--dark); outline:none; box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.form-row input:focus { box-shadow:inset 4px 4px 9px #C8C8D8, inset -4px -4px 9px #FFFFFF; }
 .proj-sel-btn { display:flex; align-items:center; gap:5px; padding:0 12px; height:36px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.3); background:rgba(255,255,255,0.8); color:var(--dark); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; white-space:nowrap; flex-shrink:0; }
 .proj-sel-btn:hover { background:rgba(123,104,238,0.1); }
 .var-rows { display:flex; flex-direction:column; gap:7px; margin-bottom:8px; }
 .var-row { display:flex; align-items:center; gap:8px; }
 .var-label { font-size:12px; color:var(--mid); min-width:72px; flex-shrink:0; }
+.var-label-f0 { color:#2E6090; }
+.var-label-f1 { color:#5887A8; }
+.var-label-f2 { color:#7FA4BE; }
+.var-label-f3 { color:#3A7A9C; }
 .var-val { flex:1; position:relative; }
-.skip-btn { width:28px; height:28px; border-radius:50%; border:0.5px solid rgba(123,104,238,0.25); background:rgba(255,255,255,0.7); color:var(--mid); font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
-.skip-btn:hover { border-color:var(--pink); color:var(--pink); }
-.skip-btn.skipped { background:rgba(255,63,108,0.1); border-color:var(--pink); color:var(--pink); }
+.skip-btn { width:28px; height:28px; border-radius:50%; border:none; background:var(--lavender); color:var(--mid); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s, color .15s; position:relative; }
+.skip-btn:hover { color:#266ea7; box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; }
+.skip-btn:hover::after { content:attr(data-tip); position:absolute; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); background:#266ea7; color:#fff; font-size:9px; font-weight:700; padding:2px 7px; border-radius:999px; white-space:nowrap; pointer-events:none; font-family:'Nunito',sans-serif; }
+.skip-btn:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; color:#266ea7; }
+.skip-btn.skipped { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; color:#266ea7; }
 .extras-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
-.extra-toggle { display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.2); background:rgba(255,255,255,0.6); color:var(--mid); font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; }
-.extra-toggle.on { border-color:var(--purple); background:rgba(123,104,238,0.1); color:var(--purple); font-weight:700; }
+.extra-toggle { display:flex; align-items:center; gap:4px; padding:5px 10px; border-radius:999px; border:none; background:var(--lavender); color:var(--mid); font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:none; transition:box-shadow .15s; }
+.extra-toggle:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
+.extra-toggle.on { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; color:var(--purple); font-weight:700; }
 .coin-preview { font-size:11px; color:#854F0B; background:#FAEEDA; border-radius:8px; padding:7px 10px; margin-bottom:8px; }
 .form-btns { display:flex; gap:6px; justify-content:flex-end; }
-.f-cancel { padding:7px 14px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.3); background:rgba(255,255,255,0.7); color:var(--mid); font-size:13px; cursor:pointer; font-family:'Nunito',sans-serif; }
-.f-save { padding:7px 18px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:13px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; }
-.f-save:hover { opacity:.85; }
+.f-cancel { padding:6px 14px; border-radius:999px; border:none; background:var(--lavender); color:var(--mid); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:none; transition:box-shadow .15s; }
+.f-cancel:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
+.f-cancel:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.f-save { padding:6px 18px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:5px 5px 10px #B8BEC8, -5px -5px 10px #FFFFFF; transition:box-shadow .15s; }
+.f-save:hover { box-shadow:10px 10px 18px #B0B8C4, -10px -10px 18px #FFFFFF; }
+.f-save:active { box-shadow:inset 4px 4px 9px #1e5a8a, inset -2px -2px 5px rgba(255,255,255,0.15); }
 
 /* PROJ PICKER */
 .proj-picker { background:rgba(255,255,255,0.9); border:0.5px solid rgba(123,104,238,0.3); border-radius:12px; padding:10px; margin-bottom:8px; }
@@ -197,12 +216,12 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 
 /* SELECT DROPDOWN */
 .sel-wrap { position:relative; width:100%; }
-.sel-btn { width:100%; display:flex; align-items:center; justify-content:space-between; padding:0 10px; height:34px; border-radius:8px; border:0.5px solid rgba(123,104,238,0.25); background:rgba(255,255,255,0.8); color:var(--dark); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; }
-.sel-btn:hover { background:rgba(255,255,255,1); }
-.sel-dropdown { background:rgba(255,255,255,0.97); border:0.5px solid rgba(123,104,238,0.3); border-radius:10px; padding:6px; margin-top:3px; z-index:10; }
+.sel-btn { width:100%; display:flex; align-items:center; justify-content:space-between; padding:0 10px; height:34px; border-radius:8px; border:none; background:var(--lavender); color:var(--dark); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+.sel-btn:hover { box-shadow:inset 4px 4px 9px #C8C8D8, inset -4px -4px 9px #FFFFFF; }
+.sel-dropdown { background:var(--lavender); border:none; border-radius:10px; padding:6px; margin-top:3px; z-index:10; box-shadow:6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF; }
 .sd-opt { display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:7px; cursor:pointer; font-size:12px; color:var(--dark); font-family:'Nunito',sans-serif; }
-.sd-opt:hover { background:rgba(123,104,238,0.08); }
-.sd-opt.sel { background:#FAEEDA; color:#633806; font-weight:700; }
+.sd-opt:hover { background:rgba(38,110,167,0.03); }
+.sd-opt.sel { background:rgba(38,110,167,0.08); color:#266ea7; font-weight:700; }
 .sd-add { display:flex; gap:6px; padding:5px 4px 2px; border-top:0.5px solid rgba(123,104,238,0.12); margin-top:4px; }
 .sd-add input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; border:0.5px solid rgba(123,104,238,0.2); border-radius:7px; padding:5px 8px; background:rgba(255,255,255,0.9); color:var(--dark); outline:none; }
 .sd-add-btn { padding:4px 10px; border-radius:7px; border:0.5px solid rgba(123,104,238,0.25); background:rgba(123,104,238,0.08); color:var(--purple); font-size:11px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; }
@@ -446,7 +465,7 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
         <button onclick="setLang('zh')" id="lang-zh" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:var(--purple);transition:box-shadow .15s">中</button>
         <button onclick="setLang('en')" id="lang-en" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:var(--mid);transition:box-shadow .15s">EN</button>
       </div>
-      <button class="new-btn" id="stats-btn" style="background:var(--lavender);color:var(--dark);font-size:12px;padding:8px 14px;box-shadow:4px 4px 9px #c8cedb,-4px -4px 9px #FFFFFF">📊 <span id="weekly-btn-label">周报告</span></button>
+      <button class="new-btn weekly-btn" id="stats-btn" style="background:var(--lavender);color:var(--dark);font-size:12px;padding:8px 14px">📊 <span id="weekly-btn-label">周报告</span></button>
       <button class="new-btn" id="new-entry-btn">✦ <span id="new-btn-label">新记录</span></button>
     </div>
   </div>
@@ -779,7 +798,7 @@ function renderTracker(){
         const row=document.createElement('div');row.className='tracker-entry-row';
         const parts=e.dateKey.split('-');const m2=parts[1],d2=parts[2];
         let fHTML='';
-        (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;const dv=Array.isArray(v)?v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' \u00b7 '):v;fHTML+='<span class="tracker-field-tag">'+f.label+': '+dv+'</span>';});
+        (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;let dv;if(f.type==='number'&&Array.isArray(v)){dv=v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' \u00b7 ');}else if(Array.isArray(v)){dv=v.join(', ');}else{dv=v;}fHTML+='<span class="tracker-field-tag">'+f.label+': '+dv+'</span>';});
         row.innerHTML='<span class="tracker-date">'+m2+'/'+d2+'</span><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+''+(fHTML?'<div class="tracker-entry-fields">'+fHTML+'</div>':'')+(e.note?'<div class="tracker-entry-note">'+e.note+'</div>':'')+'</div><span style="font-size:10px;color:#854F0B;background:#FAEEDA;border-radius:999px;padding:2px 7px;flex-shrink:0">🐾 +'+calcCoins(e,e.dateKey)+'</span>';
         body.appendChild(row);
       });}
@@ -1923,14 +1942,24 @@ function buildCard(e,p){
   const card=document.createElement('div');card.className='entry-card';
   const isArchived=(p.status||'active')==='archived';
   let fHTML='';
-  (p.fields||[]).forEach(f=>{
+  // select fields first
+  const selectFields=(p.fields||[]).filter(x=>x.type!=='number');
+  selectFields.forEach((f,fi)=>{
     if(e.skipped&&e.skipped[f.id])return;
     const v=e.fields&&e.fields[f.id];if(!v)return;
-    if(f.type==='number'){
-      const display=Array.isArray(v)?v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' · '):v;
-      fHTML+=`<span class="ec-field">· ${f.label}: <strong>${display}</strong></span>`;
-    }
-    else{const tags=String(v).split(',').map(s=>s.trim()).filter(Boolean);fHTML+=tags.map(t=>`<span class="ec-selval">${t}</span>`).join('');}
+    const cls='ec-selval-f'+(fi%4);
+    if(fi>0&&fHTML)fHTML+=`<div class="ec-vdivider"></div>`;
+    const tags=Array.isArray(v)?v:String(v).split(',').map(s=>s.trim()).filter(Boolean);
+    fHTML+=tags.map(tg=>`<span class="ec-selval ${cls}">${tg}</span>`).join('');
+  });
+  // number fields after
+  (p.fields||[]).filter(x=>x.type==='number').forEach(f=>{
+    if(e.skipped&&e.skipped[f.id])return;
+    const v=e.fields&&e.fields[f.id];if(!v)return;
+    const unit=Array.isArray(v)?'':(f.units&&f.units.length?f.units[0]:(f.unit||''));
+    const display=Array.isArray(v)?v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' · '):(v+(unit?' '+unit:''));
+    if(fHTML)fHTML+=`<div class="ec-vdivider"></div>`;
+    fHTML+=`<span class="ec-field">· ${f.label}: <strong>${display}</strong></span>`;
   });
   const coins=calcCoins(e, dk(selDate));
   card.innerHTML=`<div class="ec-inner">
@@ -1940,8 +1969,8 @@ function buildCard(e,p){
     </div>
     <div class="ec-body">
       ${e.title&&e.title.trim()?`<div class="ec-title">${e.title}</div>`:''}
-      <div class="ec-meta">${fHTML}${e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">↗ ${e.linkLabel||t('form_link')}</a>`:''}</div>
-      ${e.note?`<div class="ec-note">${e.note}</div>`:''}
+      <div class="ec-meta">${fHTML}${e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none"><svg width="12" height="12" viewBox="0 0 14 14" fill="none" style="display:inline;vertical-align:-1px"><path d="M5.5 8.5a3 3 0 0 0 4.243 0l1.5-1.5a3 3 0 0 0-4.243-4.243L6.25 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 5.5a3 3 0 0 0-4.243 0l-1.5 1.5a3 3 0 0 0 4.243 4.243L7.75 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> ${e.linkLabel||t('form_link')}</a>`:''}</div>
+      ${e.note?`<div class="ec-note"><svg class="ec-note-icon" width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 2h7l3 3v7H2V2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 2v3h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="4" y1="9.5" x2="8" y2="9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg><span>${e.note}</span></div>`:''}
     </div>
     <span class="ec-coin">${dk(selDate)!==todayKey?'½ ':''} 🐾 +${coins}</span>
     <div class="ec-acts">
@@ -1987,19 +2016,19 @@ function buildEditForm(e,p){
     </div>`;
   }
   let varsHTML='';
-  (p.fields||[]).forEach(f=>{
+  (p.fields||[]).forEach((f,fi)=>{
     const isSkip=es.skipped[f.id],curVal=es.fields[f.id]||'',isOpen=openDropId===('ed-'+f.id);
     if(f.type==='number'){
       const units=f.units&&f.units.length?f.units:(f.unit?[f.unit]:['']);
       const curArr=Array.isArray(curVal)?curVal:(curVal?[{unit:units[0],val:curVal}]:[]);
-      varsHTML+=`<div class="var-row" style="${units.length>1?'align-items:flex-start':''}"><span class="var-label">${f.label}</span>
+      varsHTML+=`<div class="var-row" style="${units.length>1?'align-items:flex-start':''}"><span class="var-label var-label-f${fi%4}">${f.label}</span>
         <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;flex-direction:column;gap:5px'>${units.map(u=>{const found=curArr.find(c=>c.unit===u);const v=found?found.val:'';return`<div style='display:flex;align-items:center;gap:5px'><input type="number" id="edf-${f.id}-${u||'_'}" value="${v}" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:5px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8, inset -2px -2px 5px #FFFFFF">${u?`<span style="font-size:12px;color:var(--mid);font-weight:600">${u}</span>`:''}</div>`;}).join('')}</div>`}</div>
-        <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
+        <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleEditSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
     } else {
       const esArr=editState.fields[f.id]||[];
       const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):t('form_select_ph');
-      varsHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-        <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'}">${esDisplay}</span><span style="opacity:.4">▾</span></button>
+      varsHTML+=`<div class="var-row"><span class="var-label var-label-f${fi%4}">${f.label}</span>
+        <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esDisplay}</span><span style="opacity:.4;flex-shrink:0">▾</span></button>
           ${isOpen?`<div class="sel-dropdown">
             ${f.options.map(o=>{const arr=editState.fields[f.id]||[];const isSel=Array.isArray(arr)?arr.includes(o):arr===o;return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickEditOpt('${f.id}','${o}')">
               <span>${isSel?'✓ ':''} ${o}</span>
@@ -2007,12 +2036,12 @@ function buildEditForm(e,p){
             </div>`;}).join('')}
             <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">${t('form_save')}</button></div>
           </div>`:''}</div>`}</div>
-        <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleEditSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
+        <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleEditSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
     }
   });
   const projBadge=isMissingProj
     ?`<button class="proj-sel-btn error" onclick="editState.showProjPicker=!editState.showProjPicker;renderAll()" style="animation:none">${t('no_proj_warn')}<span style="opacity:.5">▾</span></button>`
-    :`<div class="proj-sel-btn" style="cursor:default;opacity:.7"><div style="width:8px;height:8px;border-radius:50%;background:${p.color}"></div>${p.name}</div>`;
+    :`<div class="proj-badge-wrap"><div class="proj-badge" style="background:rgba(${hexRgb(p.color)},.16);color:${p.color};border:1.5px solid ${p.color};box-shadow:inset 1.5px 1.5px 3px rgba(0,0,0,.12), inset -1px -1px 2px rgba(255,255,255,.5)">${p.name}</div></div>`;
   wrap.innerHTML=`
     ${editPpHTML}
     <div class="form-row">
@@ -2021,12 +2050,12 @@ function buildEditForm(e,p){
     </div>
     ${varsHTML.length?`<div class="var-rows">${varsHTML}</div>`:''}
     <div class="extras-row">
-      <div class="extra-toggle${es.showNote?' on':''}" onclick="editState.showNote=!editState.showNote;renderAll()">📝 ${t('form_note')}</div>
-      <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()">🔗 ${t('form_link')}</div>
+      <div class="extra-toggle${es.showNote?' on':''}" onclick="editState.showNote=!editState.showNote;renderAll()"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M2 2h7l3 3v7H2V2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 2v3h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="4" y1="9.5" x2="8" y2="9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> ${t('form_note')}</div>
+      <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M5.5 8.5a3 3 0 0 0 4.243 0l1.5-1.5a3 3 0 0 0-4.243-4.243L6.25 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 5.5a3 3 0 0 0-4.243 0l-1.5 1.5a3 3 0 0 0 4.243 4.243L7.75 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
       ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="${t('form_note_ph')}">${es.note}</textarea>`:''}
-      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="editState.linkLabel=this.value"></div>`:''}
+      ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px #C8C8D8,inset -3px -3px 7px #FFFFFF" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px #C8C8D8,inset -3px -3px 7px #FFFFFF" oninput="editState.linkLabel=this.value"></div>`:''}
     </div>
     <div class="form-btns">
       <button class="f-cancel" onclick="cancelEdit()">${t('form_cancel')}</button>
@@ -2120,19 +2149,19 @@ function buildNewForm(){
   let dynHTML='';
   if(p&&p.fields&&p.fields.length){
     dynHTML='<div class="var-rows">';
-    p.fields.forEach(f=>{
+    p.fields.forEach((f,fi)=>{
       const isSkip=skippedFields[f.id],curVal=window._fv&&window._fv[f.id]||'',isOpen=openDropId===('new-'+f.id);
       if(f.type==='number'){
         const units=f.units&&f.units.length?f.units:(f.unit?[f.unit]:['']);
         const multiUnit=units.length>1;
-        dynHTML+=`<div class="var-row" style="${multiUnit?'align-items:flex-start':''}"><span class="var-label">${f.label}</span>
+        dynHTML+=`<div class="var-row" style="${multiUnit?'align-items:flex-start':''}"><span class="var-label var-label-f${fi%4}">${f.label}</span>
           <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;flex-direction:column;gap:5px'>${units.map(u=>`<div style='display:flex;align-items:center;gap:5px'><input type='number' id='ff-${f.id}-${u||'_'}' placeholder="0" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:5px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8, inset -2px -2px 5px #FFFFFF">${u?`<span style="font-size:12px;color:var(--mid);font-weight:600">${u}</span>`:''}</div>`).join('')}</div>`}</div>
-          <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
+          <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
       } else {
         const selArr=(window._fv&&window._fv[f.id])||[];
         const selDisplay=selArr.length?selArr.join(', '):t('form_select_ph');
-        dynHTML+=`<div class="var-row"><span class="var-label">${f.label}</span>
-          <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4">▾</span></button>
+        dynHTML+=`<div class="var-row"><span class="var-label var-label-f${fi%4}">${f.label}</span>
+          <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4;flex-shrink:0">▾</span></button>
             ${isOpen?`<div class="sel-dropdown">
               ${f.options.map(o=>{const isSel=selArr.includes(o);return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickNewOpt('${f.id}','${o}')">
                 <span>${isSel?'✓ ':''} ${o}</span>
@@ -2140,7 +2169,7 @@ function buildNewForm(){
               </div>`;}).join('')}
               <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">${t('form_save')}</button></div>
             </div>`:''}</div>`}</div>
-          <button class="skip-btn${isSkip?' skipped':''}" onclick="toggleSkip('${f.id}')">${isSkip?'＋':'✕'}</button></div>`;
+          <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
       }
     });
     dynHTML+='</div>';
@@ -2157,12 +2186,12 @@ function buildNewForm(){
     </div>
     ${dynHTML}
     <div class="extras-row">
-      <div class="extra-toggle${formExtras.note?' on':''}" onclick="toggleExtra('note')">📝 ${t('form_note')}</div>
-      <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')">🔗 ${t('form_link')}</div>
+      <div class="extra-toggle${formExtras.note?' on':''}" onclick="toggleExtra('note')"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M2 2h7l3 3v7H2V2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 2v3h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="4" y1="9.5" x2="8" y2="9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> ${t('form_note')}</div>
+      <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M5.5 8.5a3 3 0 0 0 4.243 0l1.5-1.5a3 3 0 0 0-4.243-4.243L6.25 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 5.5a3 3 0 0 0-4.243 0l-1.5 1.5a3 3 0 0 0 4.243 4.243L7.75 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
       ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="${t('field_note_ph')}" oninput="formNote=this.value"></textarea>`:''}
-      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:0.5px solid rgba(123,104,238,0.2);border-radius:8px;padding:6px 8px;background:rgba(255,255,255,0.9);color:var(--dark);outline:none" oninput="formLinkLabel=this.value"></div>`:''}
+      ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px #C8C8D8,inset -3px -3px 7px #FFFFFF" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px #C8C8D8,inset -3px -3px 7px #FFFFFF" oninput="formLinkLabel=this.value"></div>`:''}
     </div>
     <div class="coin-preview">🐾 ${t('form_earn')} <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?`<span style="color:var(--pink);font-size:10px;margin-left:6px">(${t('form_past')} ×½)</span>`:''}</div>
     <div class="form-btns">
