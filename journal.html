@@ -2372,12 +2372,25 @@ function renderModal(){
       let subHtml='';
       if(isSel){
         subHtml=`<div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
-            ${f.options.map((o,oi)=>`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px #C8C8D8,-3px -3px 7px #FFFFFF">
-                <span style="width:6px;height:6px;border-radius:50%;background:${selColors[i%4]};flex-shrink:0;display:inline-block"></span>
-                <input id="mopt-${i}-${oi}" type="text" value="${o}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:${selColors[i%4]};border:none;background:transparent;outline:none;padding:0;min-width:0" onchange="modal.fields[${i}].options[${oi}]=this.value">
-                <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#C8C8D8;display:flex;align-items:center;margin-left:auto;flex-shrink:0" onmouseover="this.style.color='#266ea7'" onmouseout="this.style.color='#C8C8D8'" onclick="document.getElementById('mopt-${i}-${oi}').focus()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
-                <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeOption(${i},${oi})">×</button>
-            </div>`).join('')}
+            ${f.options.map((o,oi)=>{
+          const isEditing=(modal._editKey===`opt-${i}-${oi}`);
+          if(isEditing){
+            return`<div style="display:flex;align-items:center;gap:6px">
+              <input id="mopt-${i}-${oi}" type="text" value="${o}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].options[${oi}]=v;}modal._editKey=null;renderModal()}"
+                onchange="modal.fields[${i}].options[${oi}]=this.value.trim()">
+              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#266ea7;display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('mopt-${i}-${oi}').value.trim();if(v)modal.fields[${i}].options[${oi}]=v;modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeOption(${i},${oi})">×</button>
+            </div>`;
+          } else {
+            return`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px #C8C8D8,-3px -3px 7px #FFFFFF">
+              <span style="width:6px;height:6px;border-radius:50%;background:${selColors[i%4]};flex-shrink:0;display:inline-block"></span>
+              <span style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:${selColors[i%4]};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o}</span>
+              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#C8C8D8;display:flex;align-items:center;margin-left:auto;flex-shrink:0" onmouseover="this.style.color='#266ea7'" onmouseout="this.style.color='#C8C8D8'" onclick="modal._editKey='opt-${i}-${oi}';renderModal();setTimeout(()=>{const el=document.getElementById('mopt-${i}-${oi}');if(el){el.focus();el.select();}},30)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeOption(${i},${oi})">×</button>
+            </div>`;
+          }
+        }).join('')}
             <div style="display:flex;gap:6px;margin-top:4px">
               <input type="text" id="modal-new-opt-${i}" placeholder="${t('form_add_sub')}" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
               <button style="width:28px;height:28px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 8px #B8BEC8,-3px -3px 8px #FFFFFF;flex-shrink:0" onclick="addOptionInModal(${i})">+</button>
@@ -2386,13 +2399,27 @@ function renderModal(){
       } else {
         const units=f.units||[];
         subHtml=`<div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
-            ${units.map((u,ui)=>`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px #C8C8D8,-3px -3px 7px #FFFFFF">
-                <span style="width:6px;height:6px;border-radius:50%;background:#888;flex-shrink:0;opacity:.4;display:inline-block"></span>
-                <input id="munit-${i}-${ui}" type="text" value="${u}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--mid);border:none;background:transparent;outline:none;padding:0;min-width:0" onchange="modal.fields[${i}].units[${ui}]=this.value">
-                <span style="font-size:9px;font-weight:800;color:#AEB6C4;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">单位</span>
-                <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#C8C8D8;display:flex;align-items:center;flex-shrink:0" onmouseover="this.style.color='#266ea7'" onmouseout="this.style.color='#C8C8D8'" onclick="document.getElementById('munit-${i}-${ui}').focus()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
-                <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeUnit(${i},${ui})">×</button>
-            </div>`).join('')}
+            ${units.map((u,ui)=>{
+          const isEditingU=(modal._editKey===`unit-${i}-${ui}`);
+          if(isEditingU){
+            return`<div style="display:flex;align-items:center;gap:6px">
+              <input id="munit-${i}-${ui}" type="text" value="${u}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].units[${ui}]=v;}modal._editKey=null;renderModal()}"
+                onchange="modal.fields[${i}].units[${ui}]=this.value.trim()">
+              <span style="font-size:9px;font-weight:800;color:#AEB6C4;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">单位</span>
+              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#266ea7;display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('munit-${i}-${ui}').value.trim();if(v)modal.fields[${i}].units[${ui}]=v;modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeUnit(${i},${ui})">×</button>
+            </div>`;
+          } else {
+            return`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px #C8C8D8,-3px -3px 7px #FFFFFF">
+              <span style="width:6px;height:6px;border-radius:50%;background:#888;flex-shrink:0;opacity:.4;display:inline-block"></span>
+              <span style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--mid);min-width:0">${u}</span>
+              <span style="font-size:9px;font-weight:800;color:#AEB6C4;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">单位</span>
+              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#C8C8D8;display:flex;align-items:center;flex-shrink:0" onmouseover="this.style.color='#266ea7'" onmouseout="this.style.color='#C8C8D8'" onclick="modal._editKey='unit-${i}-${ui}';renderModal();setTimeout(()=>{const el=document.getElementById('munit-${i}-${ui}');if(el){el.focus();el.select();}},30)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeUnit(${i},${ui})">×</button>
+            </div>`;
+          }
+        }).join('')}
             <div style="display:flex;gap:6px;margin-top:4px">
               <input type="text" id="modal-new-unit-${i}" placeholder="\u5982 min\u3001hour\u3001km..." style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addUnitInModal(${i})}">
               <button style="width:28px;height:28px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 8px #B8BEC8,-3px -3px 8px #FFFFFF;flex-shrink:0" onclick="addUnitInModal(${i})">+</button>
