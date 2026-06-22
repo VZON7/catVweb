@@ -246,7 +246,7 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 
 /* MODAL */
 .modal-bg { position:fixed; inset:0; background:rgba(45,43,61,.35); display:flex; align-items:center; justify-content:center; z-index:300; border-radius:0; }
-.modal { background:var(--lavender); border-radius:16px; border:none; padding:20px; width:300px; max-height:85vh; overflow-y:auto; box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; }
+.modal { background:var(--lavender); border-radius:16px; border:none; padding:20px; width:300px; max-height:85vh; overflow-y:auto; overflow-x:hidden; box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; }
 .modal-title { font-family:'ZCOOL XiaoWei',sans-serif; font-size:16px; color:var(--dark); margin-bottom:14px; }
 .modal-lbl { font-size:11px; font-weight:700; color:var(--mid); margin-bottom:5px; margin-top:10px; }
 .modal input { width:100%; font-size:13px; font-family:'Nunito',sans-serif; border:none; border-radius:8px; padding:7px 10px; background:var(--lavender); color:var(--dark); outline:none; box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
@@ -418,14 +418,14 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .cp-color-name { font-size:11px; color:var(--mid); margin-bottom:7px; padding-left:1px; }
 .cp-bottom-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .cp-rgb-group { display:flex; gap:4px; }
-.cp-rgb-box { background:rgba(255,255,255,0.5); border:0.5px solid rgba(123,104,238,0.15); border-radius:7px; padding:3px 5px; text-align:center; width:38px; }
+.cp-rgb-box { background:var(--lavender); border:none; border-radius:7px; padding:3px 5px; text-align:center; width:38px; box-shadow:inset 2px 2px 5px #C8C8D8, inset -2px -2px 5px #FFFFFF; }
 .cp-rgb-num { font-size:11px; font-weight:500; color:var(--dark); }
 .cp-rgb-lbl { font-size:8px; color:var(--mid); }
 .cp-bag-wrap { position:relative; display:flex; align-items:center; justify-content:center; }
 .cp-bag-btn { width:44px; height:44px; border-radius:10px; border:none; background:var(--lavender); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:4px; overflow:hidden; flex-shrink:0; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; transition:box-shadow .15s; }
-.cp-bag-btn:hover { background:rgba(239,159,39,0.1); border-color:rgba(239,159,39,0.4); }
+.cp-bag-btn:hover { box-shadow:4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF; }
 .cp-bag-btn img { width:100%; height:100%; object-fit:contain; }
-.cp-palette-popup { display:none; position:absolute; right:0; top:50px; background:rgba(234,232,245,0.98); border:0.5px solid rgba(123,104,238,0.3); border-radius:12px; padding:10px 12px; min-width:190px; box-shadow:0 6px 24px rgba(45,43,61,0.15); z-index:100; }
+.cp-palette-popup { display:none; position:absolute; right:0; top:50px; background:var(--lavender); border:none; border-radius:12px; padding:10px 12px; min-width:190px; box-shadow:6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF; z-index:100; }
 .cp-palette-popup.open { display:block; }
 .cp-palette-popup-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .cp-palette-popup-title { font-size:11px; font-weight:600; color:var(--dark); }
@@ -438,13 +438,13 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .cp-my-del { position:absolute; top:-3px; right:-3px; width:11px; height:11px; border-radius:50%; background:var(--pink); color:#fff; font-size:8px; display:none; align-items:center; justify-content:center; cursor:pointer; line-height:1; }
 .cp-my-swatch:hover .cp-my-del { display:flex; }
 .cp-palette-empty { font-size:11px; color:var(--mid); font-style:italic; }
-.cp-closest-wrap { background:rgba(255,255,255,0.5); border:0.5px solid rgba(123,104,238,0.15); border-radius:8px; padding:7px 9px; }
+.cp-closest-wrap { background:var(--lavender); border:none; border-radius:8px; padding:7px 9px; box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .cp-closest-title { font-size:10px; font-weight:700; color:var(--mid); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
 .cp-closest-item { display:flex; align-items:center; gap:6px; padding:3px 5px; border-radius:6px; cursor:pointer; transition:background .12s; }
-.cp-closest-item:hover { background:rgba(123,104,238,0.08); }
-.cp-closest-item.cp-sel { background:rgba(123,104,238,0.12); }
+.cp-closest-item:hover { background:rgba(38,110,167,0.06); }
+.cp-closest-item.cp-sel { background:rgba(38,110,167,0.10); }
 .cp-closest-dot { width:13px; height:13px; border-radius:50%; flex-shrink:0; border:0.5px solid rgba(0,0,0,.1); }
-.cp-closest-hex { font-size:10px; font-weight:500; color:var(--dark); min-width:54px; font-family:monospace; }
+.cp-closest-hex { font-size:10px; font-weight:700; color:var(--dark); min-width:54px; font-family:'Nunito',sans-serif; }
 .cp-closest-name { font-size:10px; color:var(--mid); flex:1; }
 .cp-closest-check { font-size:10px; color:#1D9E75; opacity:0; transition:opacity .12s; }
 .cp-closest-item.cp-sel .cp-closest-check { opacity:1; }
@@ -568,7 +568,7 @@ const I18N={
     form_past:'过去日期',form_earn:'预计获得',form_half:'减半',
     edit_reselect:'重新选择',edit_no_proj:'未选择',
     modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
-    modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',
+    modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',modal_sel_title:'文字选择项',modal_sel_desc:'建立一组选项，记录时从中勾选，如工具、状态、项目阶段',modal_num_title:'数字栏位',modal_num_desc:'记录可量化的数据，例如时间、距离、次数',
     modal_unit:'单位',modal_unit_ph:'如 min、km、次…',
     modal_save:'保存',modal_cancel:'取消',modal_delete:'删除',modal_edit:'编辑',
     del_title:'删除「',del_archive_btn:'保留历史记录，先归档',
@@ -599,8 +599,8 @@ const I18N={
     cb_export_docx:'⬇ 导出 DOCX',cb_export_pdf:'🖨 打印/PDF',
     cb_added:'已选中',cb_add:'加入导出',
     cb_total:'合计：',cb_detail:'详细记录',cb_chart_title:'统计图表',cb_times:'次',cb_unit_suffix:'次',
-    cp_open:'打开调色盘',cp_my:'我的颜色',cp_none:'还没有保存颜色',
-    cp_save:'保存到我的颜色',cp_nearest:'近似颜色',cp_drag:'拖动排序',cp_click:'点击选用',
+    cp_open:'打开调色盘',cp_my:'我的颜色包',cp_none:'还没有保存颜色',
+    cp_save:'添加进我的颜色包',cp_nearest:'近似颜色',cp_drag:'拖动排序',cp_click:'点击选用',
     cp_display_as:'显示为「数字',
     weekly_done:'这周完成了',weekly_suffix:'条记录，共赚了',weekly_proud:'为你骄傲！',
     export_status:'状态',export_total:'总记录',export_detail:'详细记录',
@@ -611,7 +611,7 @@ const I18N={
     export_popup_warn:'请允许弹窗，或复制以下内容：',
     export_print_warn:'请允许浏览器弹窗以打印报告',
     field_like_sel:'如 工具、阶段',field_like_num:'如 Sessions、时长',
-    field_note_ph:'补充说明、心得',field_record:'记录下来',field_custom:'自定义栏位',
+    field_note_ph:'补充说明、心得',field_record:'记录下来',field_custom:'自定义栏位',modal_custom_fields:'自定义栏位',
     proj_sel_prompt:'选择 Project / Task',
     no_proj_warn:'⚠ 未选择 project',
     proj_sel_edit:'重新选择 Project / Task',
@@ -640,7 +640,7 @@ const I18N={
     form_past:'Past date',form_earn:'Will earn',form_half:'Half',
     edit_reselect:'Reselect',edit_no_proj:'No project',
     modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
-    modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',
+    modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',modal_sel_title:'Text Options',modal_sel_desc:'Create a set of options to pick from when logging, e.g. tools, status, project stage',modal_num_title:'Number Field',modal_num_desc:'Record quantifiable data, e.g. time, distance, count',
     modal_unit:'Unit',modal_unit_ph:'e.g. min, km, times...',
     modal_save:'Save',modal_cancel:'Cancel',modal_delete:'Delete',modal_edit:'Edit',
     del_title:'Delete "',del_archive_btn:'Archive — keep all records',
@@ -671,8 +671,8 @@ const I18N={
     cb_export_docx:'Export DOCX',cb_export_pdf:'Print/PDF',
     cb_added:'Added',cb_add:'+ Add to Export',
     cb_total:'Total: ',cb_detail:'Detailed Records',cb_chart_title:'Statistics Chart',cb_times:'times',
-    cp_open:'Open Color Picker',cp_my:'My Colors',cp_none:'No saved colors yet',
-    cp_save:'Save Color',cp_nearest:'Similar color',cp_drag:'Drag to reorder',cp_click:'Click to use',
+    cp_open:'Open Color Picker',cp_my:'My Color Bag',cp_none:'No saved colors yet',
+    cp_save:'Add to my Color Bag',cp_nearest:'Similar color',cp_drag:'Drag to reorder',cp_click:'Click to use',
     cp_display_as:'Shown as number',
     weekly_done:'This week you completed',weekly_suffix:' entries and earned',weekly_proud:'Great work!',
     export_status:'Status',export_total:'Total entries',export_detail:'Detailed Records',
@@ -683,7 +683,7 @@ const I18N={
     export_popup_warn:'Please allow popups, or copy the content below:',
     export_print_warn:'Please allow browser popups to print the report',
     field_like_sel:'e.g. Tools, Stage',field_like_num:'e.g. Sessions, Duration',
-    field_note_ph:'Notes and thoughts',field_record:'Log it',field_custom:'custom fields',
+    field_note_ph:'Notes and thoughts',field_record:'Log it',field_custom:'custom fields',modal_custom_fields:'Custom Fields',
     proj_sel_prompt:'Select Project / Task',
     no_proj_warn:'⚠ No project selected',
     proj_sel_edit:'Reselect Project / Task',
@@ -2306,6 +2306,8 @@ function renderModal(){
   const mc=document.getElementById('modal-container');
   if(!modal){mc.innerHTML='';return;}
   const m=modal;
+  const _modalEl=mc.querySelector('.modal');
+  const _scrollTop=_modalEl?_modalEl.scrollTop:0;
   mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this){modal=null;renderModal()}">
   <div class="modal">
     <div class="modal-title">${m.mode==='add'?t('modal_new')+' '+t('modal_task'):t('modal_edit')+' '+t('modal_task')}</div>
@@ -2318,7 +2320,7 @@ function renderModal(){
           <div id="cp-presets" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"></div>
           <button class="cp-palette-toggle" id="cp-palette-toggle" onclick="cpTogglePanel()" title="${t('cp_open')}" style="display:flex;align-items:center;gap:5px;width:auto;border-radius:999px;padding:3px 10px 3px 4px;white-space:nowrap">
             <img src="Pictures/cat_paws_colors.png" alt="🎨" onerror="this.style.display='none'" style="width:20px;height:20px;object-fit:contain;flex-shrink:0">
-            <span style="font-size:11px;font-weight:600;color:var(--purple);font-family:'Nunito',sans-serif">More Colors</span>
+            <span style="font-size:11px;font-weight:700;font-family:'Nunito',sans-serif;background:linear-gradient(to right,#FF6B6B,#FF9F43,#F7CA18,#26de81,#45aaf2,#a55eea);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">+ More Colors</span>
           </button>
         </div>
         <div id="cp-badge-preview" style="display:inline-flex;align-items:center;padding:3px 12px;border-radius:999px;border:1.5px solid rgba(123,104,238,0.5);background:rgba(123,104,238,0.1);font-size:12px;font-weight:700;color:var(--purple);font-family:'Nunito',sans-serif;white-space:nowrap;word-break:break-all;flex-wrap:wrap;max-width:100%">Project / Task</div>
@@ -2329,7 +2331,7 @@ function renderModal(){
         <div class="cp-preview-row">
           <div class="cp-preview-swatch" id="cp-preview-swatch"></div>
           <input class="cp-hex-input" id="cp-hex-input" type="text" maxlength="7" placeholder="#000000" spellcheck="false">
-          <button class="cp-save-icon-btn" onclick="cpSaveColor()" title="${t('cp_save')}" style="font-size:18px;font-weight:400;color:var(--purple);letter-spacing:0">＋</button>
+          <button class="cp-save-icon-btn" onclick="cpSaveColor()" title="${t('cp_save')}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="7" y1="2" x2="7" y2="12" stroke="#266ea7" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="7" x2="12" y2="7" stroke="#266ea7" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
         <div class="cp-color-name" id="cp-color-name"></div>
         <div class="cp-bottom-row">
@@ -2361,7 +2363,8 @@ function renderModal(){
     <div style="display:flex;gap:6px;margin-bottom:4px">
       ${['active','done','archived'].map(s=>{const lbl=s==='active'?t('status_active'):s==='done'?t('status_done'):t('status_archived');const isSel=(m.status||'active')===s;const textColor=isSel?(s==='active'?'#1D9E75':s==='done'?'#266ea7':'#A32D2D'):'var(--mid)';const shadow=isSel?'inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF':'3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF';return`<div onclick="modal.status='${s}';renderModal()" style="padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;border:none;background:var(--lavender);color:${textColor};box-shadow:${shadow};transition:box-shadow .15s">${lbl}</div>`;}).join('')}
     </div>
-    <div class="modal-lbl">Variables (${t('field_custom')})</div>
+    ${m.mode==='edit'?`<div class="modal-lbl">${t('modal_custom_fields')}</div>`:''
+}
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px">${m.fields.map((f,i)=>{
       const selColors=['#2E6090','#5887A8','#7FA4BE','#3A7A9C'];
       const isSel=f.type==='select';
@@ -2428,7 +2431,7 @@ function renderModal(){
       }
       return`<div style="background:var(--lavender);border-radius:12px;padding:10px 12px;box-shadow:6px 6px 12px #C8C8D8,-6px -6px 12px #FFFFFF">
         <div style="display:flex;align-items:center;gap:8px;width:100%">
-          <span style="font-size:10px;font-weight:800;font-family:'Nunito',sans-serif;padding:2px 8px;border-radius:999px;background:${badgeBg};color:${badgeColor};flex-shrink:0;box-shadow:inset 2px 2px 4px ${badgeShadowIn},inset -2px -2px 4px ${badgeShadowOut}">${isSel?t('modal_sel'):t('modal_num')}</span>
+          <span style="font-size:10px;font-weight:800;font-family:'Nunito',sans-serif;padding:3px 10px;border-radius:999px;background:${badgeBg};color:${badgeColor};flex-shrink:0;box-shadow:3px 3px 8px #C0C8D8,-3px -3px 8px #FFFFFF,inset 0 2px 6px rgba(180,190,210,0.45),inset 0 -1px 2px rgba(255,255,255,0.85)">${isSel?t('modal_sel'):t('modal_num')}</span>
           <input type="text" value="${f.label}" placeholder="${t('modal_field_name')}" style="flex:1;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:4px 8px;background:var(--lavender);color:var(--dark);outline:none;min-width:0;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onchange="renameField(${i},this.value)">
           <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeField(${i})">\u2715</button>
         </div>
@@ -2436,9 +2439,22 @@ function renderModal(){
       </div>`;
     }).join('')}</div>
     <hr style="border:none;height:0;margin:8px 0;border-top:1px solid #C9D0DC;border-bottom:1px solid #FFFFFF">
-    <div class="ftype-row">
-      <div class="ftype-btn${m.nft==='number'?' sel':''}" onclick="modal.nft='number';renderModal()">${t('modal_num')}</div>
-      <div class="ftype-btn${m.nft==='select'?' sel':''}" onclick="modal.nft='select';renderModal()">${t('modal_sel')}</div>
+    <div style="font-size:12px;font-weight:700;color:var(--mid);margin-bottom:10px">+ ${t('modal_new')} · ${t('field_custom')}</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;justify-content:center">
+      <div onclick="modal.nft='select';renderModal()" style="width:118px;flex-shrink:0;border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--lavender);transition:box-shadow .15s;box-shadow:${m.nft==='select'?'inset 4px 4px 9px #C8C8D8,inset -4px -4px 9px #FFFFFF':'3px 3px 8px #C8C8D8,-3px -3px 8px #FFFFFF'}">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(123,104,238,0.12);display:flex;align-items:center;justify-content:center;box-shadow:${m.nft==='select'?'inset 2px 2px 5px #C9B8DE,inset -2px -2px 5px #FBF7FF':'2px 2px 5px #C9B8DE,-2px -2px 5px #FBF7FF'};margin-bottom:6px">
+          <span style="font-size:13px;font-weight:800;color:#7B68EE">Aa</span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:${m.nft==='select'?'#7B68EE':'var(--dark)'};margin-bottom:4px">${t('modal_sel_title')}</div>
+        <div style="font-size:10px;color:var(--mid);line-height:1.4">${t('modal_sel_desc')}</div>
+      </div>
+      <div onclick="modal.nft='number';renderModal()" style="width:118px;flex-shrink:0;border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--lavender);transition:box-shadow .15s;box-shadow:${m.nft==='number'?'inset 4px 4px 9px #C8C8D8,inset -4px -4px 9px #FFFFFF':'3px 3px 8px #C8C8D8,-3px -3px 8px #FFFFFF'}">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(29,158,117,0.12);display:flex;align-items:center;justify-content:center;box-shadow:${m.nft==='number'?'inset 2px 2px 5px #B5D7CE,inset -2px -2px 5px #F4FBF9':'2px 2px 5px #B5D7CE,-2px -2px 5px #F4FBF9'};margin-bottom:6px">
+          <span style="font-size:13px;font-weight:800;color:#1D9E75">#</span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:${m.nft==='number'?'#1D9E75':'var(--dark)'};margin-bottom:4px">${t('modal_num_title')}</div>
+        <div style="font-size:10px;color:var(--mid);line-height:1.4">${t('modal_num_desc')}</div>
+      </div>
     </div>
     <div class="add-field-row">
       <input type="text" id="m-field" placeholder="${m.nft==='number'?t('field_like_num'):t('field_like_sel')}" autocomplete="off" oninput="modal.nf=this.value" value="${m.nf}">
@@ -2450,7 +2466,10 @@ function renderModal(){
       <button class="m-save" onclick="saveProject()">${t('modal_save')}</button>
     </div>
   </div></div>`;
-  setTimeout(()=>cpInitPicker(modal?modal.color:'#7B68EE'),0);
+  setTimeout(()=>{
+    cpInitPicker(modal?modal.color:'#7B68EE');
+    const _el=mc.querySelector('.modal');if(_el)_el.scrollTop=_scrollTop;
+  },0);
 }
 function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[],unit:'',units:[]});modal.nf='';renderModal()}
 function renameField(fi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].label=val.trim()}
