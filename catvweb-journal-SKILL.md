@@ -370,3 +370,36 @@ sed -n "$((START+1)),$((END-1))p" journal.html | tr -d '\r' > /tmp/check.js && n
 
 - **`cb_unit_suffix` 只有 zh key，没有 en key**——英文版数字格式走 `lang==='en'?('x'+v):...` 分支，直接拼 `'x'`，不调用这个 key，所以英文不需要对应翻译。不是双语缺失。
 - **`f.unit`（旧字符串单位）仍保留在多处代码里，与新的 `f.units`（数组）共存**——这是向后兼容设计，旧项目数据没有 `units` 时回退用 `unit`。不要删除 `f.unit` 相关代码。
+
+
+---
+
+## 二十一、与 ZONZON 沟通约定
+
+### 效果名称（用「我看到的东西」描述，不用 CSS class 名）
+
+| 说这个 | 不说这个 |
+|---|---|
+| 「标准凸起效果」 | `var(--neu-raised)` |
+| 「sidebar 凹陷效果」 | `var(--neu-inset-val)` |
+| 「七日效果」 | 2C/2E 组合 |
+| 「新纪录效果」 | 2G |
+| 「周报告效果」 | 2H |
+| 「竖向雕刻线」 | 2I |
+| 「项目徽章效果」 | 2J |
+| 「布凹效果」 | 2K |
+| 「entry card 选项标签」 | `.ec-selval` |
+| 「表单字段标题颜色」 | `.var-label` |
+| 「跳过按钮」 | `.skip-btn` |
+| 「Note/Link 切换按钮」 | `.extra-toggle` |
+| 「新记录/编辑表单外层背景」 | `.form-card` |
+| 「entry card 字段分隔线」 | `.ec-vdivider` |
+| 「entry card note 文字」 | `.ec-note` |
+| 「猫爪币」 | `.ec-coin` |
+
+### 阴影数值来源
+全站阴影以 `catvweb-design-system.md` 第二节为准，不凭记忆填写。
+设计系统文档改用「效果名称」而非编号，沟通时直接说效果名称。
+
+### 翻译决策
+遇到不确定的英文翻译，列出 2-3 个选项问 ZONZON，不自行决定。

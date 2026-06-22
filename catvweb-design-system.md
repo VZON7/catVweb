@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第67次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第84次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 
 ---
 
@@ -17,275 +17,249 @@
 ### 功能性固定色（不走变量）
 | 用途 | 色值 |
 |---|---|
-| New Log 按钮暗影 | `#43688e` |
-| New Log 按钮 active 暗影 | `#2a4f6e` |
-| 周报告按钮暗影 | `#c8cedb` |
-| coin-pill 背景 | `#FAEEDA` |
-| coin-pill 文字 | `#633806` |
+| 新纪录/保存按钮 默认暗影 | `#B8BEC8` |
+| 新纪录/保存按钮 active 暗影 | `#1e5a8a` |
+| 周报告按钮 默认阴影 | `#c8cedb` |
+| 周报告按钮 hover 阴影 | `#B2B7C4` |
 
 ---
 
-## 二、阴影系统
+## 二、阴影效果速查（按「我看到的东西」命名）
 
-### 2A. 正常背景上的标准凸起（raised）
+### 标准凸起效果
 ```
 box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF
 ```
 → CSS变量：`var(--neu-raised)`
-→ 使用场景：stat card、nav-back 按钮、coin-pill
+→ 用在：stat card、entry card 卡片本身
 
-### 2B. 正常背景上的标准凹陷（inset）
+### 标准凹陷效果（sidebar 同款）
 ```
 box-shadow: inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF
 ```
 → CSS变量：`var(--neu-inset-val)`
-→ 使用场景：sidebar 容器
+→ 用在：sidebar 容器、新记录/编辑表单 外层背景
 
-### 2C. 凹陷容器内的轻凸起（子元素默认态）
+### 七日效果（凹陷容器内三态）
+专指凹陷容器内子元素的完整三态：
+- 默认：无阴影（平贴）
+- hover：`box-shadow: 3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF`
+- active / 选中：`box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF`
+
+→ 用在：日期格、周报告/项目追踪导航按钮、Note/Link 切换按钮、Cancel 按钮、跳过按钮
+
+### 变量效果（proj-item 同款）
+- 默认：无阴影
+- hover：轻凸起（同七日效果 hover）
+- active：按住瞬间轻凹陷（同七日效果 active）
+- 无持久选中状态
+
+→ 用在：项目列表拖拽项
+
+### 新纪录效果（蓝底按钮专用）
 ```
-box-shadow: 3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF
+默认：  box-shadow: 5px 5px 10px #B8BEC8, -5px -5px 10px #FFFFFF
+hover：  box-shadow: 10px 10px 18px #B0B8C4, -10px -10px 18px #FFFFFF
+active：  box-shadow: inset 4px 4px 9px #1e5a8a, inset -2px -2px 5px rgba(255,255,255,0.15)
 ```
-→ 使用场景：add-proj-btn、sb-nav-btn 默认态
+→ 暗影用灰色系（不用蓝色），让按钮从背景长出来
+→ 用在：「新纪录」按钮、「✓ 保存」按钮
 
-### 2D. 凹陷容器内的轻凸起（子元素 hover 加强）
+### 周报告效果（灰底按钮专用）
 ```
-box-shadow: 4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF
+默认：  box-shadow: 4px 4px 9px #c8cedb, -4px -4px 9px #FFFFFF
+hover：  box-shadow: 8px 8px 18px #B2B7C4, -8px -8px 18px #FFFFFF
+active：  box-shadow: inset 3px 3px 7px #c8cedb, inset -3px -3px 7px #FFFFFF
 ```
-→ 使用场景：add-proj-btn hover、sb-nav-btn hover
+→ 用在：「周报告」按钮
 
-### 2E. 凹陷容器内的轻凹陷（子元素 active / selected）
+### 横向雕刻线（待改）
+```css
+/* 现在（旧）*/
+box-shadow: 0 1px 0 #FFFFFF, 0 -1px 0 #C8C8D8;
 ```
-box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF
+→ **待办**：改成跟竖向雕刻线一样用 border 实现
+
+### 竖向雕刻线
+```css
+width: 0; height: 14px; flex-shrink: 0; align-self: center;
+border-left: 1px solid #C9D0DC; border-right: 1px solid #FFFFFF;
 ```
-→ 使用场景：day-item active、proj-item:active、add-proj-btn:active、sb-nav-btn:active
+→ 原理：左暗右亮，模拟刻入感
+→ 用在：entry card 字段与字段之间的分隔线
 
-### 「七日效果」= 2C + 2E 组合命名
-专指完整三态交互组合：
-- 默认：无阴影（平贴容器）
-- hover：**2C**（轻凸起）
-- active / selected：**2E**（轻凹陷）
-→ 之后凡指定「用七日效果」即套用此三态组合，不需要重复写出具体数值。
-→ 已套用元素：`.day-item`（日一至今天）、`.sb-nav-btn`（周报告 / 项目追踪）
+### Project 徽章效果（双层立体）
+```
+外层凸起框：
+  background: var(--lavender); padding: 4px;
+  box-shadow: 4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF;
 
----
+内层项目色：
+  background: rgba(项目色,.16); color: 项目色;
+  border: 1.5px solid 项目色;
+  box-shadow: inset 1.5px 1.5px 3px rgba(0,0,0,.12), inset -1px -1px 2px rgba(255,255,255,.5);
+```
+→ 用在：entry card 左上角项目名徽章、inline edit 顶部项目名
 
-## 二点五、Sidebar 交互分类详解
+### 布凹效果（猫爪币专用）
+```
+box-shadow:
+  4px 4px 10px #C0C8D8,                    /* 外轮廓轻凸 */
+  -4px -4px 10px #FFFFFF,
+  inset 0 3px 8px rgba(180,190,210,0.55),   /* 中央布面下沉 */
+  inset 0 -1px 3px rgba(255,255,255,0.9);   /* 底部高光 */
+```
+→ 外层轻凸 + 内层从上方打入暗影，模拟布料中央凹陷的弧面感
+→ 用在：entry card 右上角猫爪币（`🐾 +N`）
 
-### 一、七日效果
-**对象**：`.day-item`（日一至日六/今天，7 个日期格）
-
-| 状态 | 触发条件 | 视觉 |
-|---|---|---|
-| 默认 | 平时 | 无阴影，平贴 sidebar |
-| hover | 鼠标悬停 | 轻凸起（2C） |
-| active / 选中 | `selDate` 等于这一天 **且** `view==='journal'` | 轻凹陷（2E）+ 文字变蓝加粗 |
-
-**逻辑关键**：选中状态会跟着 `view` 联动——切到周报告/项目追踪时自动回弹平，回到 journal 才恢复凹陷。
-
----
-
-### 二、变量效果
-**对象**：`.proj-item`（PROJECTS/TASKS 列表，project 03、catVweb 等）
-
-| 状态 | 触发条件 | 视觉 |
-|---|---|---|
-| 默认 | 平时 | 无阴影 |
-| hover | 鼠标悬停 | 轻凸起（2C），同时显示 tooltip |
-| active | 鼠标按住瞬间 | 轻凹陷（2E） |
-| dragging | 拖动中 | 透明度 0.35 |
-| drag-over | 拖到目标位置上方 | 轻凹陷（2E），提示可放置 |
-
-**逻辑关键**：和七日效果几乎一样的阴影系统（2C/2E），但**没有持久选中状态**——点击只是按住瞬间凹陷，松手就弹平，不会像日期那样「记住」选中了哪个 project。另外多了拖拽排序的两个特殊状态。
-
----
-
-### 三、周报告 / 项目追踪（沿用七日效果，未单独命名）
-**对象**：`.sb-nav-btn`
-
-| 状态 | 触发条件 | 视觉 |
-|---|---|---|
-| 默认 | 平时 | 无阴影 |
-| hover | 鼠标悬停 | 轻凸起（2C） |
-| active（伪类） | 鼠标按住瞬间 | 轻凹陷（2E） |
-| **.active（持久）** | `view==='stats'` 或 `view==='tracker'` | 轻凹陷（2E）+ 蓝字加粗 |
-
-**逻辑关键**：和七日效果**完全一样的阴影逻辑**（2C/2E + 持久选中状态跟随 `view`），只是七日效果跟踪的是「选中哪一天」，这个跟踪的是「当前在哪个页面」。
-
-→ 因逻辑与七日效果完全一致，不重新命名，直接说「用七日效果」即可。
-
----
-
-### 四、箭头效果
-**对象**：`.wnav-btn`（‹ › 左右切换周）
-
-| 状态 | 视觉 |
-|---|---|
-| 默认 | `drop-shadow` 蓝色系，轻立体 |
-| hover | `drop-shadow` 加强 |
-| active | `drop-shadow` 压平 |
-
-**逻辑关键**：不用 `box-shadow`，用 `filter: drop-shadow()`——因为图标是无方框 SVG 线条，阴影要贴合线条轮廓而不是矩形容器。没有持久选中状态（不像日期/页面那样需要记住）。
-
----
-
-### 五、日历效果
-**对象**：`.cal-icon-btn`（📅 日期选择器图标）
-
-**逻辑关键**：和箭头效果**完全一样**——同样的 `drop-shadow` 数值、同样三态、同样无持久选中状态。两者唯一区别是图标本身的 SVG 形状不同。
-
-### 2F. NAV 栏底部单向阴影
+### NAV 栏阴影
 ```
 box-shadow: 0 4px 10px #C8C8D8, 0 -2px 6px #FFFFFF
 ```
-→ 使用场景：#site-nav
-
-### 2G. New Log 按钮同色系阴影（蓝底专用）
-```
-默认：  box-shadow: 6px 6px 14px #43688e, -6px -6px 14px #FFFFFF
-hover：  box-shadow: 8px 8px 18px #43688e, -8px -8px 18px #FFFFFF
-active：  box-shadow: inset 4px 4px 9px #2a4f6e   ← 只单向，不加白
-```
-
-### 2H. 周报告按钮同色系阴影（灰底，inline style）
-```
-默认：  box-shadow: 4px 4px 9px #c8cedb, -4px -4px 9px #FFFFFF
-```
-
-### 2I. 雕刻分隔线（carved divider）
-```
-border: none;
-height: 2px;
-background: transparent;
-box-shadow: 0 1px 0 #FFFFFF, 0 -1px 0 #C8C8D8;
-```
-→ 使用场景：`.sb-divider`，sidebar 内的分隔
-
-### 2J. Project 标题徽章（双层立体）
-```
-外层（白色凸起外框）：
-background: var(--lavender);
-padding: 4px;
-box-shadow: 4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF;
-
-内层（项目色实底 + 轻凹陷）：
-background: rgba(项目色,.16);
-color: 项目色;
-border: 1.5px solid 项目色;
-box-shadow: inset 1.5px 1.5px 3px rgba(0,0,0,.12), inset -1px -1px 2px rgba(255,255,255,.5);
-```
-→ 使用场景：`.proj-badge-wrap` + `.proj-badge`，颜色完全沿用用户创建 project 时选的 `p.color`，不固定为紫色
+→ 用在：顶部导航栏底边
 
 ---
 
 ## 三、SVG 图标系统（无方框，drop-shadow 贴合轮廓）
 
-### 3A. 导航箭头（左 / 右）
+### 导航箭头（左 / 右）
 
 | 属性 | 数据 |
 |---|---|
-| 形状 | 带尾线实心箭头，`path`，无方框 |
 | SVG 尺寸 | `width="14" height="12" viewBox="0 0 14 12"` |
 | 左箭头 path | `M8 1L2 6L8 11M2 6H13` |
 | 右箭头 path | `M6 1L12 6L6 11M12 6H1` |
 | 颜色 | `#266ea7`，`stroke-width="2"` |
 | 端点 | `stroke-linecap="round" stroke-linejoin="round"` |
-| 容器 | `background:none`，`padding:3px 4px` |
 | 默认阴影 | `drop-shadow(2.5px 2.5px 3px rgba(38,110,167,.6)) drop-shadow(-1.5px -1.5px 2px #fff)` |
 | hover 阴影 | `drop-shadow(3.5px 3.5px 5px rgba(38,110,167,.8)) drop-shadow(-2px -2px 3px #fff)` |
 | active 阴影 | `drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .5px rgba(255,255,255,.7))` |
-| 排列 | 靠右，`margin-left:auto`，与日历同组 `gap:4px` |
 
-### 3B. 日历图标（动态日期）
+### 日历图标（动态日期）
 
 | 属性 | 数据 |
 |---|---|
 | SVG 尺寸 | `width="26" height="26" viewBox="0 0 26 26"` |
 | 外框 | `rect x=2 y=4 w=22 h=20 rx=3`，`stroke="#266ea7" stroke-width="1.8"` |
-| 顶栏（占25%） | `rect x=2 y=4 w=22 h=5 rx=2`，`fill="#266ea7"` |
+| 顶栏 | `rect x=2 y=4 w=22 h=5 rx=2`，`fill="#266ea7"` |
 | 横分隔线 | `line y1=9 y2=9`，`stroke="#266ea7" stroke-width="1.8"` |
 | 左挂钩 | `line x=8 y1=2 y2=6`，`stroke-width="2" stroke-linecap="round"` |
 | 右挂钩 | `line x=18 y1=2 y2=6`，`stroke-width="2" stroke-linecap="round"` |
-| 日期文字位置 | `x="13" y="17"`，`dominant-baseline="central"` |
+| 日期文字 | `x="13" y="17"`，`dominant-baseline="central"` |
 | 日期字体 | `font-size="10" font-weight="800" fill="#266ea7" font-family="Nunito,sans-serif"` |
 | 动态注入 | `id="cal-icon-day"`，`renderAll()` 内写入 `today.getDate()` |
-| 容器 | `background:none`，`padding:3px 4px` |
-| 阴影 | 同 3A 完全一致 |
-| 排列 | 靠右，与箭头同组 |
+| 阴影 | 同导航箭头完全一致 |
 
-### 3C. 编辑铅笔图标（Entry Card）
+### 编辑铅笔图标（entry card 右侧）
 
 | 属性 | 数据 |
 |---|---|
-| 形状 | 带笔尖分隔线，`path`，无方框 |
 | SVG 尺寸 | `width="15" height="15" viewBox="0 0 20 20"` |
 | path | `M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z` + 笔尖线 `M11.5 4.5L15.5 8.5` |
-| 默认颜色 | `var(--mid)`，`drop-shadow(1.5px 1.5px 2px rgba(0,0,0,.12))` |
-| hover | 颜色变 `#266ea7`（蓝），`drop-shadow(2px 2px 3px rgba(38,110,167,.5))` |
+| 默认 | `var(--mid)`，`drop-shadow(1.5px 1.5px 2px rgba(0,0,0,.12))` |
+| hover | 蓝色 `#266ea7`，`drop-shadow(2px 2px 3px rgba(38,110,167,.5))` |
 
-### 3D. 删除 X 图标（Entry Card，含 Shift 双态）
+### 删除 X 图标（entry card 右侧 + 跳过按钮）
 
 | 属性 | 数据 |
 |---|---|
-| 形状 | 粗线 `path`，无方框 |
-| SVG 尺寸 | `width="14" height="14" viewBox="0 0 18 18"` |
-| path | `M3 3L15 15M15 3L3 15"`，`stroke-width="2.6"` |
-| 默认颜色 | `var(--mid)` |
-| hover（不按 Shift） | 颜色变蓝 `#266ea7`，`drop-shadow(2px 2px 3px rgba(38,110,167,.5))` |
-| hover（按住 Shift） | 颜色变红 `#E53935`，`drop-shadow(2px 2px 3px rgba(229,57,53,.5))`，触发条件 `body.shift-down` class |
-| 点击行为 | 不按 Shift → 弹出删除确认 modal；按住 Shift → 跳过确认直接删除 |
-| Shift 检测 | `document.addEventListener('keydown'/'keyup')` 切换 `body.shift-down`，`window blur` 时强制清除防卡住 |
+| entry card 尺寸 | `width="14" height="14" viewBox="0 0 18 18"` |
+| 跳过按钮尺寸 | `width="11" height="11" viewBox="0 0 18 18"` |
+| path | `M3 3L15 15M15 3L3 15`，`stroke-width="2.6"` |
+| entry card hover（默认） | 颜色变蓝 `#266ea7` |
+| entry card hover（按住 Shift） | 颜色变红 `#E53935`，触发条件 `body.shift-down` |
+| 跳过按钮 hover | 颜色变蓝 + tooltip「跳过/Skip」，无红色 |
+
+### Note 图标（折角便签）
+```html
+<svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+  <path d="M2 2h7l3 3v7H2V2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M9 2v3h3" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+  <line x1="4" y1="7" x2="10" y2="7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="4" y1="9.5" x2="8" y2="9.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+</svg>
+```
+→ 用在：Note 切换按钮、entry card note 文字前缀（颜色 `#7FA4BE`）
+
+### Link 图标（链条环）
+```html
+<svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+  <path d="M5.5 8.5a3 3 0 0 0 4.243 0l1.5-1.5a3 3 0 0 0-4.243-4.243L6.25 4"
+        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M8.5 5.5a3 3 0 0 0-4.243 0l-1.5 1.5a3 3 0 0 0 4.243 4.243L7.75 10"
+        stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+</svg>
+```
+→ 用在：Link 切换按钮、entry card link 前缀（替代原 ↗）
 
 ---
 
-## 四、交互状态规则
+## 四、交互状态规则（按元素说明）
 
-### 正常背景上的元素
+### Entry card 卡片
+- 默认：标准凸起效果
+- hover：凸起加强（8px）
+- 编辑中：sidebar 同款凹陷效果
+
+### 跳过按钮（表单里每个字段右边的 ×）
 | 状态 | 效果 |
 |---|---|
-| 默认 | 凸起 `--neu-raised` |
-| hover | 凸起加强（offset +2px）或 `translateY(-1px)` |
-| active | 凸起缩小 或 单向 inset |
+| 默认 | 七日效果中的轻凸起 |
+| hover | 轻凸起加强 + 蓝色 + tooltip「跳过/Skip」 |
+| active | 轻凹陷 + 蓝色 |
+| 已跳过 | 持久凹陷 + 蓝色 |
+→ 无红色，不区分 Shift 键
 
-### 凹陷容器内的元素
+### Note / Link 切换按钮
 | 状态 | 效果 |
 |---|---|
-| 默认 | 轻凸起 `3px 3px 7px`（**2C**） |
-| hover | 轻凸起加强 `4px 4px 9px`（**2D**）|
-| active / selected | 轻凹陷 `inset 3px 3px 7px`（**2E**）|
+| 默认 | 无阴影平贴 |
+| hover | 轻凸起（七日效果） |
+| 点击激活 | 凹陷持久 + 蓝字加粗（七日效果） |
 
-### SVG 图标（无方框）
-| 状态 | 效果 |
-|---|---|
-| 默认 | `drop-shadow` 蓝色系立体 |
-| hover | `drop-shadow` 加强 |
-| active | `drop-shadow` 压平 |
-
-### 语言切换按钮（`#lang-zh` / `#lang-en`）
-| 状态 | box-shadow | 文字色 |
+### 语言切换按钮（ZH / EN）
+| 状态 | 阴影 | 文字色 |
 |---|---|---|
-| active（当前语言） | `inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF` | `var(--purple)` |
-| inactive | `3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF` | `var(--mid)` |
+| 当前语言 | 凹陷 `inset 3px 3px 7px` | 蓝色 `var(--purple)` |
+| 非当前语言 | 凸起 `3px 3px 7px` | 灰色 `var(--mid)` |
 
 ---
 
-## 四点五、Entry Card 元素层级分类
+## 四点五、Entry Card 内容层级
 
-新拟态原则：**阴影表示层级深度，不表示内容类型**。Entry Card 内不同元素按"站在哪一层"决定视觉处理方式，而非每种类型发明新阴影。
+### 视觉层级规则
+「阴影表示层级深度，不表示内容类型」
 
-| 层级 | 视觉逻辑 | 适用元素 |
+| 层级 | 用在 | 视觉 |
 |---|---|---|
-| 第 0 层 — 页面背景 | 平 | sidebar 外的页面底色 |
-| 第 1 层 — 容器 | 凸起（**--neu-raised**） | `.entry-card` 本身 |
-| 第 2 层 — 分类徽章 | 实色块，不用灰阶阴影 | `.proj-badge`（见 **2J**）、状态标签 |
-| 第 2 层 — 数据标签 | 实色胶囊，无阴影 | 栏位 tag（`.ec-selval`，select 类型选项） |
-| 第 2 层 — 纯文字数据 | 无背景、无阴影 | 数字+单位说明（如 `time: 30 min`） |
-| 第 3 层 — 强调数字 | 实色块（暖色） | Cat Token（`.ec-coin`，🐾 +N） |
-| 交互层 — 图标按钮 | 默认无背景，hover 才出现 | 编辑/删除图标（**3C / 3D**） |
+| 第 1 层 — 卡片本身 | entry card | 标准凸起 |
+| 第 2 层 — 项目名徽章 | 左上角项目名 | 项目色双层立体 |
+| 第 2 层 — 选项标签 | select 字段的选项 | lavender底凹陷 + 蓝灰字 |
+| 第 2 层 — 数字数据 | number 字段 | 纯文字，无背景无阴影 |
+| 第 3 层 — 猫爪币 | 右上角 `🐾 +N` | 布凹效果 |
+| 交互层 — 图标 | 铅笔/删除 X | 默认无背景，hover 才显色 |
 
-**判断原则**：
-1. 会变化/被切换的状态（选中/未选中）→ 用阴影
-2. 代表分类/身份的徽章 → 用实色，不用阴影
-3. 纯展示性文字 → 越简单越好，不需要容器感
+### 字段显示顺序
+1. select 字段（全部，字段间加竖向雕刻线）
+2. number 字段（全部，前面加竖向雕刻线与 select 组分隔）
+
+### 选项标签颜色规则
+按 select 字段在项目中的顺序轮流分配蓝灰深浅色：
+| 第几个 select 字段 | 颜色 |
+|---|---|
+| 第 1 个 | `#2E6090`（深蓝） |
+| 第 2 个 | `#5887A8`（中蓝） |
+| 第 3 个 | `#7FA4BE`（浅蓝灰） |
+| 第 4 个 | `#3A7A9C`（中深青蓝） |
+| 第 5 个起 | 循环重复 |
+
+### 表单字段 label 颜色规则
+按字段在项目中的顺序（含所有类型）同上规则分配，第 1 个字段深蓝，依次变浅。
+
+### Note 文字样式
+- 字号 11px，斜体，颜色 `#9EA8B8`
+- 前面带折角便签图标（蓝色 `#7FA4BE`）
+- 无背景、无边框、无阴影
 
 ---
 
@@ -299,6 +273,7 @@ box-shadow: inset 1.5px 1.5px 3px rgba(0,0,0,.12), inset -1px -1px 2px rgba(255,
 | 中文兜底 | `Noto Sans SC` | — | — |
 | 标签 / 上标 | `Nunito` | 10–11px | 800，uppercase |
 | 辅助说明 | `Nunito` | 11–12px | 600，color: `--mid` |
+| entry card 选项标签 | `Nunito` | 10px | **550** |
 
 ---
 
@@ -308,38 +283,74 @@ box-shadow: inset 1.5px 1.5px 3px rgba(0,0,0,.12), inset -1px -1px 2px rgba(255,
 |---|---|
 | 大卡片（stat card、sidebar） | `20px` |
 | 中型卡片（entry card、modal） | `12–14px` |
-| 小按钮（sb-nav-btn、day-item） | `10px` |
-| 图标容器（wnav-btn 旧版） | `7px`（现已废弃，图标改为无方框） |
-| 胶囊形（**不可改**） | `999px` |
+| 小按钮（日期格、导航按钮） | `10px` |
+| 胶囊形（不可改） | `999px` |
 
-胶囊形保留元素：`.coin-pill`、`.proj-badge`、颜色色点、`#lang-zh`、`#lang-en`、`.new-btn`、`.nav-back`
+胶囊形元素：猫爪币、项目徽章、语言切换按钮、新纪录按钮、返回按钮、entry card 选项标签、跳过按钮、Note/Link 按钮
 
 ---
 
-## 七、待办 / 未完成项目
+## 七、Select 下拉组件
+
+### 收起状态（字段输入框）
+```css
+background: var(--lavender); border: none; border-radius: 8px;
+padding: 0 10px; height: 34px;
+box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF;
+/* 文字超出截断 */
+overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+```
+→ hover：`inset 4px 4px 9px`
+
+### 展开列表
+```css
+background: var(--lavender); border: none; border-radius: 10px; padding: 6px;
+box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF;
+```
+
+### 选项三态
+```
+默认：无背景
+hover：background: rgba(38,110,167,0.03)（极淡蓝）
+已选中：background: rgba(38,110,167,0.08)，蓝色文字，加粗
+```
+
+---
+
+## 八、待办 / 未完成项目
 
 | 项目 | 说明 |
 |---|---|
-| Step 4：子选项视觉区分 | 目前所有种类的子选项（select 栏位 tag）全是同一种白底凹陷，未按「四点五」层级分类区分种类 |
-| Step 5：Form + Modal | border 待清除，换新拟态 |
-| Step 6：Tracker 卡片 | 状态标签、按钮待统一 |
-| coin-pill | 目前 `--neu-raised`，待确认是否保留暖色背景 |
+| 横向雕刻线 | sidebar 内分隔线，目前用 box-shadow 实现，待改成跟竖向雕刻线一样用 border 实现 |
+| 新记录表单 + 项目设置弹窗 | 部分 border 边框还没换成新拟态风格 |
+| 「✓ 保存」按钮（编辑模式） | 仍用旧蓝色阴影 `#43688e`，待统一为新纪录效果 |
 
 ### 已完成
 | 项目 | 完成于 |
 |---|---|
-| Step 4：Entry Card 容器 + Inline Edit | 第55次 update |
-| Project 标题徽章双层立体（2J） | 第56–57次 update |
-| 编辑/删除图标 SVG 化（3C/3D）+ 删除确认/Shift机制 | 第58–59次 update |
-| 多单位数字字段（Modal/表单/显示/计算/Chart Builder 全链路） | 第60–67次 update，详见 SKILL.md 第十七节 |
+| Step 1–3：CSS变量、NAV、stat cards、sidebar | 第46次前 |
+| Step 4：Entry Card 容器 + Inline Edit | 第55次 |
+| 项目徽章双层立体 | 第56–57次 |
+| 铅笔/删除图标 SVG 化 + Shift 删除机制 | 第58–59次 |
+| 多单位数字字段全链路 | 第60–67次 |
+| 选项标签凹陷 + 蓝灰字色 + 竖向雕刻线 | 第68次 |
+| Tracker undefined bug 修复 | 第68次 |
+| Select 下拉组件新拟态化 | 第69–70次 |
+| Note/Link 图标 SVG 化 | 第69–70次 |
+| 表单字段 label 蓝灰字色 | 第71次 |
+| Note/Link 切换按钮七日效果 | 第71次 |
+| 新记录/编辑表单外层背景凹陷 | 第72次 |
+| Entry card 字段排序（select先number后） | 第73次 |
+| Note 文字样式（斜体+图标前缀） | 第73–74次 |
+| 布凹效果（猫爪币） | 第74次 |
+| 跳过按钮 SVG 化 + tooltip + 蓝色三态 | 第75次 |
+| 单单位 number 字段单位显示 bug 修复 | 第76次 |
+| 蓝底按钮阴影改灰色系（新纪录效果） | 第78次 |
+| 周报告按钮独立效果（周报告效果） | 第80–84次 |
 
 ---
 
-## 八、多单位数字字段（设计要点摘要）
+## 九、多单位数字字段显示规则
 
-完整技术规则见 `catvweb-journal-SKILL.md` 第十七节。这里只记录**视觉/UX 决策**：
-
-- 填表单时，多单位字段渲染成**多行独立输入框**（方案 1），不是单选单位+一个数字（方案 2）
-- Entry Card / Tracker 显示格式：`time: 30 min · 1 hour`（`·` 分隔，无逗号）
-- Chart Builder「SELECT VARIABLE」：多单位字段拆成多个独立按钮，如 `time (min)`、`time (hour)`
-- **默认勾选规则**：单一单位（或无单位）的数字字段默认勾选；≥2 个单位的字段默认**不**勾选，需用户手动选
+**多单位**：`time: 30 min · 1 hour`（`·` 分隔）
+**单单位**：`length: 23 cm`（从 `f.units[0]` 或 `f.unit` 拼接单位）
