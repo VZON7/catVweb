@@ -403,3 +403,40 @@ sed -n "$((START+1)),$((END-1))p" journal.html | tr -d '\r' > /tmp/check.js && n
 
 ### 翻译决策
 遇到不确定的英文翻译，列出 2-3 个选项问 ZONZON，不自行决定。
+
+
+---
+
+## 二十二、I18N 双语字节编码安全规则
+
+⚠️ 把中文写进 en key 会导致乱码，在 GitHub Pages 上直接显示为乱码字符。
+
+**根本原因：**
+Python 用 bytes 模式处理文件时，中文 UTF-8 字节序列写进 en key 后，浏览器读取 JS 字符串时发生二次编码，变成乱码。
+
+**强制规则：**
+
+```python
+# ❌ 错误：en key 写入中文字节
+old_en = b"cp_my:'My Colors',"
+new_en = "cp_my:'我的颜色包',".encode()  # 中文写进 en → 乱码
+
+# ✅ 正确：en key 保持英文
+old_en = b"cp_my:'My Colors',"
+new_en = b"cp_my:'My Color Bag',"  # en key 只用英文
+
+# ✅ 正确：zh key 用 UTF-8
+old_zh = "cp_my:'我的颜色'".encode('utf-8')
+new_zh = "cp_my:'我的颜色包'".encode('utf-8')
+```
+
+**操作流程：**
+1. 修改 zh key → 用 `.encode('utf-8')` 或直接写 UTF-8 字节
+2. 修改 en key → 只写英文，用 `b"..."` 纯 ASCII bytes
+3. 两次替换必须分开操作，不能把同一个中文字符串同时写入 zh 和 en
+
+**验证方法：**
+```bash
+grep -n "cp_my\|cp_save\|modal_sel\|modal_num" journal.html | head -20
+# 检查 en 那行（行号674附近）是否含有非ASCII字符
+```
