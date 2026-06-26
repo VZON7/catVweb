@@ -329,21 +329,28 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .cb-exp-docx:hover { opacity:.85; }
 .cb-exp-pdf { background:rgba(123,104,238,0.1); color:var(--purple); border:0.5px solid rgba(123,104,238,0.3); }
 .cb-exp-pdf:hover { background:rgba(123,104,238,0.18); }
-.proj-status { font-size:9px; font-weight:700; letter-spacing:.05em; padding:2px 6px; border-radius:999px; flex-shrink:0; text-transform:uppercase; }
-.proj-status.active { background:rgba(29,158,117,0.12); color:#1D9E75; border:0.5px solid rgba(29,158,117,0.3); }
-.proj-status.done { background:rgba(123,104,238,0.1); color:var(--purple); border:0.5px solid rgba(123,104,238,0.25); }
-.proj-status.archived { color:#A32D2D; background:transparent; border:1.5px solid #A32D2D; border-radius:3px; letter-spacing:.1em; opacity:.75; transform:rotate(-7deg); }
+.proj-status { font-size:9px; font-weight:700; letter-spacing:.05em; padding:2px 8px; border-radius:999px; flex-shrink:0; text-transform:uppercase; border:none; box-shadow:inset 2px 2px 5px #C8C8D8, inset -2px -2px 5px #FFFFFF; background:var(--lavender); }
+.proj-status.active { color:#1D9E75; }
+.proj-status.done { color:#266ea7; }
+.proj-status.archived { color:#A32D2D; background:transparent; border:1.5px solid #A32D2D !important; border-radius:3px; letter-spacing:.1em; transform:rotate(-7deg); box-shadow:none !important; }
 .undo-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--dark); color:#fff; font-size:13px; font-weight:500; padding:10px 20px; border-radius:999px; display:flex; align-items:center; gap:12px; z-index:500; box-shadow:0 4px 20px rgba(0,0,0,.2); font-family:'Nunito',sans-serif; }
 .undo-btn { font-size:12px; font-weight:700; color:#B0A8FF; cursor:pointer; border:none; background:none; font-family:'Nunito',sans-serif; padding:0; }
 .undo-btn:hover { color:#fff; }
-.tracker-proj-card { background:rgba(255,255,255,0.65); border:0.5px solid rgba(123,104,238,0.18); border-radius:14px; margin-bottom:12px; overflow:hidden; }
-.tracker-proj-header { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; }
-.tracker-proj-header:hover { background:rgba(123,104,238,0.04); }
-.tracker-proj-chevron { font-size:12px; color:var(--mid); transition:transform .2s; flex-shrink:0; }
+.tracker-proj-card { background:var(--lavender); border:none; border-radius:14px; margin-bottom:12px; overflow:hidden; box-shadow:6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF; }
+.tracker-proj-card.archived { box-shadow:inset 4px 4px 9px #C8C8D8, inset -4px -4px 9px #FFFFFF; }
+
+.tracker-proj-header { display:flex; align-items:center; gap:6px; padding:10px 12px; cursor:pointer; border-radius:12px; transition:box-shadow .15s; }
+.tracker-proj-header:hover { background:rgba(255,255,255,0.15); }
+.tracker-proj-chevron { flex-shrink:0; transition:transform .2s, filter .15s; display:flex; align-items:center; filter:drop-shadow(2.5px 2.5px 3px rgba(38,110,167,.6)) drop-shadow(-1.5px -1.5px 2px #fff); }
 .tracker-proj-chevron.open { transform:rotate(90deg); }
-.tracker-proj-name { font-size:14px; font-weight:700; color:var(--dark); flex:1; }
-.tracker-proj-meta { font-size:11px; color:var(--mid); display:flex; gap:10px; }
-.tracker-proj-body { padding:0 16px 12px; border-top:0.5px solid rgba(123,104,238,0.1); }
+.tracker-proj-header:hover .tracker-proj-chevron { filter:drop-shadow(3.5px 3.5px 5px rgba(38,110,167,.8)) drop-shadow(-2px -2px 3px #fff); }
+.tracker-proj-header:active .tracker-proj-chevron { filter:drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .5px rgba(255,255,255,.7)); }
+.tracker-proj-name { font-size:13px; font-weight:700; color:var(--dark); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tracker-proj-meta { display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:auto; flex-wrap:nowrap; }
+.tracker-proj-records { font-size:12px; flex-shrink:0; }
+.tracker-proj-last { font-size:9px; color:#9AA0A8; flex-shrink:0; margin-top:1px; }
+.tracker-proj-archived { opacity:.8; }
+.tracker-proj-body { padding:0 16px 12px; border-top:1px solid #C9D0DC; box-shadow:0 -1px 0 #FFFFFF; }
 .tracker-entry-row { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:0.5px solid rgba(123,104,238,0.07); }
 .tracker-entry-row:last-child { border:none; }
 .tracker-date { font-size:11px; color:var(--mid); min-width:44px; flex-shrink:0; margin-top:2px; }
@@ -356,7 +363,7 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .tracker-export-btn { display:flex; align-items:center; gap:5px; padding:6px 14px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.3); background:rgba(123,104,238,0.08); color:var(--purple); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; }
 .tracker-export-btn:hover { background:rgba(123,104,238,0.16); }
 .tracker-tabs { display:flex; gap:6px; margin-bottom:16px; }
-.tracker-tab { padding:7px 16px; border-radius:999px; border:0.5px solid rgba(123,104,238,0.25); background:rgba(255,255,255,0.6); color:var(--mid); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; }
+.tracker-tab { padding:7px 16px; border-radius:999px; border:none; background:var(--lavender); color:var(--mid); font-size:12px; font-weight:600; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
 .tracker-tab.active { background:var(--purple); color:#fff; border-color:var(--purple); }
 .tracker-empty { text-align:center; padding:2rem; color:var(--mid); font-size:13px; }
 .cb-type-btn { padding:5px 13px; border-radius:999px; border:.5px solid rgba(0,0,0,0.12); background:#f5f4f9; color:#666; font-size:11px; cursor:pointer; font-family:'Nunito',sans-serif; transition:all .15s; }
@@ -794,11 +801,25 @@ function renderTracker(){
     pe.sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
     const totalC=pe.reduce((s,e)=>s+calcCoins(e,e.dateKey),0);
     const days=new Set(pe.map(e=>e.dateKey)).size;
-    const card=document.createElement('div');card.className='tracker-proj-card';
     const isOpen=window._trackerOpenId===p.id;
     const isArchived=(p.status||'active')==='archived';
+    const card=document.createElement('div');card.className='tracker-proj-card'+(isArchived?' archived':'');
       const hdr=document.createElement('div');hdr.className='tracker-proj-header';
-    hdr.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div><span class="tracker-proj-name">'+p.name+'</span><span class="proj-status '+(p.status||'active')+'">'+getStatusLabels()[p.status||'active']+'</span><div class="tracker-proj-meta"><span>📝 '+pe.length+' </span><span>📅 '+days+'</span><span>🐾 '+totalC+'</span></div>'+(isArchived?'<button onclick="event.stopPropagation();restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.1);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">↩ '+t('restore')+'</button><button onclick="event.stopPropagation();confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\')" style="font-size:11px;font-weight:700;color:var(--pink);background:rgba(255,63,108,0.08);border:0.5px solid rgba(255,63,108,0.3);border-radius:999px;padding:3px 10px;cursor:pointer;font-family:\'Nunito\',sans-serif;flex-shrink:0;margin-right:4px">🗑 '+t('perm_delete')+'</button>':'')+'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'">›</span>';
+    const lastDate=pe.length?(()=>{const p=pe[0].dateKey.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);})():'--';
+    const recLabel=lang==='zh'?
+      '<span style="font-weight:800;color:#2d2b3d">'+pe.length+'</span><span style="font-weight:700;color:#888"> 条记录</span>':
+      '<span style="font-weight:800;color:#2d2b3d">'+pe.length+'</span><span style="font-weight:700;color:#888"> records</span>';
+    const lastLabel='last · '+lastDate;
+    hdr.className='tracker-proj-header'+(isArchived?' tracker-proj-archived':'');
+    hdr.innerHTML=
+      '<div style="width:8px;height:8px;border-radius:50%;background:'+p.color+';flex-shrink:0"></div>'
+      +'<span class="tracker-proj-name" style="'+(isArchived?'color:#666;':'')+'flex:1">'+p.name+'</span>'
+      +'<span class="proj-status '+(p.status||'active')+'" style="flex-shrink:0">'+getStatusLabels()[p.status||'active']+'</span>'
+      +'<div class="tracker-proj-meta">'
+      +'<span class="tracker-proj-records">'+recLabel+'</span>'
+      +'<span class="tracker-proj-last" style="margin-left:2px">last · '+lastDate+'</span>'
+      +'</div>'
+      +'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M6 1L12 6L6 11M12 6H1" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
     hdr.onclick=()=>{window._trackerOpenId=(window._trackerOpenId===p.id)?null:p.id;renderTracker();};
     card.appendChild(hdr);
     if(isOpen){
@@ -813,6 +834,14 @@ function renderTracker(){
         body.appendChild(row);
       });}
       card.appendChild(body);
+      if(isArchived){
+        const actRow=document.createElement('div');
+        actRow.style.cssText='display:flex;justify-content:flex-end;gap:8px;padding:10px 16px 6px';
+        actRow.innerHTML=
+          '<button onclick="restoreProject(\''+p.id+'\')" style="font-size:11px;font-weight:700;color:#1D9E75;background:rgba(29,158,117,0.08);border:0.5px solid rgba(29,158,117,0.3);border-radius:999px;padding:4px 12px;cursor:pointer;font-family:\'Nunito\',sans-serif">↩ '+t('restore')+'</button>'
+          +'<button onclick="confirmPermDelete(\''+p.id+'\',\''+p.name.replace(/\'/g,"\\\'")+'\')"; style="font-size:11px;font-weight:700;color:#E53935;background:rgba(229,57,53,0.06);border:0.5px solid rgba(229,57,53,0.3);border-radius:999px;padding:4px 12px;cursor:pointer;font-family:\'Nunito\',sans-serif">🗑 '+t('perm_delete')+'</button>';
+        card.appendChild(actRow);
+      }
       // Chart builder
       const cb=document.createElement('div');cb.className='cb-wrap';
       cb.id='cb-'+p.id;
