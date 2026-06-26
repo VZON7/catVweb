@@ -440,3 +440,88 @@ new_zh = "cp_my:'我的颜色包'".encode('utf-8')
 grep -n "cp_my\|cp_save\|modal_sel\|modal_num" journal.html | head -20
 # 检查 en 那行（行号674附近）是否含有非ASCII字符
 ```
+
+
+---
+
+## 二十三、SVG 图标强制查阅规则
+
+⚠️ **任何 SVG 图标写入代码前，必须先查 `catvweb-design-system.md` 第三节，包含：**
+- path 数据
+- width / height / viewBox 尺寸
+- stroke 颜色和粗细
+- filter drop-shadow 三态数值（默认 / hover / active）
+
+**不可凭记忆写入，即使「看起来差不多」也必须核对。**
+
+常见错误：
+- 写了箭头 SVG 但遗漏 filter drop-shadow → 箭头无立体感
+- filter 只写默认态，没有 hover/active 态 → 点击无反馈
+- path 数值写错（左右箭头搞混）
+
+正确做法：
+```
+1. 查 design system 第三节对应图标
+2. 复制完整 HTML 模板
+3. 三态 filter 通过 CSS class 实现（不写在 SVG inline style 里）
+```
+
+---
+
+## 二十四、Tracker 模块结构（第156次 update 后）
+
+### CSS Class 速查
+| Class | 用途 |
+|---|---|
+| `.tracker-tabs` | 顶部筛选标签行容器 |
+| `.tracker-tab` | 单个筛选标签（全部/进行中/已完成/已归档） |
+| `.tracker-tab.active` | 选中态，凹陷效果 |
+| `.tracker-proj-card` | 每个项目的卡片容器，标准凸起 |
+| `.tracker-proj-card.archived` | 已归档卡片（opacity 0.8） |
+| `.tracker-proj-header` | 卡片头部（可点击，展开/收起） |
+| `.tracker-proj-header:hover` | 轻微白色高亮 |
+| `.tracker-proj-archived` | 已归档头部（opacity + 名称灰色） |
+| `.tracker-proj-name` | 项目名称文字 |
+| `.tracker-proj-meta` | 右侧信息区（records + last） |
+| `.tracker-proj-records` | 记录数文字，12px，数字 800/深色，文字 700/灰 |
+| `.tracker-proj-last` | last · 日期，9px，#9AA0A8 |
+| `.tracker-proj-chevron` | 展开箭头容器，含三态 filter CSS |
+| `.tracker-proj-chevron.open` | 展开时 rotate(90deg) |
+| `.tracker-proj-body` | 展开区容器，横向雕刻线分隔 |
+| `.tracker-entry-row` | 单条记录行 |
+| `.tracker-date` | 记录日期，11px，灰色，min-width:44px |
+| `.tracker-entry-content` | 记录内容区 |
+| `.tracker-entry-title` | 记录标题，12px，600 |
+| `.tracker-entry-fields` | 字段标签行 |
+| `.tracker-field-tag` | 字段值标签，紫色系胶囊 |
+| `.tracker-entry-note` | Note 文字，11px，斜体 |
+| `.tracker-empty` | 空状态提示 |
+| `.cb-wrap` | Chart Builder 容器（每个项目展开区底部） |
+
+### JS 函数速查
+| 函数 | 用途 |
+|---|---|
+| `renderTracker()` | 整体渲染 Tracker 视图，读 `window._trackerTab` 和 `window._trackerOpenId` |
+| `window._trackerTab` | 当前筛选标签（'all'/'active'/'done'/'archived'） |
+| `window._trackerOpenId` | 当前展开的项目 id（null = 全收起） |
+
+### 展开区结构（重要：不要破坏 Chart Builder）
+```
+.tracker-proj-body
+  └── entry rows（pe.forEach 渲染）
+  └── 已归档操作按钮行（仅 isArchived，右对齐，↩复原 + 🗑永久删除）
+  └── .cb-wrap（Chart Builder，id="cb-{p.id}"，由 buildChartBuilderHTML(p.id) 生成）
+```
+⚠️ Chart Builder 在每个项目展开区底部，改动展开区时不要误删或破坏 `.cb-wrap`。
+
+### 项目行内容格式
+```
+● 项目名  [状态徽章]  [N records · last · DD/MM/YY]  [→箭头]
+```
+- 日期格式：DD/MM/YY（如 22/06/26），从 `pe[0].dateKey` 取最新记录日期
+- 数字加粗深色，records 中等灰，last · 日期浅灰小字
+- 已归档行额外显示 ARCHIVED 印章（rotate -7deg，红框）
+
+### 状态徽章规格
+- Active/Done：凹陷胶囊（inset 2px），`.proj-status.active/.done`
+- Archived：印章，`border: 1.5px solid #A32D2D; border-radius: 3px; transform: rotate(-7deg); box-shadow: none;`
