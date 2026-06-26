@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第121次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第130次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 
 ---
 
@@ -27,6 +27,7 @@
 | Done 状态色 | `#266ea7`（蓝） |
 | Archived 状态色 | `#A32D2D`（归档红） |
 | 过去日期 ×½ 提示 | `#B87878`（低饱和暖红） |
+| 模糊红框警告色 | `rgba(229,57,53,0.55)`（低透明度红） |
 
 ---
 
@@ -115,6 +116,22 @@ box-shadow:
   inset 0 -1px 3px rgba(255,255,255,0.9);   /* 底部高光 */
 ```
 → 用在：entry card 右上角猫爪币、「预计获得 N Cat Token」胶囊、modal 字段类型选择卡片（数字/选项）选中态
+
+### 模糊红框
+```css
+@keyframes nameAlert {
+  0%   { box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+  15%  { box-shadow: inset 0 0 0 rgba(229,57,53,0), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+  25%  { box-shadow: inset 0 0 10px rgba(229,57,53,0.55), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+  50%  { box-shadow: inset 0 0 10px rgba(229,57,53,0.55), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+  100% { box-shadow: inset 0 0 28px rgba(229,57,53,0), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
+}
+.m-name-highlight { animation: nameAlert 1.1s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
+```
+→ 触发方式：点 Save 时 Name 为空，输入框触发动画并自动 focus
+→ 节奏：快进（0.1s）→ 停留（0.15s）→ 缓慢向外扩散褪去（雾气感）
+→ 用在：modal Name 输入框必填警告
+→ 复用原则：凡需要引导用户目光到某个输入框的场景，可套用此动画
 
 ### NAV 栏阴影
 ```
@@ -234,6 +251,12 @@ box-shadow: 0 4px 10px #C8C8D8, 0 -2px 6px #FFFFFF
 | 未选中 | 轻凸起（3px） | 轻凸起 |
 | 选中 | 布凹效果（inset 4px） | 凹陷 |
 
+### 背景关闭（modal 蒙层点击）
+- 点击 modal 弹窗外的半透明背景区域，弹窗关闭（等同点 Cancel）
+- **实现用 `onmousedown` 而非 `onclick`**
+- 原因：`onclick` = mousedown + mouseup 在同一元素。用户在输入框内 highlight 文字时，mousedown 在输入框，mouseup 可能落在背景上，触发误关闭。改成 `onmousedown` 后只判断按下瞬间的 target，highlight 拖动不再误触
+- 全站所有 modal 背景（包括删除确认弹窗）统一使用 `onmousedown`
+
 ---
 
 ## 四点五、Entry Card 内容层级
@@ -242,7 +265,7 @@ box-shadow: 0 4px 10px #C8C8D8, 0 -2px 6px #FFFFFF
 1. select 字段（全部，字段间加竖向雕刻线）
 2. number 字段（全部，前面加竖向雕刻线与 select 组分隔）
 
-### 选项标签颜色规则（`.ec-selval`）
+### 选项标签颜色规则
 按 select 字段在项目中的顺序轮流分配：
 | 第几个 | 颜色 |
 |---|---|
@@ -252,14 +275,14 @@ box-shadow: 0 4px 10px #C8C8D8, 0 -2px 6px #FFFFFF
 | 第 4 个 | `#3A7A9C`（中深青蓝） |
 | 第 5 个起 | 循环 |
 
-### 表单字段 label 颜色规则（`.var-label`）
+### 表单字段 label 颜色规则
 同上，按字段在 `p.fields` 中的顺序分配。
 
 ### Note 文字样式
 - 字号 11px，斜体，颜色 `#9EA8B8`
 - 前面带折角便签图标（蓝色 `#7FA4BE`）
 
-### 猫爪币（`.ec-coin`）
+### 猫爪币
 - 布凹效果，蓝灰字色 `#2E6090`
 
 ---
@@ -326,7 +349,13 @@ hover：background: rgba(38,110,167,0.03)
 ### 整体
 - 背景：`var(--lavender)` + sidebar 凹陷效果
 - 输入框：凹陷
-- Name 输入框、字段名称输入框：凹陷
+- 背景关闭：`onmousedown`（见第四节）
+
+### 功能规则
+- **默认类型**：打开时默认选「文字选择项」（select）
+- **Enter 创建栏位**：在栏位名称输入框按 Enter，等同点「+ Add」按钮
+- **失焦保存**：子选项编辑态失焦后自动保存当前输入值并退出编辑态
+- **必填保护**：Project Name 为空时 Save 按钮逻辑拦截，同时触发模糊红框提示并 focus 到 Name 输入框
 
 ### 字段卡片（每个字段独立凸起卡片）
 - 外框：标准凸起（`6px 6px 12px`），`border-radius:12px`
@@ -334,26 +363,26 @@ hover：background: rgba(38,110,167,0.03)
 - 子选项：
   - **显示态**：圆点（蓝灰色/灰色）+ 文字，整体凸起方框（`3px 3px 7px`，`border-radius:8px`）
   - **编辑态**（点铅笔）：凹陷输入框，无圆点，铅笔变蓝色
-  - Enter 或再点铅笔保存，退回显示态
+  - Enter 或再点铅笔保存，失焦也自动保存（失焦保存）
 
 ### 字段类型选择卡片（新建区）
 - 并排两张，固定宽度 `118px`，居中
 - 未选中：轻凸起（`3px`）
 - 选中：布凹效果（`inset 4px`），文字变色，图标凹陷
-- 文字选择项：紫色系，`Aa` 图标
-- 数字栏位：青绿色系，`#` 图标
+- 文字选择项：紫色系，`Aa` 图标，说明「建立一组选项，记录时从中勾选，如工具、状态、项目阶段」
+- 数字栏位：青绿色系，`#` 图标，说明「记录可量化的数据，例如时间、距离、次数」
 
 ### 按钮
 - Cancel / Delete：七日效果三态
-- Save：新纪录效果三态
+- Save：新纪录效果三态，Name 为空时触发模糊红框
 - Status 按钮：七日效果 + 各自颜色（见第四节）
 
 ### 颜色选择器
-- hex 输入框：凹陷，Nunito 字体
+- hex 输入框：凹陷，Nunito 字体，`font-weight:700`
 - RGB 数值框：凹陷
-- Similar Color 区域：凹陷容器
-- 「+ 添加进我的颜色包」按钮：裸 SVG + 号
-- 「我的颜色包」面板：标准凸起
+- Similar Color 区域：凹陷容器，hover 淡蓝 3%
+- 「+ 添加进我的颜色包」按钮：裸 SVG + 号，tooltip「添加进我的颜色包 / Add to my Color Bag」
+- 「我的颜色包」面板：标准凸起，tooltip「我的颜色包 / My Color Bag」
 - 「+ More Colors」文字：彩虹渐变（红→橙→黄→绿→蓝→紫）
 
 ---
@@ -364,7 +393,7 @@ hover：background: rgba(38,110,167,0.03)
 |---|---|
 | 横向雕刻线 | sidebar 内分隔线，目前用 box-shadow 实现，待改成跟竖向雕刻线一样用 border 实现 |
 | Step 6：Tracker 卡片 | 状态标签、按钮待统一 |
-| 「✓ 保存」按钮（编辑模式 `.ie-save`） | 仍用旧蓝色阴影 `#43688e`，待统一为新纪录效果 |
+| 「✓ 保存」编辑模式按钮 | 仍用旧蓝色阴影 `#43688e`，待统一为新纪录效果 |
 
 ### 已完成
 | 项目 | 完成于 |
@@ -372,14 +401,10 @@ hover：background: rgba(38,110,167,0.03)
 | Step 1–3：CSS变量、NAV、stat cards、sidebar | 第46次前 |
 | Step 4：Entry Card + Inline Edit | 第55–75次 |
 | Step 5：Form + Modal 全面新拟态化 | 第85–121次 |
-| 多单位数字字段全链路 | 第60–67次 |
-| 选项标签凹陷 + 蓝灰字色 + 竖向雕刻线 | 第68次 |
-| Entry card 字段排序（select先number后） | 第73次 |
-| 布凹效果（猫爪币） | 第74次 |
-| 跳过按钮 SVG 化 + tooltip | 第75次 |
-| Modal 字段卡片三层景深重构 | 第91–110次 |
-| Modal 字段类型选择卡片 | 第108–112次 |
-| 颜色选择器新拟态化 | 第119–121次 |
+| Modal 功能改动（默认select、Enter创建、失焦保存、必填保护） | 第122–125次 |
+| 模糊红框（必填警告动画） | 第123–124次 |
+| 背景关闭改 onmousedown（修复 highlight 误触） | 第129–130次 |
+| showUndoToast 变量名冲突修复（t 被覆盖） | 第126次 |
 
 ---
 
@@ -394,6 +419,9 @@ hover：background: rgba(38,110,167,0.03)
 | 「周报告效果」 | 2H |
 | 「竖向雕刻线」 | `.ec-vdivider` |
 | 「布凹效果」 | 复杂 box-shadow 数值 |
+| 「模糊红框」 | `.m-name-highlight` / `nameAlert` |
+| 「背景关闭」 | `onmousedown` modal-bg |
+| 「失焦保存」 | `onblur` auto-save |
 | 「entry card 选项标签」 | `.ec-selval` |
 | 「表单字段标题颜色」 | `.var-label` |
 | 「跳过按钮」 | `.skip-btn` |
@@ -402,8 +430,8 @@ hover：background: rgba(38,110,167,0.03)
 | 「entry card 字段分隔线」 | `.ec-vdivider` |
 | 「猫爪币」 | `.ec-coin` |
 | 「字段类型徽章」 | `.badge` in modal |
-| 「字段卡片」 | `.mfl-item` |
-| 「颜色包」 | `.cp-bag-btn` / palette popup |
+| 「字段卡片」 | modal 内字段独立卡片 |
+| 「颜色包」 | palette popup |
 
 ---
 
