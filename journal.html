@@ -2303,7 +2303,7 @@ function renderModal(){
   const m=modal;
   const _modalEl=mc.querySelector('.modal');
   const _scrollTop=_modalEl?_modalEl.scrollTop:0;
-  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this){modal=null;renderModal()}">
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)_bgClose()">
   <div class="modal">
     <div class="modal-title">${m.mode==='add'?t('modal_new')+' '+t('modal_task'):t('modal_edit')+' '+t('modal_task')}</div>
     <div class="modal-lbl">${t('modal_name')}</div>
@@ -2375,11 +2375,20 @@ function renderModal(){
           const isConfirming=(modal._confirmDel&&modal._confirmDel.fi===i&&modal._confirmDel.oi===oi);
           if(isConfirming){
             const cnt=modal._confirmDel.count;
-            const warn=lang==='zh'?`「${o}」已被 ${cnt} 条记录使用，删除后无法复原`:`"${o}" is used in ${cnt} record(s). Cannot be undone.`;
-            return`<div style="display:flex;align-items:center;gap:6px;background:rgba(229,57,53,0.06);border-radius:8px;padding:4px 10px">
-              <span style="flex:1;font-size:10px;color:#B87878;font-weight:600">${warn}</span>
-              <button onclick="confirmDelOption()" style="background:none;border:none;cursor:pointer;font-size:10px;font-weight:700;color:#B87878;padding:0 4px;font-family:'Nunito',sans-serif">${lang==='zh'?'确认':'Delete'}</button>
-              <button onclick="cancelDelOption()" style="background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;color:#C8C8D8;padding:0 4px;font-family:'Nunito',sans-serif">${lang==='zh'?'取消':'Cancel'}</button>
+            const warn=lang==='zh'?`「${o}」已被 ${cnt} 条记录使用，删除后无法复原，但会完整保存在历史数据中。`:`"${o}" is used in ${cnt} record(s). Cannot be undone, but historical records will be preserved.`;
+            const line1=lang==='zh'?`<span style="color:#266ea7;font-weight:700">「${o}」</span>已被 <span style="color:#B87878;font-weight:800">${cnt}</span> 条记录使用，历史数据会完整保存。`:`<span style="color:#266ea7;font-weight:700">"${o}"</span> is used in <span style="color:#B87878;font-weight:800">${cnt}</span> record(s). Historical data will be preserved.`;
+            const line2=lang==='zh'?'删除后无法复原':'Cannot be undone.';
+            const btnDel=lang==='zh'?'删除':'Delete';
+            const btnCancel=lang==='zh'?'取消':'Cancel';
+            return`<div style="display:flex;align-items:flex-start;gap:8px;background:rgba(229,57,53,0.05);border-radius:8px;padding:6px 10px">
+              <div style="flex:1">
+                <div style="font-size:11px;color:#888;margin-bottom:2px;line-height:1.4">${line1}</div>
+                <div style="font-size:11px;font-weight:800;color:#B87878">${line2}</div>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-top:2px">
+                <button onclick="confirmDelOption()" style="font-size:10px;font-weight:700;color:#fff;background:#B87878;border:none;border-radius:999px;padding:3px 10px;cursor:pointer;font-family:'Nunito',sans-serif">${btnDel}</button>
+                <button onclick="cancelDelOption()" style="font-size:10px;font-weight:600;color:#888;background:var(--lavender);border:none;border-radius:999px;padding:3px 10px;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:2px 2px 5px #C8C8D8,-2px -2px 5px #FFFFFF">${btnCancel}</button>
+              </div>
             </div>`;
           }
           if(isEditing){
@@ -2542,6 +2551,21 @@ function addUnitInModal(fi){
 }
 function removeUnit(fi,ui){if(modal&&modal.fields[fi]&&modal.fields[fi].units)modal.fields[fi].units.splice(ui,1);renderModal()}
 function renameUnit(fi,ui,val){if(modal&&modal.fields[fi]&&modal.fields[fi].units&&val.trim())modal.fields[fi].units[ui]=val.trim()}
+function _bgClose(){
+  if(!modal)return;
+  if(!modal.name.trim()){
+    // has fields added but no name: show alert and keep modal open
+    if(modal.fields&&modal.fields.length>0){
+      const el=document.getElementById('m-name');
+      if(el){el.classList.remove('m-name-highlight');void el.offsetWidth;el.classList.add('m-name-highlight');el.focus();}
+      return;
+    }
+    // no fields, no name: just close silently
+    modal=null;renderModal();return;
+  }
+  // has name: save and close
+  saveProject();
+}
 function saveProject(){
   if(!modal||!modal.name.trim())return;
   const status=modal.status||'active';
