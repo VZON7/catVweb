@@ -2044,7 +2044,7 @@ function buildEditForm(e,p){
               <span>${isSel?'✓ ':''} ${o}</span>
               <span onclick="event.stopPropagation();deleteEditOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
             </div>`;}).join('')}
-            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">${t('form_save')}</button></div>
+            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="${t('form_add_opt')}" autocomplete="off" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">${t('form_save')}</button></div>
           </div>`:''}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleEditSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
     }
@@ -2177,7 +2177,7 @@ function buildNewForm(){
                 <span>${isSel?'✓ ':''} ${o}</span>
                 <span onclick="event.stopPropagation();deleteNewOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
               </div>`;}).join('')}
-              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="${t('form_add_opt')}" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">${t('form_save')}</button></div>
+              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="${t('form_add_opt')}" autocomplete="off" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">${t('form_save')}</button></div>
             </div>`:''}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
       }
@@ -2325,7 +2325,7 @@ function renderModal(){
         <div class="cp-hue-wrap" id="cp-hue-wrap"><div class="cp-hue-thumb" id="cp-hue-thumb"></div></div>
         <div class="cp-preview-row">
           <div class="cp-preview-swatch" id="cp-preview-swatch"></div>
-          <input class="cp-hex-input" id="cp-hex-input" type="text" maxlength="7" placeholder="#000000" spellcheck="false">
+          <input class="cp-hex-input" id="cp-hex-input" type="text" maxlength="7" placeholder="#000000" spellcheck="false" autocomplete="off">
           <button class="cp-save-icon-btn" onclick="cpSaveColor()" title="${t('cp_save')}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="7" y1="2" x2="7" y2="12" stroke="#266ea7" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="7" x2="12" y2="7" stroke="#266ea7" stroke-width="2" stroke-linecap="round"/></svg></button>
         </div>
         <div class="cp-color-name" id="cp-color-name"></div>
@@ -2393,7 +2393,7 @@ function renderModal(){
           }
           if(isEditing){
             return`<div style="display:flex;align-items:center;gap:6px">
-              <input id="mopt-${i}-${oi}" type="text" value="${o}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
+              <input id="mopt-${i}-${oi}" type="text" autocomplete="off" value="${o}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].options[${oi}]=v;}modal._editKey=null;renderModal()}"
                 onchange="modal.fields[${i}].options[${oi}]=this.value.trim()"
                 onblur="const v=this.value.trim();if(v)modal.fields[${i}].options[${oi}]=v;modal._editKey=null;renderModal()">
@@ -2410,7 +2410,7 @@ function renderModal(){
           }
         }).join('')}
             <div style="display:flex;gap:6px;margin-top:4px">
-              <input type="text" id="modal-new-opt-${i}" placeholder="${t('form_add_sub')}" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
+              <input type="text" id="modal-new-opt-${i}" placeholder="${t('form_add_sub')}" autocomplete="off" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
               <button style="width:28px;height:28px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 8px #B8BEC8,-3px -3px 8px #FFFFFF;flex-shrink:0" onclick="addOptionInModal(${i})">+</button>
             </div>
           </div>`;
@@ -2421,7 +2421,7 @@ function renderModal(){
           const isEditingU=(modal._editKey===`unit-${i}-${ui}`);
           if(isEditingU){
             return`<div style="display:flex;align-items:center;gap:6px">
-              <input id="munit-${i}-${ui}" type="text" value="${u}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
+              <input id="munit-${i}-${ui}" type="text" autocomplete="off" value="${u}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].units[${ui}]=v;}modal._editKey=null;renderModal()}"
                 onchange="modal.fields[${i}].units[${ui}]=this.value.trim()"
                 onblur="const v=this.value.trim();if(v)modal.fields[${i}].units[${ui}]=v;modal._editKey=null;renderModal()">
@@ -2440,7 +2440,7 @@ function renderModal(){
           }
         }).join('')}
             <div style="display:flex;gap:6px;margin-top:4px">
-              <input type="text" id="modal-new-unit-${i}" placeholder="${t('modal_unit_ph')}" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addUnitInModal(${i})}">
+              <input type="text" id="modal-new-unit-${i}" placeholder="${t('modal_unit_ph')}" autocomplete="off" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addUnitInModal(${i})}">
               <button style="width:28px;height:28px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 8px #B8BEC8,-3px -3px 8px #FFFFFF;flex-shrink:0" onclick="addUnitInModal(${i})">+</button>
             </div>
           </div>`;
@@ -2448,7 +2448,7 @@ function renderModal(){
       return`<div style="background:var(--lavender);border-radius:12px;padding:10px 12px;box-shadow:6px 6px 12px #C8C8D8,-6px -6px 12px #FFFFFF">
         <div style="display:flex;align-items:center;gap:8px;width:100%">
           <span style="font-size:10px;font-weight:800;font-family:'Nunito',sans-serif;padding:3px 10px;border-radius:999px;background:${badgeBg};color:${badgeColor};flex-shrink:0;box-shadow:3px 3px 8px #C0C8D8,-3px -3px 8px #FFFFFF,inset 0 2px 6px rgba(180,190,210,0.45),inset 0 -1px 2px rgba(255,255,255,0.85)">${isSel?t('modal_sel'):t('modal_num')}</span>
-          <input type="text" value="${f.label}" placeholder="${t('modal_field_name')}" style="flex:1;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:4px 8px;background:var(--lavender);color:var(--dark);outline:none;min-width:0;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onchange="renameField(${i},this.value)">
+          <input type="text" autocomplete="off" value="${f.label}" placeholder="${t('modal_field_name')}" style="flex:1;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:4px 8px;background:var(--lavender);color:var(--dark);outline:none;min-width:0;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF" onchange="renameField(${i},this.value)">
           <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:14px;padding:2px 4px;line-height:1" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeField(${i})">\u2715</button>
         </div>
         ${subHtml}
