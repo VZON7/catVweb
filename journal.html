@@ -2372,6 +2372,16 @@ function renderModal(){
         subHtml=`<div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
             ${f.options.map((o,oi)=>{
           const isEditing=(modal._editKey===`opt-${i}-${oi}`);
+          const isConfirming=(modal._confirmDel&&modal._confirmDel.fi===i&&modal._confirmDel.oi===oi);
+          if(isConfirming){
+            const cnt=modal._confirmDel.count;
+            const warn=lang==='zh'?`已被 ${cnt} 条记录使用，删除后无法复原`:`Used in ${cnt} record(s). Cannot be undone.`;
+            return`<div style="display:flex;align-items:center;gap:6px;background:rgba(229,57,53,0.06);border-radius:8px;padding:4px 10px">
+              <span style="flex:1;font-size:10px;color:#B87878;font-weight:600">${warn}</span>
+              <button onclick="confirmDelOption()" style="background:none;border:none;cursor:pointer;font-size:10px;font-weight:700;color:#B87878;padding:0 4px;font-family:'Nunito',sans-serif">${lang==='zh'?'确认':'Delete'}</button>
+              <button onclick="cancelDelOption()" style="background:none;border:none;cursor:pointer;font-size:10px;font-weight:600;color:#C8C8D8;padding:0 4px;font-family:'Nunito',sans-serif">${lang==='zh'?'取消':'Cancel'}</button>
+            </div>`;
+          }
           if(isEditing){
             return`<div style="display:flex;align-items:center;gap:6px">
               <input id="mopt-${i}-${oi}" type="text" value="${o}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
@@ -2471,11 +2481,9 @@ function renderModal(){
 function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[],unit:'',units:[]});modal.nf='';renderModal()}
 function renameField(fi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].label=val.trim()}
 function removeOption(fi,oi){
-  console.log("removeOption called",fi,oi,modal);
   if(!modal||!modal.fields[fi])return;
   const optVal=modal.fields[fi].options[oi];
   const fid=modal.fields[fi].id;
-  console.log("optVal",optVal,"fid",fid,"entries",JSON.stringify(Object.values(entries).flat().slice(0,3)));
   // count how many entries use this option
   let usageCount=0;
   Object.values(entries).forEach(arr=>arr.forEach(e=>{
@@ -2484,13 +2492,21 @@ function removeOption(fi,oi){
     if(vals.includes(optVal))usageCount++;
   }));
   if(usageCount>0){
-    const msg=lang==='zh'
-      ?`此选项已被 ${usageCount} 条记录使用，删除后无法复原。确认删除？`
-      :`This option is used in ${usageCount} record(s). This action cannot be undone. Delete anyway?`;
-    if(!confirm(msg))return;
+    modal._confirmDel={fi,oi,count:usageCount};renderModal();return;
   }
   if(!modal||!modal.fields[fi])return;
   modal.fields[fi].options.splice(oi,1);renderModal();
+}
+function confirmDelOption(){
+  if(!modal||!modal._confirmDel)return;
+  const {fi,oi}=modal._confirmDel;
+  modal._confirmDel=null;
+  if(modal.fields[fi])modal.fields[fi].options.splice(oi,1);
+  renderModal();
+}
+function cancelDelOption(){
+  if(modal)modal._confirmDel=null;
+  renderModal();
 }
 function renameOption(fi,oi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].options[oi]=val.trim()}
 function addOptionInModal(fi){
