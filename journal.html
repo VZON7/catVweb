@@ -2139,7 +2139,7 @@ function _doDeleteEntry(key,id){
 }
 function confirmDeleteEntry(key,id){
   const mc=document.getElementById('modal-container');
-  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)_closeDelConfirm()">
   <div class="modal" style="max-width:300px">
     <div class="modal-title" style="color:var(--pink)">${t('del_entry_title')}</div>
     <p style="font-size:13px;color:var(--mid);margin-bottom:10px;line-height:1.6">
@@ -2310,7 +2310,7 @@ function renderModal(){
   const m=modal;
   const _modalEl=mc.querySelector('.modal');
   const _scrollTop=_modalEl?_modalEl.scrollTop:0;
-  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this){modal=null;renderModal()}">
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this){modal=null;renderModal()}">
   <div class="modal">
     <div class="modal-title">${m.mode==='add'?t('modal_new')+' '+t('modal_task'):t('modal_edit')+' '+t('modal_task')}</div>
     <div class="modal-lbl">${t('modal_name')}</div>
@@ -2467,14 +2467,12 @@ function renderModal(){
     <div class="modal-btns">
       ${m.mode==='edit'?`<button class="m-delete" onclick="deleteProject('${m.pid}')">${t('modal_delete')}</button>`:''}
       <button class="m-cancel" onclick="modal=null;renderModal()">${t('modal_cancel')}</button>
-      <button class="m-save" id="modal-save-btn" onclick="if(!modal.name.trim()){const el=document.getElementById('m-name');if(el){el.classList.remove('m-name-highlight');void el.offsetWidth;el.classList.add('m-name-highlight');el.focus();}return;}saveProject()">${t('modal_save')}</button>
+      <button class="m-save" onclick="if(!modal.name.trim()){const el=document.getElementById('m-name');if(el){el.classList.remove('m-name-highlight');void el.offsetWidth;el.classList.add('m-name-highlight');el.focus();}return;}saveProject()">${t('modal_save')}</button>
     </div>
   </div></div>`;
   setTimeout(()=>{
     cpInitPicker(modal?modal.color:'#7B68EE');
     const _el=mc.querySelector('.modal');if(_el)_el.scrollTop=_scrollTop;
-    const _sb=document.getElementById('modal-save-btn');
-    if(_sb){const _empty=modal&&!modal.name.trim();_sb.style.opacity=_empty?'0.4':'';_sb.style.cursor=_empty?'not-allowed':'';_sb.style.boxShadow=_empty?'none':'';}
   },0);
 }
 function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[],unit:'',units:[]});modal.nf='';renderModal()}
@@ -2520,7 +2518,7 @@ function deleteProject(id){
   let entryCount=0;
   Object.values(entries).forEach(arr=>arr.forEach(e=>{if(e.projId===id)entryCount++;}));
   const mc=document.getElementById('modal-container');
-  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)_closeDelConfirm()">
   <div class="modal" style="max-width:320px">
     <div class="modal-title" style="color:var(--pink)">${t('del_title')}${p.name}」</div>
     <p style="font-size:13px;color:var(--mid);margin-bottom:16px;line-height:1.6">
@@ -2590,7 +2588,7 @@ function confirmPermDelete(id,name){
   if(!id)return;
   name=name||'(unnamed)';
   const mc=document.getElementById('modal-container');
-  mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)_closeDelConfirm()">
   <div class="modal" style="max-width:300px">
     <div class="modal-title" style="color:var(--pink)">${t('del_perm_title')}</div>
     <p style="font-size:13px;color:var(--mid);margin-bottom:6px;line-height:1.6">
@@ -2618,11 +2616,11 @@ function _permDeleteProject(id){
 
 function showUndoToast(msg){
   clearTimeout(_delTimer);
-  let t=document.getElementById('undo-toast');
-  if(!t){t=document.createElement('div');t.id='undo-toast';t.className='undo-toast';document.body.appendChild(t);}
-  t.innerHTML=msg+' <button class="undo-btn" onclick="undoDelete()">'+t('undo')+'</button>';
-  t.style.display='flex';
-  _delTimer=setTimeout(()=>{t.style.display='none';_deletedProj=null;},5000);
+  let _toast=document.getElementById('undo-toast');
+  if(!_toast){_toast=document.createElement('div');_toast.id='undo-toast';_toast.className='undo-toast';document.body.appendChild(_toast);}
+  _toast.innerHTML=msg+' <button class="undo-btn" onclick="undoDelete()">'+t('undo')+'</button>';
+  _toast.style.display='flex';
+  _delTimer=setTimeout(()=>{_toast.style.display='none';_deletedProj=null;},5000);
 }
 
 function undoDelete(){
