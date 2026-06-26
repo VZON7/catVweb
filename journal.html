@@ -249,6 +249,8 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .modal { background:var(--lavender); border-radius:16px; border:none; padding:20px; width:300px; max-height:85vh; overflow-y:auto; overflow-x:hidden; box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; }
 .modal-title { font-family:'ZCOOL XiaoWei',sans-serif; font-size:16px; color:var(--dark); margin-bottom:14px; }
 .modal-lbl { font-size:11px; font-weight:700; color:var(--mid); margin-bottom:5px; margin-top:10px; }
+@keyframes nameAlert {  0%   { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }  15%  { box-shadow:inset 0 0 0 rgba(229,57,53,0), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }  25%  { box-shadow:inset 0 0 10px rgba(229,57,53,0.55), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }  50%  { box-shadow:inset 0 0 10px rgba(229,57,53,0.55), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }  100% { box-shadow:inset 0 0 28px rgba(229,57,53,0), inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }}
+.m-name-highlight { animation: nameAlert 1.1s cubic-bezier(0.25,0.46,0.45,0.94) forwards; }
 .modal input { width:100%; font-size:13px; font-family:'Nunito',sans-serif; border:none; border-radius:8px; padding:7px 10px; background:var(--lavender); color:var(--dark); outline:none; box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 .swatch { width:22px; height:22px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform .1s; flex-shrink:0; }
 .swatch:hover { transform:scale(1.15); }
@@ -2300,7 +2302,7 @@ function saveEntry(){
 }
 
 // PROJECTS MODAL
-function openAddProject(){modal={mode:'add',name:'',color:COLORS[0],status:'active',fields:[],nf:'',nft:'number'};renderModal()}
+function openAddProject(){modal={mode:'add',name:'',color:COLORS[0],status:'active',fields:[],nf:'',nft:'select'};renderModal()}
 
 function renderModal(){
   const mc=document.getElementById('modal-container');
@@ -2381,7 +2383,8 @@ function renderModal(){
             return`<div style="display:flex;align-items:center;gap:6px">
               <input id="mopt-${i}-${oi}" type="text" value="${o}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].options[${oi}]=v;}modal._editKey=null;renderModal()}"
-                onchange="modal.fields[${i}].options[${oi}]=this.value.trim()">
+                onchange="modal.fields[${i}].options[${oi}]=this.value.trim()"
+                onblur="const v=this.value.trim();if(v)modal.fields[${i}].options[${oi}]=v;modal._editKey=null;renderModal()">
               <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#266ea7;display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('mopt-${i}-${oi}').value.trim();if(v)modal.fields[${i}].options[${oi}]=v;modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
               <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeOption(${i},${oi})">×</button>
             </div>`;
@@ -2408,7 +2411,8 @@ function renderModal(){
             return`<div style="display:flex;align-items:center;gap:6px">
               <input id="munit-${i}-${ui}" type="text" value="${u}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px #C8C8D8,inset -2px -2px 5px #FFFFFF"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].units[${ui}]=v;}modal._editKey=null;renderModal()}"
-                onchange="modal.fields[${i}].units[${ui}]=this.value.trim()">
+                onchange="modal.fields[${i}].units[${ui}]=this.value.trim()"
+                onblur="const v=this.value.trim();if(v)modal.fields[${i}].units[${ui}]=v;modal._editKey=null;renderModal()">
               <span style="font-size:9px;font-weight:800;color:#AEB6C4;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0">单位</span>
               <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:#266ea7;display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('munit-${i}-${ui}').value.trim();if(v)modal.fields[${i}].units[${ui}]=v;modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
               <button style="background:none;border:none;color:#C8C8D8;cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='#C8C8D8'" onclick="removeUnit(${i},${ui})">×</button>
@@ -2457,18 +2461,20 @@ function renderModal(){
       </div>
     </div>
     <div class="add-field-row">
-      <input type="text" id="m-field" placeholder="${m.nft==='number'?t('field_like_num'):t('field_like_sel')}" autocomplete="off" oninput="modal.nf=this.value" value="${m.nf}">
+      <input type="text" id="m-field" placeholder="${m.nft==='number'?t('field_like_num'):t('field_like_sel')}" autocomplete="off" oninput="modal.nf=this.value" value="${m.nf}" onkeydown="if(event.key==='Enter'){event.preventDefault();addField()}">
       <button class="add-field-btn" onclick="addField()">${t('add_field')}</button>
     </div>
     <div class="modal-btns">
       ${m.mode==='edit'?`<button class="m-delete" onclick="deleteProject('${m.pid}')">${t('modal_delete')}</button>`:''}
       <button class="m-cancel" onclick="modal=null;renderModal()">${t('modal_cancel')}</button>
-      <button class="m-save" onclick="saveProject()">${t('modal_save')}</button>
+      <button class="m-save" id="modal-save-btn" onclick="if(!modal.name.trim()){const el=document.getElementById('m-name');if(el){el.classList.remove('m-name-highlight');void el.offsetWidth;el.classList.add('m-name-highlight');el.focus();}return;}saveProject()">${t('modal_save')}</button>
     </div>
   </div></div>`;
   setTimeout(()=>{
     cpInitPicker(modal?modal.color:'#7B68EE');
     const _el=mc.querySelector('.modal');if(_el)_el.scrollTop=_scrollTop;
+    const _sb=document.getElementById('modal-save-btn');
+    if(_sb){const _empty=modal&&!modal.name.trim();_sb.style.opacity=_empty?'0.4':'';_sb.style.cursor=_empty?'not-allowed':'';_sb.style.boxShadow=_empty?'none':'';}
   },0);
 }
 function addField(){if(!modal.nf.trim())return;modal.fields.push({id:'f'+Date.now(),label:modal.nf.trim(),type:modal.nft,options:[],unit:'',units:[]});modal.nf='';renderModal()}
@@ -2500,13 +2506,13 @@ function addUnitInModal(fi){
 function removeUnit(fi,ui){if(modal&&modal.fields[fi]&&modal.fields[fi].units)modal.fields[fi].units.splice(ui,1);renderModal()}
 function renameUnit(fi,ui,val){if(modal&&modal.fields[fi]&&modal.fields[fi].units&&val.trim())modal.fields[fi].units[ui]=val.trim()}
 function saveProject(){
-  if(!modal.name.trim())return;
+  if(!modal||!modal.name.trim())return;
   const status=modal.status||'active';
   if(modal.mode==='add')projects.push({id:'p'+Date.now(),name:modal.name,color:modal.color,status,fields:modal.fields});
   else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;}}
   modal=null;renderModal();saveData();renderAll();
 }
-function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',units:[...(f.units||[])],options:[...(f.options||[])]})),nf:'',nft:'number'};renderModal()}
+function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',units:[...(f.units||[])],options:[...(f.options||[])]})),nf:'',nft:'select'};renderModal()}
 let _deletedProj=null,_delTimer=null;
 
 function deleteProject(id){
@@ -2548,7 +2554,7 @@ function _closeDelConfirm(){
 }
 
 function _doDeleteProject(id,action){
-  const p=projects.find(x=>x.id===id);if(!p)return;
+  const p=projects.find(x=>x.id===id);if(!p){_closeDelConfirm();return;}
   const idx=projects.indexOf(p);
   if(action==='archive'){
     p.status='archived';
@@ -2581,6 +2587,8 @@ function restoreProject(id){
 }
 
 function confirmPermDelete(id,name){
+  if(!id)return;
+  name=name||'(unnamed)';
   const mc=document.getElementById('modal-container');
   mc.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)_closeDelConfirm()">
   <div class="modal" style="max-width:300px">
