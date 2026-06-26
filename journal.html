@@ -2375,7 +2375,7 @@ function renderModal(){
           const isConfirming=(modal._confirmDel&&modal._confirmDel.fi===i&&modal._confirmDel.oi===oi);
           if(isConfirming){
             const cnt=modal._confirmDel.count;
-            const warn=lang==='zh'?`已被 ${cnt} 条记录使用，删除后无法复原`:`Used in ${cnt} record(s). Cannot be undone.`;
+            const warn=lang==='zh'?`「${o}」已被 ${cnt} 条记录使用，删除后无法复原`:`"${o}" is used in ${cnt} record(s). Cannot be undone.`;
             return`<div style="display:flex;align-items:center;gap:6px;background:rgba(229,57,53,0.06);border-radius:8px;padding:4px 10px">
               <span style="flex:1;font-size:10px;color:#B87878;font-weight:600">${warn}</span>
               <button onclick="confirmDelOption()" style="background:none;border:none;cursor:pointer;font-size:10px;font-weight:700;color:#B87878;padding:0 4px;font-family:'Nunito',sans-serif">${lang==='zh'?'确认':'Delete'}</button>
@@ -2500,8 +2500,17 @@ function removeOption(fi,oi){
 function confirmDelOption(){
   if(!modal||!modal._confirmDel)return;
   const {fi,oi}=modal._confirmDel;
+  const pid=modal.pid;
   modal._confirmDel=null;
-  if(modal.fields[fi])modal.fields[fi].options.splice(oi,1);
+  if(modal.fields[fi]){
+    modal.fields[fi].options.splice(oi,1);
+    // persist to project immediately
+    if(pid){
+      const p=projects.find(x=>x.id===pid);
+      if(p)p.fields=modal.fields.map(f=>({...f,options:[...f.options],units:[...f.units]}));
+      saveData();
+    }
+  }
   renderModal();
 }
 function cancelDelOption(){
