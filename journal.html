@@ -95,7 +95,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .day-item.active .day-name { color:var(--purple); font-weight:700; }
 .day-cnt { font-size:10px; color:var(--mid); }
 /* 雕刻分隔线 */
-.sb-divider { border:none; margin:10px 0; height:2px; background:transparent; box-shadow:0 1px 0 #FFFFFF, 0 -1px 0 #C8C8D8; }
+.sb-divider { border:none; border-top:1px solid #C9D0DC; border-bottom:1px solid #FFFFFF; margin:10px 0; }
 .proj-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:10px; cursor:pointer; margin-bottom:2px; transition:box-shadow .15s; user-select:none; position:relative; }
 .proj-item:hover { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; }
 .proj-item:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
@@ -171,9 +171,7 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .ie-cancel { padding:7px 16px; border-radius:999px; border:none; background:var(--lavender); color:var(--mid); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:var(--neu-raised); transition:box-shadow .15s; }
 .ie-cancel:hover { box-shadow:8px 8px 16px #C8C8D8, -8px -8px 16px #FFFFFF; }
 .ie-cancel:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
-.ie-save { padding:7px 20px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:6px 6px 14px #43688e, -6px -6px 14px #FFFFFF; transition:box-shadow .15s; }
-.ie-save:hover { box-shadow:8px 8px 18px #43688e, -8px -8px 18px #FFFFFF; }
-.ie-save:active { box-shadow:inset 4px 4px 9px #2a4f6e; }
+
 
 /* FORM */
 .form-card { background:var(--lavender); border:none; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; }
