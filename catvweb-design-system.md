@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第156次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第174次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 
 ⚠️ **Claude 使用规则：任何 SVG 图标、阴影数值、颜色在写入代码前，必须先查本文档对应章节，不可凭记忆写入。**
 
@@ -33,6 +33,9 @@
 | Tracker records 数字色 | `#2d2b3d`（最深灰，font-weight:800） |
 | Tracker records 文字色 | `#888`（中等灰，font-weight:700） |
 | Tracker last update 色 | `#9AA0A8` |
+| 周报告亮点 pill 标题色 | `#A07850`（暖棕金） |
+| 周报告亮点 pill 内容色 | `#4E5568`（蓝灰） |
+| 周日历框 / 顶栏色 | `#266ea7`（与主强调色一致） |
 
 ---
 
@@ -48,7 +51,7 @@ box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF
 ```
 box-shadow: inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF
 ```
-→ 用在：sidebar 容器、`.form-card`、modal 弹窗整体
+→ 用在：sidebar 容器、`.form-card`、modal 弹窗整体、周报告 PROJECT LOG 容器
 
 ### 七日效果（凹陷容器内三态）
 - 默认：无阴影（平贴）
@@ -83,7 +86,6 @@ border-left: 1px solid #C9D0DC; border-right: 1px solid #FFFFFF;
 ```css
 border-top: 1px solid #C9D0DC; border-bottom: 1px solid #FFFFFF;
 ```
-→ **待办**：sidebar 内分隔线仍用旧 box-shadow，待改成此 border 实现
 
 ### Project 徽章效果（双层立体）
 ```
@@ -98,7 +100,7 @@ box-shadow: 4px 4px 10px #C0C8D8, -4px -4px 10px #FFFFFF,
             inset 0 3px 8px rgba(180,190,210,0.55),
             inset 0 -1px 3px rgba(255,255,255,0.9);
 ```
-→ 用在：猫爪币、「预计获得 N Cat Token」、modal 类型选择卡片选中态
+→ 用在：猫爪币、「预计获得 N Cat Token」、modal 类型选择卡片选中态、**周报告本周亮点 pill**
 
 ### 模糊红框
 ```css
@@ -127,6 +129,40 @@ background: var(--lavender); border: none; border-radius: 999px;
 - Active：color `#1D9E75`
 - Done：color `#266ea7`
 - Archived：印章效果，`border: 1.5px solid #A32D2D; border-radius: 3px; transform: rotate(-7deg); box-shadow: none;`
+
+### 周日历格子（三态）
+```css
+/* 有记录 — 凹陷 + 淡染 + 数字凸起 */
+box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF;
+color: #266ea7;
+text-shadow: 1px 1px 2px #FFFFFF, -0.5px -0.5px 1px rgba(38,110,167,0.3);
+/* 淡染用 ::before 伪元素 */
+background: #266ea7; opacity: 0.12;
+
+/* 无记录 — 凸起空白 */
+box-shadow: 3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF;
+color: #bbb;
+```
+→ 数字加粗（font-weight:800），颜色 `#266ea7`，text-shadow 模拟凸起感
+→ 无记录格子不显示数字，只显示凸起空格
+
+### Toggle 开关（两态）
+```css
+/* 容器轨道 — 关闭态 */
+width: 32px; height: 18px; border-radius: 999px;
+box-shadow: inset 2px 2px 5px #C8C8D8, inset -2px -2px 5px #FFFFFF;
+background: var(--lavender);
+
+/* 容器轨道 — 开启态 */
+background: #266ea7;
+box-shadow: inset 2px 2px 5px #1e5a8a, inset -1px -1px 3px rgba(255,255,255,0.15);
+
+/* 滑块 */
+width: 12px; height: 12px; border-radius: 50%;
+background: #fff; box-shadow: 1px 1px 3px #B8BEC8;
+left: 3px（关闭） / left: 17px（开启）; transition: left 0.2s;
+```
+→ 用在：周报告「显示使用提示」开关
 
 ---
 
@@ -260,6 +296,19 @@ SVG 尺寸：width="26" height="26" viewBox="0 0 26 26"
 | 未选中 | 轻凸起（3px） | 轻凸起 |
 | 选中 | 布凹效果（inset 4px） | 凹陷 |
 
+### 凹陷中的凹陷（层级规则）
+当一个元素处于 sidebar 凹陷容器内，且需要进一步区分为「已归档/非激活」状态时，使用内层凹陷：
+```css
+/* 外层容器：sidebar 凹陷效果 */
+box-shadow: inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF;
+
+/* 内层已归档元素：再凹陷 + 降低透明度 */
+box-shadow: inset 4px 4px 8px #C8C8D8, inset -4px -4px 8px #FFFFFF;
+opacity: 0.75;
+```
+→ 用在：周报告 PROJECT LOG 容器内的已归档项目卡片
+→ 语义：凹陷 = 信息性/非交互；凹陷中的凹陷 = 降级/归档
+
 ---
 
 ## 五、字体系统
@@ -276,6 +325,12 @@ SVG 尺寸：width="26" height="26" viewBox="0 0 26 26"
 | Tracker records 数字 | `Nunito` | 12px | **800**，`#2d2b3d` |
 | Tracker records 文字 | `Nunito` | 12px | **700**，`#888` |
 | Tracker last update | `Nunito` | 9px | —，`#9AA0A8` |
+| 周报告亮点 pill 标题 | `Nunito` | 14px | **800**，`#A07850` |
+| 周报告亮点 pill 内容 | `Nunito` | 11px | **700**，`#4E5568` |
+| 周日历顶栏主文案 | `Nunito` | 12px | **800**，`#fff` |
+| 周日历顶栏日期范围 | `Nunito` | 10px | **700**，`#fff` opacity 0.8 |
+| 周日历星期标题 | `Nunito` | 10px | **800**，`#266ea7` opacity 0.75 |
+| 周日历格子数字 | `Nunito` | 11.5px | **800**，`#266ea7` |
 
 ---
 
@@ -287,6 +342,8 @@ SVG 尺寸：width="26" height="26" viewBox="0 0 26 26"
 | 中型卡片（entry card、字段卡片、Tracker卡片） | `12–14px` |
 | 小按钮（日期格、导航按钮） | `10px` |
 | 胶囊形（不可改） | `999px` |
+| 周日历框 | `18px` |
+| 周日历格子 | `8px` |
 
 ---
 
@@ -362,15 +419,70 @@ box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF;
 
 ---
 
-## 十、待办
+## 十、周报告（Week in Review）
+
+### 整体结构
+```
+猫咪横幅（sidebar 凹陷）
+本周亮点 pills（布凹，横排撑满）
+周日历框
+  └── 蓝色顶栏（「2026年的第N个星期，你好！」+ 日月范围）
+  └── 星期标题行（Su Mo Tu We Th Fr Sa）
+  └── 格子行（有记录凹陷淡染 / 无记录凸起）
+PROJECT LOG 容器（sidebar 凹陷）
+  └── 标题行 + toggle 开关（同行，标题左，开关右）
+  └── 横向雕刻线
+  └── 项目卡片（平，无阴影）× N
+      └── 已归档项目（凹陷中的凹陷）
+```
+
+### 本周亮点 pill
+- 效果：布凹效果
+- 标题：14px 800 `#A07850`（「最活跃的一天」「最常回来的项目」「首次登场」）
+- 内容：11px 700 `#4E5568`（日期、项目名）
+- 三个 pill 等宽横排（`flex:1`），不换行
+- 条件显示：有数据才显示对应 pill，没有则不占位
+
+### 周日历框
+- 外层背景色：`#266ea7`（不用 border，背景即框）
+- 圆角：`border-radius: 18px`
+- 阴影：`box-shadow: 4px 4px 12px #C8C8D8, -4px -4px 12px #FFFFFF`
+- 顶部两个挂钩：`width:11px height:16px background:#266ea7 border-radius:5px 5px 3px 3px`
+- 格子区域背景：`var(--lavender)`，`border-radius: 0 0 15px 15px`
+
+### 周日历格子（见第二节）
+
+### 周数计算
+```js
+// ISO 8601 标准，准确
+const getISOWeek = d => {
+  const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  return Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+};
+```
+
+### 项目卡片（PROJECT LOG 内）
+- 正常项目：平的，无阴影，`background: var(--lavender)`
+- 已归档项目：凹陷中的凹陷（见第四节），`opacity: 0.75`，ARCHIVED 印章 `rotate(-5deg)` 红框，`vertical-align: middle`
+
+### 调皮提示词规则
+- toggle 默认关闭，state 存 `window._wrHintsOn`
+- 门槛：select 字段某选项出现 ≥2 次 → 「秘密武器」类语气；1 次 → 「这周试了一下 X，感觉怎么样？」
+- 三个模板轮换（按项目顺序 idx % 3）
+
+---
+
+## 十一、待办
 
 | 项目 | 说明 |
 |---|---|
-| 横向雕刻线 | sidebar 内分隔线待改成 border 实现 |
-| 「✓ 保存」按钮（`.ie-save`） | 仍用旧阴影 `#43688e`，待改为新纪录效果 |
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
+| 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
+| Night Mode 按钮 | 顶部占位，功能待实现，toggle 方式待确定 |
 
-### 已完成（第122次后）
+### 已完成
 | 项目 | 完成于 |
 |---|---|
 | Modal 功能改动 | 第122–130次 |
@@ -378,10 +490,13 @@ box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF;
 | 背景关闭自动保存逻辑 | 第142次 |
 | autocomplete 全站关闭 | 第143–144次 |
 | Tracker 列表重设计 | 第145–156次 |
+| 废弃 `.ie-save` 清理、sb-divider 改 border | 第157次 |
+| Night Mode 占位、月报告入口 | 第158次 |
+| 周报告全面重设计 | 第159–174次 |
 
 ---
 
-## 十一、沟通约定
+## 十二、沟通约定
 
 | 说这个 | 不说这个 |
 |---|---|
@@ -398,17 +513,21 @@ box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF;
 | 「跳过按钮」 | `.skip-btn` |
 | 「猫爪币」 | `.ec-coin` |
 | 「颜色包」 | palette popup |
+| 「周日历框」 | `.wr-cal-outer` |
+| 「周日历格子」 | `.wr-cal-day` |
+| 「凹陷中的凹陷」 | 具体数值 |
+| 「toggle 开关」 | `.wr-toggle-track` |
 
 ---
 
-## 十二、多单位数字字段显示规则
+## 十三、多单位数字字段显示规则
 
 **多单位**：`time: 30 min · 1 hour`（`·` 分隔）
 **单单位**：`length: 23 cm`（从 `f.units[0]` 拼接单位）
 
 ---
 
-## 十三、已知 Bug 记录（避免重犯）
+## 十四、已知 Bug 记录（避免重犯）
 
 | Bug | 根源 | 修法 |
 |---|---|---|
@@ -417,3 +536,6 @@ box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF;
 | highlight 文字关闭 modal | `onclick` 在 mouseup 判断 target | 改 `onmousedown` |
 | Save 按钮卡死 | 模板字符串 style 跟 onblur 时序冲突 | style 条件移除，只用 JS 判断 |
 | Tracker isArchived 报错 | `card.className` 在 `isArchived` 定义前 | 调换定义顺序 |
+| 中文写入 JS 乱码 | Python bytes 模式拼接中文字符 | 用临时 .js 文件写入，或 str_replace 直接写中文 |
+| 函数重复定义 | str_replace 找不到目标时静默失败，新内容追加到文件末 | 替换后立即 grep -c 验证函数唯一性 |
+| 工作文件丢失 | 误用上传文件（原始版）而非 outputs/ 最新版 | 新对话优先检查 /mnt/user-data/outputs/ |
