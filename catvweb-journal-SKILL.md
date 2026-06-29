@@ -105,6 +105,17 @@ journal.html
 
 ## 六、文件版本管理
 
+⚠️ **新对话开始时，必须先检查 `/mnt/user-data/outputs/journal.html` 是否存在且比上传文件更新。**
+上传文件 = 用户手动上传的版本，不一定是最新。
+outputs/ = Claude 输出的最新工作版本，优先使用。
+
+```bash
+# 新对话开始时先做这个检查
+wc -c /mnt/user-data/uploads/journal.html /mnt/user-data/outputs/journal.html 2>/dev/null
+# outputs/ 文件更大 → 用 outputs/；一样大或不存在 → 用 uploads/
+cp /mnt/user-data/outputs/journal.html /home/claude/journal.html
+```
+
 - **同一对话继续开发**：直接在 `/home/claude/journal.html` 叠加改动，不需要用户重新上传
 - **每次输出标注「第 N 次 update」**，让用户确认版本
 - **用户上传文件时**：先 grep 检查关键函数（如 `renameField` / `stripEmoji` / `setLang`）确认是否为最新版本
@@ -170,15 +181,62 @@ window.addEventListener('load', function(){
 
 ---
 
-## 十一、Python 替换代码块安全规则
+## 十一、Python 操作安全规则（全部中文写入场景）
 
-⚠️ 以下错误各踩过一次，务必遵守：
+⚠️ 以下规则涵盖所有 Python 写入操作，违反任何一条都可能导致乱码或文件损坏。
 
-**边界查找** — 禁止用 `find('}};')` 找代码块结束点（会意外包含后续代码）。
-正确做法：用函数名或注释作为边界，如 `find('\nconst CB_BgPlugin=')`。
+### 中文内容写入规则
 
-**字符编码** — Python 写入 JS 字符串时，禁止使用 Unicode 弯引号（`\u2018` `\u2019`）和 Unicode 省略号（`\u2026`）。
+**根本原则：** 凡是包含中文的内容，不用 Python bytes 模式拼接，改用临时文件写入。
+
+```python
+# ❌ 错误：Python bytes 模式拼接中文 — 写入的是原始字节序列，不是字符串
+new_js = b"  const label='\xe6\x9c\xac\xe5\x91\xa8';"  # 浏览器读到乱码
+
+# ✅ 正确：写临时 .js 文件，用 str 模式写中文，再 bytes 读取插入
+with open('/tmp/snippet.js', 'w', encoding='utf-8') as f:
+    f.write("  const label='本周';")
+with open('/tmp/snippet.js', 'rb') as f:
+    new_js = f.read()
+```
+
+**str_replace 写中文时可直接写：** str_replace 工具内部处理 UTF-8，不需要额外转换。
+
+### en key 不得写入中文
+
+```python
+# ❌ 错误：en key 写入中文字节
+new_en = "cp_my:'我的颜色包',".encode()  # 中文写进 en → 乱码
+
+# ✅ 正确：en key 只用英文 ASCII
+new_en = b"cp_my:'My Color Bag',"
+```
+
+### 边界查找规则
+
+禁止用 `find('}};')` 找代码块结束点（会意外包含后续代码）。
+正确做法：用函数名或注释作为边界：
+
+```python
+# ✅ 正确
+s = c.find(b'function renderStats()')
+e = c.find(b'\nfunction renderMonth()')
+```
+
+### 禁止使用的字符
+
+Python 写入 JS 字符串时，禁止使用 Unicode 弯引号（`\u2018` `\u2019`）和 Unicode 省略号（`\u2026`）。
 正确做法：省略号用 `'...'`，引号用直引号 `'` 或 `"`。
+
+### I18N 块保护
+
+Python 做字符串全局替换时，先定位 I18N 块边界再操作：
+```python
+i18n_start = content.find('const I18N={')
+i18n_end = content.find('\nlet lang=', i18n_start)
+# 只在 content[:i18n_start] + content[i18n_end:] 范围内替换
+```
+不排除会把 I18N 内部的字符串值替换成 `t('key')` 调用，造成循环依赖崩溃。
 
 ---
 
@@ -192,21 +250,13 @@ Chart.js doughnut 的圆心是 `chartArea` 中心，`arc.outerRadius` 基于 `ch
 - 边界计算时，`(limitX - cx) / cosA` 里的 `cx` 和 `limitX` 必须在同一坐标系
 - `layout.padding` 会让 `chartArea` 比 canvas 小，偏移量 = padding 值
 
-
 ---
 
 ## 十三、I18N 操作安全规则
 
 ⚠️ 以下三条各踩过一次，直接导致页面崩溃：
 
-**全局替换前必须排除 I18N 块**
-Python 做字符串全局替换时，先定位 I18N 块边界再操作：
-```python
-i18n_start = content.find('const I18N={')
-i18n_end = content.find('\nlet lang=', i18n_start)
-# 只在 content[:i18n_start] + content[i18n_end:] 范围内替换
-```
-不排除会把 I18N 内部的字符串值替换成 `t('key')` 调用，造成循环依赖崩溃。
+**全局替换前必须排除 I18N 块**（见第十一节）
 
 **Template literal 里禁用字符串拼接语法**
 在 backtick template literal 内取 I18N 值，只能用 `${t('key')}`，绝对不能用 `'+t('key')+'`：
@@ -263,11 +313,25 @@ box-shadow: inset 4px 4px 9px #2a4f6e, inset -4px -4px 9px #FFFFFF;
 **阴影数值唯一来源**
 全站阴影数值以 `catvweb-design-system.md` 第二节为准，不得凭记忆自行填写。
 
+**带颜色背景的新拟态元素**
+当元素背景为纯色（如蓝色顶栏 `#266ea7`），不依赖 `overflow:hidden` 裁切来实现圆角衔接。
+正确做法：让外层容器背景色 = 顶栏色，内容区域单独设背景色，避免抗锯齿留白：
+```css
+/* ✅ 外层背景即顶栏色，不需要裁切 */
+.outer { background: #266ea7; border-radius: 18px; }
+.inner { background: var(--lavender); border-radius: 0 0 15px 15px; }
+```
+
 ---
 
 ## 十六、SVG 图标规则
 
-涉及箭头或日历图标修改时，必须先读取 `catvweb-design-system.md` 第三节「SVG 图标系统」确认定案数据，不得凭训练数据自行生成 SVG。
+⚠️ **任何 SVG 图标写入代码前，必须先查 `catvweb-design-system.md` 第三节**，包含：
+- path 数据、width / height / viewBox 尺寸
+- stroke 颜色和粗细
+- filter drop-shadow 三态数值（默认 / hover / active）
+
+**不可凭记忆写入，即使「看起来差不多」也必须核对。**
 
 **定案图标速查：**
 
@@ -277,7 +341,7 @@ box-shadow: inset 4px 4px 9px #2a4f6e, inset -4px -4px 9px #FFFFFF;
 | 右箭头 | `14×12` | path: `M6 1L12 6L6 11M12 6H1`，stroke `#266ea7`，width 2 |
 | 日历 | `26×26` | 顶栏 h=5，横线 y=9，数字 x=13 y=17，`dominant-baseline="central"` |
 
-**图标阴影（统一）：**
+**图标阴影（统一三态）：**
 ```css
 /* 默认 */
 filter: drop-shadow(2.5px 2.5px 3px rgba(38,110,167,.6)) drop-shadow(-1.5px -1.5px 2px #fff);
@@ -287,8 +351,7 @@ filter: drop-shadow(3.5px 3.5px 5px rgba(38,110,167,.8)) drop-shadow(-2px -2px 3
 filter: drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .5px rgba(255,255,255,.7));
 ```
 
-**日历日期动态注入：**
-`id="cal-icon-day"` 在 `renderAll()` 内写入 `today.getDate()`，不得硬编码数字。
+三态 filter 通过 CSS class 实现，不写在 SVG inline style 里。
 
 ---
 
@@ -334,12 +397,7 @@ grep -n "f.id\]" journal.html   # 确认所有读取点都判断了 Array.isArra
 **排查双语硬编码时，同时跑两次搜索：**
 ```bash
 grep -n "次" journal.html          # 搜原始字符
-grep -n "u6b21\|u..../u" journal.html  # 搜常见转义形式（按需替换 unicode code point）
-```
-
-或更通用，直接搜索转义模式本身：
-```bash
-grep -nE "\\\\u[0-9a-fA-F]{4}" journal.html
+grep -nE "\\\\u[0-9a-fA-F]{4}" journal.html  # 搜转义形式
 ```
 找到后人工确认是否为中文转义，逐一替换为 `t('key')`。
 
@@ -349,10 +407,7 @@ grep -nE "\\\\u[0-9a-fA-F]{4}" journal.html
 
 ⚠️ journal.html 含 4 处 `<script>` 标签：CDN 引用小脚本（docx包装）、主逻辑块、以及**字符串内嵌**的 print 用假标签（在 cbExportPdf/exportTracker 函数里，不是真正的 HTML 标签）。
 
-**注意：主逻辑块不是最后一对**——字符串内嵌的假标签在文件更后面，`tail -1` 会抓错。
-**注意：文件是 CRLF 换行**（`\r\n`），纯 `grep -n "^<script>$"` 在部分环境下会因 `\r` 卡住匹配不到，必须用 `-P` 模式 + `\r?$`。
-
-正确做法：取第 2 个 `<script>`（独立一行，排除带 `src=` 的引用行）作为起点，取第 2 个 `</script>` 作为终点（第 1 个 `</script>` 是 CDN 包装小脚本的结尾，不是主逻辑块）：
+**注意：文件是 CRLF 换行**（`\r\n`），必须用 `-P` 模式 + `\r?$`。
 
 ```bash
 START=$(grep -nP "^<script>\r?$" journal.html | sed -n '2p' | cut -d: -f1)
@@ -360,21 +415,53 @@ END=$(grep -nP "^</script>\r?$" journal.html | sed -n '2p' | cut -d: -f1)
 sed -n "$((START+1)),$((END-1))p" journal.html | tr -d '\r' > /tmp/check.js && node --check /tmp/check.js
 ```
 
-每次大改后用此固定流程跑一次，不必每次重新计算行号。如果文件结构发生变化（比如又加了新的内嵌脚本或 CDN 引用），先用 `grep -nP "<script>"` 重新核对一遍标签数量和位置，再调整 `sed -n` 的取值序号。
+每次大改后用此固定流程跑一次。
 
 ---
 
-## 二十、已知的「看起来像 bug 但其实是设计」清单
+## 二十、大块函数替换安全规则
+
+⚠️ 替换整个函数时（如 renderStats、renderMonth），必须遵守以下流程，否则容易产生重复定义。
+
+**替换前：确认边界**
+```bash
+# 确认目标函数存在且唯一
+grep -c "function renderStats" journal.html  # 应该输出 1
+```
+
+**替换后：立即验证唯一性**
+```bash
+grep -c "function renderStats" journal.html  # 必须仍是 1，若为 2 说明追加了重复定义
+```
+
+**str_replace 找不到目标时会静默失败**，新内容不会替换旧内容，而是不做任何事。
+此时若用 Python bytes 模式写入，新内容可能被追加到文件末尾，导致两套函数并存。
+
+**正确的大块替换流程：**
+```python
+# 1. 用唯一 marker 定位起点和终点
+s = c.find(b'// STATS\r\nfunction renderStats()')
+e = c.find(b'// CALENDAR PICKER')  # 用下一个唯一注释作为终点
+print(f"s:{s} e:{e}")  # 必须都 > 0，否则停止操作
+
+# 2. 替换
+result = c[:s] + new_block + c[e:]
+
+# 3. 写入后立即验证
+```
+
+---
+
+## 二十一、已知的「看起来像 bug 但其实是设计」清单
 
 避免下次对话误判成缺陷去"修复"：
 
 - **`cb_unit_suffix` 只有 zh key，没有 en key**——英文版数字格式走 `lang==='en'?('x'+v):...` 分支，直接拼 `'x'`，不调用这个 key，所以英文不需要对应翻译。不是双语缺失。
 - **`f.unit`（旧字符串单位）仍保留在多处代码里，与新的 `f.units`（数组）共存**——这是向后兼容设计，旧项目数据没有 `units` 时回退用 `unit`。不要删除 `f.unit` 相关代码。
 
-
 ---
 
-## 二十一、与 ZONZON 沟通约定
+## 二十二、与 ZONZON 沟通约定
 
 ### 效果名称（用「我看到的东西」描述，不用 CSS class 名）
 
@@ -396,79 +483,20 @@ sed -n "$((START+1)),$((END-1))p" journal.html | tr -d '\r' > /tmp/check.js && n
 | 「entry card 字段分隔线」 | `.ec-vdivider` |
 | 「entry card note 文字」 | `.ec-note` |
 | 「猫爪币」 | `.ec-coin` |
+| 「周日历框」 | `.wr-cal-outer` |
+| 「周日历格子」 | `.wr-cal-day` |
+| 「凹陷中的凹陷」 | 具体数值 |
+| 「toggle 开关」 | `.wr-toggle-track` |
 
 ### 阴影数值来源
 全站阴影以 `catvweb-design-system.md` 第二节为准，不凭记忆填写。
-设计系统文档改用「效果名称」而非编号，沟通时直接说效果名称。
 
 ### 翻译决策
 遇到不确定的英文翻译，列出 2-3 个选项问 ZONZON，不自行决定。
 
-
 ---
 
-## 二十二、I18N 双语字节编码安全规则
-
-⚠️ 把中文写进 en key 会导致乱码，在 GitHub Pages 上直接显示为乱码字符。
-
-**根本原因：**
-Python 用 bytes 模式处理文件时，中文 UTF-8 字节序列写进 en key 后，浏览器读取 JS 字符串时发生二次编码，变成乱码。
-
-**强制规则：**
-
-```python
-# ❌ 错误：en key 写入中文字节
-old_en = b"cp_my:'My Colors',"
-new_en = "cp_my:'我的颜色包',".encode()  # 中文写进 en → 乱码
-
-# ✅ 正确：en key 保持英文
-old_en = b"cp_my:'My Colors',"
-new_en = b"cp_my:'My Color Bag',"  # en key 只用英文
-
-# ✅ 正确：zh key 用 UTF-8
-old_zh = "cp_my:'我的颜色'".encode('utf-8')
-new_zh = "cp_my:'我的颜色包'".encode('utf-8')
-```
-
-**操作流程：**
-1. 修改 zh key → 用 `.encode('utf-8')` 或直接写 UTF-8 字节
-2. 修改 en key → 只写英文，用 `b"..."` 纯 ASCII bytes
-3. 两次替换必须分开操作，不能把同一个中文字符串同时写入 zh 和 en
-
-**验证方法：**
-```bash
-grep -n "cp_my\|cp_save\|modal_sel\|modal_num" journal.html | head -20
-# 检查 en 那行（行号674附近）是否含有非ASCII字符
-```
-
-
----
-
-## 二十三、SVG 图标强制查阅规则
-
-⚠️ **任何 SVG 图标写入代码前，必须先查 `catvweb-design-system.md` 第三节，包含：**
-- path 数据
-- width / height / viewBox 尺寸
-- stroke 颜色和粗细
-- filter drop-shadow 三态数值（默认 / hover / active）
-
-**不可凭记忆写入，即使「看起来差不多」也必须核对。**
-
-常见错误：
-- 写了箭头 SVG 但遗漏 filter drop-shadow → 箭头无立体感
-- filter 只写默认态，没有 hover/active 态 → 点击无反馈
-- path 数值写错（左右箭头搞混）
-
-正确做法：
-```
-1. 查 design system 第三节对应图标
-2. 复制完整 HTML 模板
-3. 三态 filter 通过 CSS class 实现（不写在 SVG inline style 里）
-```
-
----
-
-## 二十四、Tracker 模块结构（第156次 update 后）
+## 二十三、Tracker 模块结构（第156次 update 后）
 
 ### CSS Class 速查
 | Class | 用途 |
