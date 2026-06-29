@@ -172,7 +172,6 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .ie-cancel:hover { box-shadow:8px 8px 16px #C8C8D8, -8px -8px 16px #FFFFFF; }
 .ie-cancel:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 
-
 /* FORM */
 .form-card { background:var(--lavender); border:none; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; }
 .form-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
@@ -228,19 +227,45 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .sd-add-btn:active { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; }
 
 /* STATS VIEW */
-.stats-bars { display:flex; align-items:flex-end; gap:6px; height:72px; margin-bottom:14px; }
-.wbar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
-.wbar-bg { flex:1; width:100%; background:rgba(123,104,238,0.12); border-radius:3px; display:flex; align-items:flex-end; overflow:hidden; }
-.wbar-in { width:100%; background:var(--purple); border-radius:3px; min-height:2px; transition:height .4s; }
-.wbar-col.today .wbar-in { background:var(--pink); }
-.wbar-lbl { font-size:10px; color:var(--mid); }
-.wbar-col.today .wbar-lbl { color:var(--pink); font-weight:700; }
-.proj-stat-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.psr-name { font-size:12px; color:var(--dark); width:110px; flex-shrink:0; display:flex; align-items:center; gap:5px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-weight:600; }
-.psr-track { flex:1; height:8px; background:rgba(123,104,238,0.12); border-radius:4px; overflow:hidden; }
-.psr-fill { height:100%; border-radius:4px; }
-.psr-val { font-size:11px; color:var(--mid); width:80px; text-align:right; flex-shrink:0; white-space:nowrap; }
-.cat66-bar { display:flex; align-items:center; gap:12px; background:rgba(250,238,218,0.7); border:0.5px solid #FAC775; border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:12px; color:#633806; line-height:1.6; }
+
+.wr-cat-banner { display:flex; align-items:center; gap:12px; box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; border-radius:14px; padding:14px 18px; margin-bottom:18px; font-size:13px; color:var(--dark); font-family:'Nunito',sans-serif; font-weight:600; }
+.wr-cat-kaomoji { font-size:22px; animation:wr-bob 2.4s ease-in-out infinite; flex-shrink:0; }
+@keyframes wr-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+.wr-section-label { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin:16px 0 10px; }
+.wr-section-label.large { font-size:13px; letter-spacing:.04em; color:var(--dark); }
+.wr-highlights { display:flex; flex-wrap:nowrap; gap:8px; margin-bottom:4px; }
+.wr-pill { flex:1; display:flex; flex-direction:column; padding:10px 14px; border-radius:12px; box-shadow:4px 4px 10px #C0C8D8, -4px -4px 10px #FFFFFF, inset 0 3px 8px rgba(180,190,210,0.55), inset 0 -1px 3px rgba(255,255,255,0.9); font-family:'Nunito',sans-serif; }
+.wr-pill-title { font-size:14px; font-weight:800; color:var(--dark); line-height:1.2; }
+.wr-pill-sub { font-size:11px; font-weight:500; color:var(--mid); margin-top:2px; }
+.wr-cal-wrap { border-radius:14px; padding:12px; margin-bottom:4px; margin-top:14px; }
+.wr-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.wr-cal-hdr { font-size:9px; font-weight:800; color:var(--mid); text-align:center; padding-bottom:4px; }
+.wr-cal-day { border-radius:8px; height:32px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; font-family:'Nunito',sans-serif; }
+.wr-cal-day.empty { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; color:var(--mid); opacity:.4; }
+.wr-cal-day.has { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; color:var(--dark); }
+.wr-proj-log-wrap { box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; border-radius:16px; padding:14px 14px 6px; margin-top:4px; }
+.wr-proj-log-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.wr-proj-log-divider { border:none; border-top:1px solid #C9D0DC; border-bottom:1px solid #FFFFFF; margin:0 0 10px; }
+.wr-proj-card { border-radius:12px; padding:10px 14px; margin-bottom:8px; font-family:'Nunito',sans-serif; background:var(--lavender); }
+.wr-proj-card.archived { box-shadow:inset 4px 4px 8px #C8C8D8, inset -4px -4px 8px #FFFFFF; opacity:0.75; }
+.wr-proj-top { display:flex; align-items:center; gap:8px; }
+.wr-proj-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.wr-proj-name { font-size:13px; font-weight:700; color:var(--dark); flex:1; }
+.wr-proj-archived-badge { font-size:8px; font-weight:800; color:#A32D2D; border:1.5px solid #A32D2D; border-radius:3px; padding:1px 4px; transform:rotate(-5deg); display:inline-block; margin-left:4px; letter-spacing:.06em; }
+.wr-proj-bar-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
+.wr-proj-bar-bg { flex:1; height:7px; background:rgba(200,200,216,0.35); border-radius:4px; overflow:hidden; }
+.wr-proj-bar-fill { height:100%; border-radius:4px; transition:width .4s; }
+.wr-proj-count { font-size:11px; color:var(--mid); font-weight:700; white-space:nowrap; min-width:28px; text-align:right; }
+.wr-proj-chip { font-size:10px; font-weight:700; color:var(--purple); background:var(--lavender); box-shadow:inset 3px 3px 6px #C8C8D8, inset -3px -3px 6px #FFFFFF; border-radius:999px; padding:3px 10px; white-space:nowrap; }
+.wr-hint-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; }
+.wr-hint-toggle-label { font-size:10px; font-weight:700; color:var(--mid); letter-spacing:.04em; }
+.wr-toggle-track { width:32px; height:18px; border-radius:999px; background:var(--lavender); box-shadow:inset 2px 2px 5px #C8C8D8, inset -2px -2px 5px #FFFFFF; cursor:pointer; position:relative; transition:all .2s; flex-shrink:0; }
+.wr-toggle-track.on { background:#266ea7; box-shadow:inset 2px 2px 5px #1e5a8a, inset -1px -1px 3px rgba(255,255,255,.15); }
+.wr-toggle-knob { width:12px; height:12px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px; transition:left .2s; box-shadow:1px 1px 3px #B8BEC8; }
+.wr-toggle-track.on .wr-toggle-knob { left:17px; }
+.wr-proj-hint { font-size:11px; color:var(--mid); margin-top:5px; font-style:italic; display:none; }
+.wr-proj-hint.visible { display:block; }
+.wr-proj-hint-star { color:var(--purple); font-style:normal; margin-right:3px; }
 
 /* MODAL */
 .modal-bg { position:fixed; inset:0; background:rgba(45,43,61,.35); display:flex; align-items:center; justify-content:center; z-index:300; border-radius:0; }
@@ -487,7 +512,7 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
         <button onclick="setLang('zh')" id="lang-zh" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:var(--purple);transition:box-shadow .15s">中</button>
         <button onclick="setLang('en')" id="lang-en" style="padding:4px 12px;border-radius:999px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:var(--mid);transition:box-shadow .15s">EN</button>
       </div>
-      <button class="new-btn weekly-btn" id="stats-btn" style="background:var(--lavender);color:var(--dark);font-size:12px;padding:8px 14px">📊 <span id="weekly-btn-label">周报告</span></button>
+      <button class="new-btn weekly-btn" id="stats-btn" title="Coming soon" style="background:var(--lavender);color:var(--dark);font-size:12px;padding:8px 14px;cursor:default">🌙 <span id="weekly-btn-label">Night Mode</span></button>
       <button class="new-btn" id="new-entry-btn">✦ <span id="new-btn-label">新记录</span></button>
     </div>
   </div>
@@ -538,7 +563,8 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
       <button class="add-proj-btn" id="add-proj-btn" id="add-proj-label">＋ <span id="add-proj-label">自定义</span></button>
       <hr class="sb-divider">
       <button class="sb-nav-btn" id="stats-nav-btn">📊 <span id="stats-nav-label">周报告</span></button>
-    <button class="sb-nav-btn" id="tracker-nav-btn">📁 <span id="tracker-nav-label">项目追踪</span></button>
+      <button class="sb-nav-btn" id="month-nav-btn">📅 <span id="month-nav-label">月报告</span></button>
+      <button class="sb-nav-btn" id="tracker-nav-btn">📁 <span id="tracker-nav-label">项目追踪</span></button>
     </div>
     <div class="main-area" id="main-area"></div>
   </div>
@@ -554,7 +580,7 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 const I18N={
   zh:{
     page_title:'项目日记',page_subtitle:'项目追踪',
-    btn_new:'新记录',btn_weekly:'周报告',
+    btn_new:'新记录',btn_weekly:'周报告',btn_month:'月报告',
     back_to:'回到',story_suffix:'的故事',
     stat_entries:'今日记录',stat_earned:'今日赚得',stat_balance:'余额',
     this_week:'本周',today:'今天',custom:'自定义',
@@ -610,6 +636,14 @@ const I18N={
     cp_save:'添加进我的颜色包',cp_nearest:'近似颜色',cp_drag:'拖动排序',cp_click:'点击选用',
     cp_display_as:'显示为「数字',
     weekly_done:'这周完成了',weekly_suffix:'条记录，共赚了',weekly_proud:'为你骄傲！',
+    wr_highlights:'本周亮点',wr_proj_log:'各项目记录',
+    wr_active_day:'最活跃的一天',wr_active_proj:'最常回来的项目',wr_debut:'首次登場',
+    wr_entries_zh:'条',
+    wr_hint1:'{option} 是你在 {project} 的秘密武器\uff01',
+    wr_hint2:'Psst——这周 {option} 出现得最多',
+    wr_hint3:'看来 {option} 是你的得力工具\uff01',
+    wr_hint_once:'这周试了一下 {option}\uff0c感觉怎么样\uff1f',
+    wr_show_hints:'显示使用洛提示',
     export_status:'状态',export_total:'总记录',export_detail:'详细记录',
     export_chart:'统计图表',export_fail:'导出失败',export_gen_fail:'生成失败',
     export_tracker_title:'项目追踪报告',export_date:'导出日期',
@@ -626,7 +660,7 @@ const I18N={
   },
   en:{
     page_title:'Project Journal',page_subtitle:'Project Tracker',
-    btn_new:'New Log',btn_weekly:'Week in Review',
+    btn_new:'New Log',btn_weekly:'Week in Review',btn_month:'Month in Review',
     back_to:'Back to',story_suffix:"'s Story",
     stat_entries:"Today's Entries",stat_earned:"Today's Earned",stat_balance:'Balance',
     this_week:'This Week',today:'Today',custom:'Custom',
@@ -682,6 +716,14 @@ const I18N={
     cp_save:'Add to my Color Bag',cp_nearest:'Similar color',cp_drag:'Drag to reorder',cp_click:'Click to use',
     cp_display_as:'Shown as number',
     weekly_done:'This week you completed',weekly_suffix:' entries and earned',weekly_proud:'Great work!',
+    wr_highlights:'Weekly Highlights',wr_proj_log:'Project Log',
+    wr_active_day:'Most active day',wr_active_proj:'Kept coming back to',wr_debut:'First appearance',
+    wr_entries_zh:' entries',
+    wr_hint1:'{option} is your secret weapon in {project}!',
+    wr_hint2:'Psst — {option} showed up the most this week',
+    wr_hint3:'Looks like {option} is your go-to tool!',
+    wr_hint_once:'You tried {option} this week — how was it?',
+    wr_show_hints:'Show usage hints',
     export_status:'Status',export_total:'Total entries',export_detail:'Detailed Records',
     export_chart:'Statistics Chart',export_fail:'Export failed',export_gen_fail:'Generation failed',
     export_tracker_title:'Project Tracker Report',export_date:'Export date',
@@ -1859,13 +1901,13 @@ function updateStaticI18N(){
   const set=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
   set('page-title',t('page_title'));
   set('new-btn-label',t('btn_new'));
-  set('weekly-btn-label',t('btn_weekly'));
   set('stat-l-entries',t('stat_entries'));
   set('stat-l-earned',t('stat_earned'));
   set('stat-l-balance','Cat Token '+t('stat_balance'));
   set('sb-this-week',t('this_week'));
   set('add-proj-label',t('custom'));
   set('stats-nav-label',t('btn_weekly'));
+  set('month-nav-label',t('btn_month'));
   set('tracker-nav-label',t('tracker'));
   const zh=document.getElementById('lang-zh');
   const en=document.getElementById('lang-en');
@@ -1882,6 +1924,7 @@ function renderAll(){
   recalcTotalCoins();syncNav();
   renderSidebar();
   if(view==='stats')renderStats();
+  else if(view==='month')renderMonth();
   else if(view==='tracker')renderTracker();
   else renderJournal();
   renderDayStats();
@@ -1896,8 +1939,10 @@ function renderAll(){
   const cd=document.getElementById('cal-icon-day');
   if(cd)cd.textContent=today.getDate();
   const statsNav=document.getElementById('stats-nav-btn');
+  const monthNav=document.getElementById('month-nav-btn');
   const trackerNav=document.getElementById('tracker-nav-btn');
   if(statsNav)statsNav.classList.toggle('active',view==='stats');
+  if(monthNav)monthNav.classList.toggle('active',view==='month');
   if(trackerNav)trackerNav.classList.toggle('active',view==='tracker');
 }
 
@@ -2737,14 +2782,14 @@ function renderStats(){
   const _pd=document.getElementById('page-date');if(_pd)_pd.textContent=t('btn_weekly');
   const area=document.getElementById('main-area');area.innerHTML='';
   const ws=getWeekStart();
-  const perDay=[];let totalE=0,totalC=0;const projStats={};
+  const perDay=[];let totalE=0;const projStats={};const projFirstSeen={};
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(d.getDate()+i);
     const list=entries[dk(d)]||[];totalE+=list.length;
     list.forEach(e=>{
-      totalC+=calcCoins(e, dk(d));
       if(!projStats[e.projId])projStats[e.projId]={count:0,fields:{}};
       projStats[e.projId].count++;
+      if(projFirstSeen[e.projId]===undefined)projFirstSeen[e.projId]=i;
       const p=proj(e.projId);
       (p.fields||[]).forEach(f=>{
         if(e.skipped&&e.skipped[f.id])return;
@@ -2754,47 +2799,158 @@ function renderStats(){
           entries2.forEach(o=>{
             const n=parseFloat(o.val);if(isNaN(n))return;
             const fkey=f.id+'::'+(o.unit||'');
-            if(!projStats[e.projId].fields[fkey])projStats[e.projId].fields[fkey]={label:f.label+(o.unit?' ('+o.unit+')':''),total:0};
+            if(!projStats[e.projId].fields[fkey])projStats[e.projId].fields[fkey]={label:f.label,unit:o.unit||'',type:'number',total:0};
             projStats[e.projId].fields[fkey].total+=n;
           });
+        } else {
+          if(!projStats[e.projId].fields[f.id])projStats[e.projId].fields[f.id]={label:f.label,type:'select',vals:{}};
+          projStats[e.projId].fields[f.id].vals[v]=(projStats[e.projId].fields[f.id].vals[v]||0)+1;
         }
-        else{if(!projStats[e.projId].fields[f.id])projStats[e.projId].fields[f.id]={label:f.label,vals:{}};projStats[e.projId].fields[f.id].vals[v]=(projStats[e.projId].fields[f.id].vals[v]||0)+1;}
       });
     });
     perDay.push({d,cnt:list.length});
   }
-  const maxC=Math.max(...perDay.map(x=>x.cnt),1);
-  const todayI=perDay.findIndex(x=>dk(x.d)===todayKey);
-  const cat=document.createElement('div');cat.className='cat66-bar';
-  cat.innerHTML=`<span style="font-size:24px">${totalE>=10?'(=^▽^=)':totalE>=5?'ᓚᘏᗢ':'=^.^='}</span><div>${t('weekly_done')} <strong>${totalE}</strong> ${t('weekly_suffix')} <strong>${totalC}</strong> Cat Token<br><span style='font-size:11px'>66 ${t('weekly_proud')}</span></div>`;
-  area.appendChild(cat);
-  const wb=document.createElement('div');wb.className='stats-bars';
-  perDay.forEach((x,i)=>{
-    const pct=Math.round(x.cnt/maxC*100),isT=i===todayI;
-    const col=document.createElement('div');col.className='wbar-col'+(isT?' today':'');
-    col.innerHTML=`<div class="wbar-bg"><div class="wbar-in" style="height:${pct}%"></div></div><div class="wbar-lbl">${DAYS[x.d.getDay()]}</div>`;
-    wb.appendChild(col);
+  const maxDay=perDay.reduce((a,b)=>b.cnt>a.cnt?b:a,perDay[0]);
+  const sortedProjs=Object.keys(projStats).sort((a,b)=>projStats[b].count-projStats[a].count);
+  const mostActiveProj=sortedProjs[0]||null;
+  const debutProj=sortedProjs.find(pid=>projFirstSeen[pid]>0)||null;
+  const zhWD=['日','一','二','三','四','五','六'];
+  const enWD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const enMon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ① 猫咪横幅
+  const kaomoji=totalE>=10?'ฅ^•ﻌ•^ฅ':totalE>=5?'ᓚᘏᗢ':'( =ω= )';
+  const banner=document.createElement('div');banner.className='wr-cat-banner';
+  const entryLabel=lang==='zh'?'<strong style="color:var(--purple);font-family:\'Lilita One\',sans-serif;font-size:16px">'+totalE+'</strong> '+t('wr_entries_zh')+'记录':'<strong style="color:var(--purple);font-family:\'Lilita One\',sans-serif;font-size:16px">'+totalE+'</strong>'+t('wr_entries_zh');
+  banner.innerHTML='<span class="wr-cat-kaomoji">'+kaomoji+'</span><div>'+t('weekly_done')+' '+entryLabel+'</div>';
+  area.appendChild(banner);
+
+  // ② 本周亮点 pill
+  const hasH=maxDay.cnt>0||mostActiveProj||debutProj;
+  if(hasH){
+    const sl=document.createElement('div');sl.className='wr-section-label';sl.textContent=t('wr_highlights');area.appendChild(sl);
+    const hw=document.createElement('div');hw.className='wr-highlights';
+    if(maxDay.cnt>0){
+      const dayLabel=lang==='zh'?'周'+zhWD[maxDay.d.getDay()]+' · '+(maxDay.d.getMonth()+1)+'/'+maxDay.d.getDate():enWD[maxDay.d.getDay()]+' · '+maxDay.d.getDate()+' '+enMon[maxDay.d.getMonth()];
+      hw.innerHTML+='<div class="wr-pill"><div class="wr-pill-title">'+t('wr_active_day')+'</div><div class="wr-pill-sub">'+dayLabel+'</div></div>';
+    }
+    if(mostActiveProj){
+      const mp=proj(mostActiveProj);
+      hw.innerHTML+='<div class="wr-pill"><div class="wr-pill-title">'+t('wr_active_proj')+'</div><div class="wr-pill-sub">'+mp.name+'</div></div>';
+    }
+    if(debutProj){
+      const dp=proj(debutProj);
+      hw.innerHTML+='<div class="wr-pill"><div class="wr-pill-title">'+t('wr_debut')+'</div><div class="wr-pill-sub">'+dp.name+'</div></div>';
+    }
+    area.appendChild(hw);
+  }
+
+  // ③ 日历热力格
+  const sl2=document.createElement('div');sl2.className='wr-section-label';sl2.textContent=t('wr_highlights')?t('wr_highlights'):'';
+  const calWrap=document.createElement('div');calWrap.className='wr-cal-wrap';
+  const calGrid=document.createElement('div');calGrid.className='wr-cal-grid';
+  const dayHeaders=lang==='zh'?['日','一','二','三','四','五','六']:['S','M','T','W','T','F','S'];
+  dayHeaders.forEach(h=>{const d=document.createElement('div');d.className='wr-cal-hdr';d.textContent=h;calGrid.appendChild(d);});
+  // 找本周主要项目颜色（记录最多的）
+  const mainColor=mostActiveProj?proj(mostActiveProj).color:'#266ea7';
+  perDay.forEach(x=>{
+    const cell=document.createElement('div');
+    const cnt=x.cnt;
+    if(cnt>0){
+      cell.className='wr-cal-day has';
+      cell.textContent=cnt;
+      cell.style.background='var(--lavender)';
+      // 淡染主色
+      const overlay=document.createElement('div');
+      overlay.style.cssText='position:absolute;inset:0;border-radius:8px;background:'+mainColor+';opacity:.15;pointer-events:none';
+      cell.style.position='relative';
+      cell.appendChild(overlay);
+    } else {
+      cell.className='wr-cal-day empty';
+      cell.textContent='·';
+    }
+    calGrid.appendChild(cell);
   });
-  area.appendChild(wb);
-  const sl=document.createElement('div');sl.className='sec-label';sl.textContent='Projects '+t('cb_stats');area.appendChild(sl);
-  const maxP=Math.max(...Object.values(projStats).map(x=>x.count),1);
-  Object.keys(projStats).forEach(pid=>{
-    const p=proj(pid),ps=projStats[pid];
-    const row=document.createElement('div');row.className='proj-stat-row';
-    let val=`${ps.count} ${t('cb_times')}`;
-    const ex=[];
-    Object.values(ps.fields).forEach(fs=>{
-      if(fs.total!==undefined)ex.push(`${fs.label} ${Math.round(fs.total)}`);
-      else if(fs.vals){const top=Object.entries(fs.vals).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([k,v])=>`${k}×${v}`).join('、');if(top)ex.push(top);}
+  calWrap.appendChild(calGrid);
+  area.appendChild(calWrap);
+
+  // ④ 项目条形图 + toggle
+  if(sortedProjs.length>0){
+    const projLogWrap=document.createElement('div');projLogWrap.className='wr-proj-log-wrap';
+
+    // header 行：PROJECT LOG 标题左，toggle 右
+    const logHeader=document.createElement('div');logHeader.className='wr-proj-log-header';
+    const sl3=document.createElement('div');sl3.className='wr-section-label large';sl3.textContent=t('wr_proj_log');
+    if(window._wrHintsOn===undefined)window._wrHintsOn=false;
+    const toggleRow=document.createElement('div');toggleRow.className='wr-hint-toggle';
+    const toggleTrack=document.createElement('div');toggleTrack.className='wr-toggle-track'+(window._wrHintsOn?' on':'');
+    const toggleKnob=document.createElement('div');toggleKnob.className='wr-toggle-knob';
+    toggleTrack.appendChild(toggleKnob);
+    const toggleLabel=document.createElement('div');toggleLabel.className='wr-hint-toggle-label';toggleLabel.textContent=t('wr_show_hints');
+    toggleRow.appendChild(toggleTrack);toggleRow.appendChild(toggleLabel);
+    toggleRow.onclick=()=>{
+      window._wrHintsOn=!window._wrHintsOn;
+      toggleTrack.classList.toggle('on',window._wrHintsOn);
+      document.querySelectorAll('.wr-proj-hint').forEach(el=>el.classList.toggle('visible',window._wrHintsOn));
+    };
+    logHeader.appendChild(sl3);logHeader.appendChild(toggleRow);
+    projLogWrap.appendChild(logHeader);
+    const divider=document.createElement('hr');divider.className='wr-proj-log-divider';projLogWrap.appendChild(divider);
+
+    const maxCount=projStats[sortedProjs[0]].count;
+    const hints=['wr_hint1','wr_hint2','wr_hint3'];
+    sortedProjs.forEach((pid,idx2)=>{
+      const p=proj(pid),ps=projStats[pid];
+      const isArchived=p.status==='archived';
+      const card=document.createElement('div');card.className='wr-proj-card'+(isArchived?' archived':'');
+
+      // 顶部：圆点 + 名称 + 数字字段 chip
+      const topRow=document.createElement('div');topRow.className='wr-proj-top';
+      const dot=document.createElement('div');dot.className='wr-proj-dot';dot.style.background=p.color;
+      const name=document.createElement('div');name.className='wr-proj-name';
+      name.innerHTML=p.name+(isArchived?'<span class="wr-proj-archived-badge">ARCHIVED</span>':'');
+      topRow.appendChild(dot);topRow.appendChild(name);
+      card.appendChild(topRow);
+
+      // 条形图
+      const barRow=document.createElement('div');barRow.className='wr-proj-bar-row';
+      const barBg=document.createElement('div');barBg.className='wr-proj-bar-bg';
+      const barFill=document.createElement('div');barFill.className='wr-proj-bar-fill';
+      barFill.style.width=Math.round(ps.count/maxCount*100)+'%';
+      barFill.style.background=p.color;
+      barBg.appendChild(barFill);
+      const countEl=document.createElement('div');countEl.className='wr-proj-count';
+      countEl.textContent=lang==='zh'?ps.count+'条记录':ps.count+' records';
+      barRow.appendChild(barBg);barRow.appendChild(countEl);
+      card.appendChild(barRow);
+
+      // 调皮提示（select 字段，≥2次秘密武器，1次轻描淡写）
+      const selF=Object.values(ps.fields).find(f=>f.type==='select'&&Object.keys(f.vals).length>0);
+      if(selF){
+        const topEntry=Object.entries(selF.vals).sort((a,b)=>b[1]-a[1])[0];
+        const topOption=topEntry[0],topCount=topEntry[1];
+        let hint='';
+        if(topCount>=2){hint=t(hints[idx2%3]).replace('{option}',topOption).replace('{project}',p.name);}
+        else{hint=t('wr_hint_once').replace('{option}',topOption);}
+        const hintEl=document.createElement('div');hintEl.className='wr-proj-hint'+(window._wrHintsOn?' visible':'');
+        hintEl.innerHTML='<span class="wr-proj-hint-star">✦</span>'+hint;
+        card.appendChild(hintEl);
+      }
+      projLogWrap.appendChild(card);
     });
-    if(ex.length)val+=` · ${ex.join(' · ')}`;
-    const pct=Math.round(ps.count/maxP*100);
-    row.innerHTML=`<div class="psr-name"><div style="width:7px;height:7px;border-radius:50%;background:${p.color};flex-shrink:0"></div>${p.name}</div><div class="psr-track"><div class="psr-fill" style="width:${pct}%;background:${p.color}"></div></div><div class="psr-val">${val}</div>`;
-    area.appendChild(row);
-  });
+    area.appendChild(projLogWrap);
+  }
 }
 
-// ════════════════════════════════════════════════════════════════
+function renderMonth(){
+  const _pd=document.getElementById('page-date');if(_pd)_pd.textContent=t('btn_month');
+  const area=document.getElementById('main-area');area.innerHTML='';
+  const placeholder=document.createElement('div');
+  placeholder.style.cssText='padding:40px;text-align:center;color:var(--mid);font-size:13px;font-family:Nunito,sans-serif;';
+  placeholder.textContent='月报告 — Coming soon';
+  area.appendChild(placeholder);
+}
+
 // CALENDAR PICKER
 // ════════════════════════════════════════════════════════════════
 let calPickerDate = new Date(today); // month being displayed in picker
@@ -3123,8 +3279,9 @@ const _savedLang=localStorage.getItem('cj_lang');
 if(_savedLang&&I18N[_savedLang])lang=_savedLang;
 
 document.getElementById('new-entry-btn').onclick=openForm;
-document.getElementById('stats-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
+document.getElementById('stats-btn').onclick=()=>{};
 document.getElementById('stats-nav-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
+document.getElementById('month-nav-btn').onclick=()=>{view='month';showForm=false;renderAll()};
 document.getElementById('tracker-nav-btn').onclick=()=>showTracker();
 document.getElementById('add-proj-btn').onclick=openAddProject;
 document.getElementById('prev-week').onclick=()=>{weekOffset--;renderAll()};
