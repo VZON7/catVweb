@@ -235,23 +235,30 @@ body.shift-down .ec-del:hover { color:#E53935; filter:drop-shadow(2px 2px 3px rg
 .wr-section-label.large { font-size:13px; letter-spacing:.04em; color:var(--dark); }
 .wr-highlights { display:flex; flex-wrap:nowrap; gap:8px; margin-bottom:4px; }
 .wr-pill { flex:1; display:flex; flex-direction:column; padding:10px 14px; border-radius:12px; box-shadow:4px 4px 10px #C0C8D8, -4px -4px 10px #FFFFFF, inset 0 3px 8px rgba(180,190,210,0.55), inset 0 -1px 3px rgba(255,255,255,0.9); font-family:'Nunito',sans-serif; }
-.wr-pill-title { font-size:14px; font-weight:800; color:var(--dark); line-height:1.2; }
-.wr-pill-sub { font-size:11px; font-weight:500; color:var(--mid); margin-top:2px; }
-.wr-cal-wrap { border-radius:14px; padding:12px; margin-bottom:4px; margin-top:14px; }
-.wr-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
-.wr-cal-hdr { font-size:9px; font-weight:800; color:var(--mid); text-align:center; padding-bottom:4px; }
-.wr-cal-day { border-radius:8px; height:32px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; font-family:'Nunito',sans-serif; }
-.wr-cal-day.empty { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; color:var(--mid); opacity:.4; }
-.wr-cal-day.has { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; color:var(--dark); }
+.wr-pill-title { font-size:14px; font-weight:800; color:#A07850; line-height:1.2; }
+.wr-pill-sub { font-size:11px; font-weight:700; color:#4E5568; margin-top:2px; }
+.wr-cal-outer { border-radius:18px; margin-top:22px; margin-bottom:18px; position:relative; background:#266ea7; box-shadow:4px 4px 12px #C8C8D8, -4px -4px 12px #FFFFFF; }
+.wr-cal-hooks { display:flex; justify-content:space-around; position:absolute; top:-13px; left:0; right:0; padding:0 32px; pointer-events:none; }
+.wr-cal-hook { width:11px; height:16px; background:#266ea7; border-radius:5px 5px 3px 3px; }
+.wr-cal-topbar { padding:8px 14px; display:flex; align-items:center; justify-content:space-between; }
+.wr-cal-topbar-label { font-size:12px; font-weight:800; color:#fff; opacity:.97; }
+.wr-cal-topbar-range { font-size:10px; font-weight:700; color:#fff; opacity:.8; letter-spacing:.04em; white-space:nowrap; }
+.wr-cal-wrap { background:var(--lavender); border-radius:0 0 15px 15px; padding:14px 14px 16px; }
+.wr-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+.wr-cal-hdr { font-size:10px; font-weight:800; color:#266ea7; text-align:center; padding-bottom:6px; opacity:.75; }
+.wr-cal-day { border-radius:8px; height:36px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:800; font-family:'Nunito',sans-serif; position:relative; overflow:hidden; }
+.wr-cal-day.empty { box-shadow:3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF; color:#bbb; }
+.wr-cal-day.has { box-shadow:inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF; color:#266ea7; text-shadow:1px 1px 2px #FFFFFF, -0.5px -0.5px 1px rgba(38,110,167,.3); }
+.wr-cal-day.has::before { content:''; position:absolute; inset:0; border-radius:8px; background:#266ea7; opacity:.12; pointer-events:none; }
 .wr-proj-log-wrap { box-shadow:inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF; border-radius:16px; padding:14px 14px 6px; margin-top:4px; }
-.wr-proj-log-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-.wr-proj-log-divider { border:none; border-top:1px solid #C9D0DC; border-bottom:1px solid #FFFFFF; margin:0 0 10px; }
+.wr-proj-log-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.wr-proj-log-divider { border:none; border-top:1px solid #C9D0DC; border-bottom:1px solid #FFFFFF; margin:0 0 12px; }
 .wr-proj-card { border-radius:12px; padding:10px 14px; margin-bottom:8px; font-family:'Nunito',sans-serif; background:var(--lavender); }
 .wr-proj-card.archived { box-shadow:inset 4px 4px 8px #C8C8D8, inset -4px -4px 8px #FFFFFF; opacity:0.75; }
 .wr-proj-top { display:flex; align-items:center; gap:8px; }
 .wr-proj-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .wr-proj-name { font-size:13px; font-weight:700; color:var(--dark); flex:1; }
-.wr-proj-archived-badge { font-size:8px; font-weight:800; color:#A32D2D; border:1.5px solid #A32D2D; border-radius:3px; padding:1px 4px; transform:rotate(-5deg); display:inline-block; margin-left:4px; letter-spacing:.06em; }
+.wr-proj-archived-badge { font-size:8px; font-weight:800; color:#A32D2D; border:1.5px solid #A32D2D; border-radius:3px; padding:1px 4px; transform:rotate(-5deg); display:inline-block; margin-left:4px; letter-spacing:.06em; vertical-align:middle; }
 .wr-proj-bar-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
 .wr-proj-bar-bg { flex:1; height:7px; background:rgba(200,200,216,0.35); border-radius:4px; overflow:hidden; }
 .wr-proj-bar-fill { height:100%; border-radius:4px; transition:width .4s; }
@@ -643,7 +650,7 @@ const I18N={
     wr_hint2:'Psst——这周 {option} 出现得最多',
     wr_hint3:'看来 {option} 是你的得力工具\uff01',
     wr_hint_once:'这周试了一下 {option}\uff0c感觉怎么样\uff1f',
-    wr_show_hints:'显示使用洛提示',
+    wr_show_hints:'显示使用提示',
     export_status:'状态',export_total:'总记录',export_detail:'详细记录',
     export_chart:'统计图表',export_fail:'导出失败',export_gen_fail:'生成失败',
     export_tracker_title:'项目追踪报告',export_date:'导出日期',
@@ -2831,7 +2838,8 @@ function renderStats(){
     const sl=document.createElement('div');sl.className='wr-section-label';sl.textContent=t('wr_highlights');area.appendChild(sl);
     const hw=document.createElement('div');hw.className='wr-highlights';
     if(maxDay.cnt>0){
-      const dayLabel=lang==='zh'?'周'+zhWD[maxDay.d.getDay()]+' · '+(maxDay.d.getMonth()+1)+'/'+maxDay.d.getDate():enWD[maxDay.d.getDay()]+' · '+maxDay.d.getDate()+' '+enMon[maxDay.d.getMonth()];
+      const _md=maxDay.d,_dd=String(_md.getDate()).padStart(2,'0'),_mm=String(_md.getMonth()+1).padStart(2,'0'),_yy=String(_md.getFullYear()).slice(2);
+      const dayLabel=(lang==='zh'?'周':'')+zhWD[maxDay.d.getDay()]+' · '+_dd+'/'+_mm+'/'+_yy;
       hw.innerHTML+='<div class="wr-pill"><div class="wr-pill-title">'+t('wr_active_day')+'</div><div class="wr-pill-sub">'+dayLabel+'</div></div>';
     }
     if(mostActiveProj){
@@ -2846,33 +2854,38 @@ function renderStats(){
   }
 
   // ③ 日历热力格
-  const sl2=document.createElement('div');sl2.className='wr-section-label';sl2.textContent=t('wr_highlights')?t('wr_highlights'):'';
+  const calOuter=document.createElement('div');calOuter.className='wr-cal-outer';
+  // 挂钩
+  const hooksDiv=document.createElement('div');hooksDiv.className='wr-cal-hooks';
+  hooksDiv.innerHTML='<div class="wr-cal-hook"></div><div class="wr-cal-hook"></div>';
+  calOuter.appendChild(hooksDiv);
+  // 顶栏：标题 + 日期范围
+  const fmtWShort=d=>{const dd=String(d.getDate()).padStart(2,'0'),mm=String(d.getMonth()+1).padStart(2,'0');return dd+'/'+mm;};
+  const getISOWeek=d=>{const tmp=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));tmp.setUTCDate(tmp.getUTCDate()+4-(tmp.getUTCDay()||7));const yearStart=new Date(Date.UTC(tmp.getUTCFullYear(),0,1));return Math.ceil((((tmp-yearStart)/86400000)+1)/7);};
+  const weekNum=getISOWeek(ws);
+  const calTopbar=document.createElement('div');calTopbar.className='wr-cal-topbar';
+  const calTopLabel=lang==='zh'?ws.getFullYear()+'年的第'+weekNum+'个星期，你好！':'You\'re in week '+weekNum+' of '+ws.getFullYear()+'!';
+  const calTopRange=fmtWShort(ws)+' – '+fmtWShort(new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()+6));
+  calTopbar.innerHTML='<span class="wr-cal-topbar-label">'+calTopLabel+'</span><span class="wr-cal-topbar-range">'+calTopRange+'</span>';
+  calOuter.appendChild(calTopbar);
+  // 格子
   const calWrap=document.createElement('div');calWrap.className='wr-cal-wrap';
   const calGrid=document.createElement('div');calGrid.className='wr-cal-grid';
-  const dayHeaders=lang==='zh'?['日','一','二','三','四','五','六']:['S','M','T','W','T','F','S'];
+  const dayHeaders=lang==='zh'?['日','一','二','三','四','五','六']:['Su','Mo','Tu','We','Th','Fr','Sa'];
   dayHeaders.forEach(h=>{const d=document.createElement('div');d.className='wr-cal-hdr';d.textContent=h;calGrid.appendChild(d);});
-  // 找本周主要项目颜色（记录最多的）
-  const mainColor=mostActiveProj?proj(mostActiveProj).color:'#266ea7';
   perDay.forEach(x=>{
     const cell=document.createElement('div');
-    const cnt=x.cnt;
-    if(cnt>0){
+    if(x.cnt>0){
       cell.className='wr-cal-day has';
-      cell.textContent=cnt;
-      cell.style.background='var(--lavender)';
-      // 淡染主色
-      const overlay=document.createElement('div');
-      overlay.style.cssText='position:absolute;inset:0;border-radius:8px;background:'+mainColor+';opacity:.15;pointer-events:none';
-      cell.style.position='relative';
-      cell.appendChild(overlay);
+      cell.textContent=x.cnt;
     } else {
       cell.className='wr-cal-day empty';
-      cell.textContent='·';
     }
     calGrid.appendChild(cell);
   });
   calWrap.appendChild(calGrid);
-  area.appendChild(calWrap);
+  calOuter.appendChild(calWrap);
+  area.appendChild(calOuter);
 
   // ④ 项目条形图 + toggle
   if(sortedProjs.length>0){
