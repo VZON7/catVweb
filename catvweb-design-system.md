@@ -1,5 +1,6 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第174次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第175次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> ⚠️ 第175次起：全站颜色已变量化。数值唯一来源 = journal.html 的 `:root`，本文档为「效果名 → 变量名 → 亮色值」对照表。改颜色改变量值，不改引用处。
 
 ⚠️ **Claude 使用规则：任何 SVG 图标、阴影数值、颜色在写入代码前，必须先查本文档对应章节，不可凭记忆写入。**
 
@@ -16,40 +17,67 @@
 | `--pink` / `--danger` | `#E53935` | 删除红，危险操作 |
 | `--cyan` | `#42C6FF` | 备用青色（暂未大量使用） |
 
-### 功能性固定色（不走变量）
-| 用途 | 色值 |
-|---|---|
-| 新纪录/保存按钮 默认暗影 | `#B8BEC8` |
-| 新纪录/保存按钮 active 暗影 | `#1e5a8a` |
-| 周报告按钮 默认阴影 | `#c8cedb` |
-| 周报告按钮 hover 阴影 | `#B2B7C4` |
-| Select 字段类型色 | `#7B68EE`（紫） |
-| Number 字段类型色 | `#1D9E75`（青绿） |
-| Active 状态色 | `#1D9E75`（青绿） |
-| Done 状态色 | `#266ea7`（蓝） |
-| Archived 状态色 | `#A32D2D`（归档红） |
-| 过去日期 ×½ 提示 | `#B87878`（低饱和暖红） |
-| 模糊红框警告色 | `rgba(229,57,53,0.55)` |
-| Tracker records 数字色 | `#2d2b3d`（最深灰，font-weight:800） |
-| Tracker records 文字色 | `#888`（中等灰，font-weight:700） |
-| Tracker last update 色 | `#9AA0A8` |
-| 周报告亮点 pill 标题色 | `#A07850`（暖棕金） |
-| 周报告亮点 pill 内容色 | `#4E5568`（蓝灰） |
-| 周日历框 / 顶栏色 | `#266ea7`（与主强调色一致） |
+### 功能色（第175次已全部变量化）
+| 用途 | 变量名 | 亮色值 |
+|---|---|---|
+| 新纪录/保存按钮 默认暗影 | `--sh-btn-dark` | `#B8BEC8` |
+| 新纪录/保存按钮 hover 暗影 | `--sh-btn-hover` | `#B0B8C4` |
+| 新纪录/保存按钮 active 暗影 | `--sh-blue-inset` | `#1e5a8a` |
+| 周报告按钮 默认阴影 | `--sh-wr-dark` | `#c8cedb` |
+| 周报告按钮 hover 阴影 | `--sh-wr-hover` | `#B2B7C4` |
+| 布凹外层暗影 | `--sh-cloth` | `#C0C8D8` |
+| 雕刻线 暗边/亮边 | `--line-dark` / `--line-light` | `#C9D0DC` / `#FFFFFF` |
+| Select 字段类型色 | `--c-select` | `#7B68EE` |
+| Number 字段类型色 | `--c-number` | `#1D9E75` |
+| Active 状态色 | `--c-active` | `#1D9E75`（与 number 同值分设） |
+| Done 状态色 | `--c-done` | `var(--purple)` |
+| Archived 状态色（归档红） | `--c-archived` | `#A32D2D` |
+| 过去日期 ×½ 提示 | `--c-past-hint` | `#B87878` |
+| 模糊红框警告色 | （保留字面值，动画 keyframes 内） | `rgba(229,57,53,0.55)` |
+| Tracker records 数字色 | `var(--dark)` | `#2d2b3d` |
+| Tracker records 文字色 | `var(--mid)` | `#888` |
+| Tracker last update 色 | `--c-last` | `#9AA0A8` |
+| 周报告亮点 pill 标题色 | `--c-pill-title` | `#A07850` |
+| 周报告亮点 pill 内容色 | `--c-pill-body` | `#4E5568` |
+| 周日历框 / 顶栏色 | `var(--purple)` | `#266ea7` |
+
+### 真白色（夜间模式下不变）
+| 变量名 | 值 | 用途 |
+|---|---|---|
+| `--white` | `#FFFFFF` | 蓝底白字（周日历顶栏）、toggle 滑块、选中日期白字——内容白，非阴影高光 |
+
+### 第175次新登记变量（迁移时发现的原硬编码色）
+| 变量名 | 亮色值 | 用途（你的叫法） |
+|---|---|---|
+| `--c-token-bg` / `--c-token-text` / `--c-token-alt` | `#FAEEDA` / `#633806` / `#854F0B` | Cat Token 金棕家族（coin-pill 底/字、tracker 猫币字） |
+| `--c-tint0~3` | `#2E6090` `#5887A8` `#7FA4BE` `#3A7A9C` | 字段染色四件套（entry card 选项标签、表单字段标题、猫爪币文字） |
+| `--sh-sel-out` / `--sh-sel-in` | `#FBF7FF` / `#C9B8DE` | Modal 类型卡片 紫系染色阴影 |
+| `--sh-num-out` / `--sh-num-in` | `#F4FBF9` / `#B5D7CE` | Modal 类型卡片 绿系染色阴影 |
+| `--sh-light-soft` | `#F4F6FA` | entry card 选项标签 内凹柔光 |
+| `--c-note` / `--c-note-text` | `#7FA4BE` / `#9EA8B8` | Note 图标前缀 / note 文字 |
+| `--c-coin-hint` | `#8A9BB0` | 「预计获得」文字 |
+| `--c-undo` | `#B0A8FF` | 复原按钮淡紫 |
+| `--c-unit-hint` | `#C8CFD8` | Modal 单位小字 |
+| `--c-muted` / `--c-empty` / `--c-faint` | `#666` / `#bbb` / `#aaa` | 已归档名·chip灰字 / 周日历空格子 / 统计面板浅灰 |
+| `--cb-chip-bg` / `--cb-chip-hover` / `--cb-sub-hover` | `#f5f4f9` / `#eeedf4` / `#f0f0f0` | Chart Builder 胶囊按钮底色三态 |
 
 ---
 
 ## 二、阴影效果速查（按「我看到的东西」命名）
 
-### 标准凸起效果
+> 📌 第175次起代码内一律引用变量：`#C8C8D8`→`var(--sh-dark)`、`#FFFFFF`(高光)→`var(--sh-light)`、`#B8BEC8`→`var(--sh-btn-dark)`、`#1e5a8a`→`var(--sh-blue-inset)`、`#c8cedb`→`var(--sh-wr-dark)`、`#B2B7C4`→`var(--sh-wr-hover)`、`#C0C8D8`→`var(--sh-cloth)`、`#C9D0DC`→`var(--line-dark)`。下方数值为亮色主题的展开值，供视觉核对。
+
+### 标准凸起效果 — `var(--neu-raised)`
 ```
-box-shadow: 6px 6px 12px #C8C8D8, -6px -6px 12px #FFFFFF
+box-shadow: var(--neu-raised)
+/* = 6px 6px 12px var(--sh-dark), -6px -6px 12px var(--sh-light)｜亮色: #C8C8D8 / #FFFFFF */
 ```
 → 用在：stat card、entry card、Tracker 项目卡片
 
-### sidebar 凹陷效果
+### sidebar 凹陷效果 — `var(--neu-inset)`（`--neu-inset-val` 已于第175次废弃）
 ```
-box-shadow: inset 6px 6px 12px #C8C8D8, inset -6px -6px 12px #FFFFFF
+box-shadow: var(--neu-inset)
+/* = inset 6px 6px 12px var(--sh-dark), inset -6px -6px 12px var(--sh-light) */
 ```
 → 用在：sidebar 容器、`.form-card`、modal 弹窗整体、周报告 PROJECT LOG 容器
 
@@ -188,12 +216,14 @@ left: 3px（关闭） / left: 17px（开启）; transition: left 0.2s;
 </svg>
 ```
 
-**三态 filter（必须实现全部三态）：**
-| 状态 | filter |
-|---|---|
-| 默认 | `drop-shadow(2.5px 2.5px 3px rgba(38,110,167,.6)) drop-shadow(-1.5px -1.5px 2px #fff)` |
-| hover | `drop-shadow(3.5px 3.5px 5px rgba(38,110,167,.8)) drop-shadow(-2px -2px 3px #fff)` |
-| active | `drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .5px rgba(255,255,255,.7))` |
+**三态 filter（第175次起用组合变量，必须实现全部三态）：**
+| 状态 | 变量 | 亮色展开值 |
+|---|---|---|
+| 默认 | `var(--icon-shadow)` | `drop-shadow(2.5px 2.5px 3px rgba(38,110,167,.6)) drop-shadow(-1.5px -1.5px 2px var(--sh-light))` |
+| hover | `var(--icon-shadow-hover)` | `drop-shadow(3.5px 3.5px 5px rgba(38,110,167,.8)) drop-shadow(-2px -2px 3px var(--sh-light))` |
+| active | `var(--icon-shadow-active)` | `drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .5px rgba(255,255,255,.7))` |
+
+⚠️ SVG 的 `stroke=` / `fill=` **属性**不支持 `var()`，保持字面值（如 `stroke="#266ea7"`）——夜间模式蓝色不变，无影响。
 
 → Tracker 展开箭头用 CSS `.tracker-proj-chevron` + parent hover/active 实现三态
 → 展开时 `transform: rotate(90deg)`
@@ -480,7 +510,7 @@ const getISOWeek = d => {
 |---|---|
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
-| Night Mode 按钮 | 顶部占位，功能待实现，toggle 方式待确定 |
+| Night Mode 按钮 | 阶段一✅(第175次)。阶段二：暗色 palette + toggle + `cj_theme`；阶段三：Chart.js 主题、导出强制亮色。暗面参考 `≈#2C2F38`，高光为比表面略亮的同色系（非白），强调色沿用现有数值 |
 
 ### 已完成
 | 项目 | 完成于 |
@@ -493,6 +523,7 @@ const getISOWeek = d => {
 | 废弃 `.ie-save` 清理、sb-divider 改 border | 第157次 |
 | Night Mode 占位、月报告入口 | 第158次 |
 | 周报告全面重设计 | 第159–174次 |
+| 夜间模式·阶段一：全站颜色变量化（456处，17个新变量，修复 --neu-inset，废弃 -val） | 第175次 |
 
 ---
 
