@@ -95,11 +95,8 @@ journal.html
 3. 导出函数用 triggerDownload()，TextRun 传值用 stripEmoji()
 4. 涉及重命名时，全文搜索确认零残留
 
-### 新增界面元素时（双语强制规则）
-- 必须同时在 `I18N.zh` 和 `I18N.en` 加对应 key
-- 代码里用 `t('key')` 取值，禁止硬编码中文界面文字
-- 遇到不确定的英文翻译，列出 2-3 个选项即时问用户，不要自行决定
-- `Cat Token` 中英文都保留原文不翻译
+### 新增界面元素时
+- 双语强制规则见第十节，逐条适用
 
 ---
 
@@ -151,6 +148,7 @@ window.addEventListener('load', function(){
 | `catTokens` | Cat Token 总余额 |
 | `cj_mypalette` | color picker 已保存颜色 |
 | `cj_lang` | 语言设定（'zh' / 'en'，默认 'zh'） |
+| `cj_theme` | 主题（'light' / 'dark'，默认 'light'，第176次起） |
 
 ---
 
@@ -228,6 +226,10 @@ e = c.find(b'\nfunction renderMonth()')
 Python 写入 JS 字符串时，禁止使用 Unicode 弯引号（`\u2018` `\u2019`）和 Unicode 省略号（`\u2026`）。
 正确做法：省略号用 `'...'`，引号用直引号 `'` 或 `"`。
 
+### 批量替换断言规则
+
+Python 批量替换必须：每个替换带 count 断言（`assert doc.count(old)==预期`），**写盘放在所有断言之后**——任何锚点撞车都会在污染文件前中止。
+
 ### I18N 块保护
 
 Python 做字符串全局替换时，先定位 I18N 块边界再操作：
@@ -293,11 +295,11 @@ Chart.js doughnut 的圆心是 `chartArea` 中心，`arc.outerRadius` 基于 `ch
 正确做法：子元素阴影参数缩小（3px 而非 6px），背景色保持 `var(--lavender)` 不变：
 ```css
 /* 凹陷容器内子元素 — 轻凸起 */
-box-shadow: 3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF;
+box-shadow: 3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light);
 /* 凹陷容器内子元素 — hover 加强 */
-box-shadow: 4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF;
+box-shadow: 4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light);
 /* 凹陷容器内子元素 — active / selected 凹陷 */
-box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF;
+box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
 ```
 
 **蓝底按钮 active 不用白色高光**
@@ -305,24 +307,34 @@ box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF;
 正确做法：只用单向深蓝 inset，不加白色那层：
 ```css
 /* ✅ 正确 */
-box-shadow: inset 4px 4px 9px #2a4f6e;
+box-shadow: inset 4px 4px 9px var(--sh-blue-inset);
 /* ❌ 错误 — 白色高光在蓝底上穿帮 */
-box-shadow: inset 4px 4px 9px #2a4f6e, inset -4px -4px 9px #FFFFFF;
+box-shadow: inset 4px 4px 9px var(--sh-blue-inset), inset -4px -4px 9px var(--sh-light);
 ```
 
 **阴影数值唯一来源**
-全站阴影数值以 `catvweb-design-system.md` 第二节为准，不得凭记忆自行填写。
+全站阴影/颜色数值以 journal.html 的 `:root` 为唯一来源；`catvweb-design-system.md` 为「效果名 → 变量名」对照表。写代码引用变量名，不凭记忆填裸值。
 
 **带颜色背景的新拟态元素**
 当元素背景为纯色（如蓝色顶栏 `#266ea7`），不依赖 `overflow:hidden` 裁切来实现圆角衔接。
 正确做法：让外层容器背景色 = 顶栏色，内容区域单独设背景色，避免抗锯齿留白：
 ```css
 /* ✅ 外层背景即顶栏色，不需要裁切 */
-.outer { background: #266ea7; border-radius: 18px; }
+.outer { background: var(--purple); border-radius: 18px; }
 .inner { background: var(--lavender); border-radius: 0 0 15px 15px; }
 ```
 
 ---
+
+### 夜间模式纪律
+
+> 机制、暗色 palette、color-mix 规则详见 `catvweb-design-system.md`「主题系统」章。
+
+- 新增任何 UI 颜色：必须写成 `:root` 变量，并**当场决定**暗色值——沿用亮值（强调色类）或给覆盖值（文字层级/浅底类），不允许"以后再说"
+- 图标颜色用语义变量（`--c-icon-idle` / `--c-icon-edit`），**禁止**借用阴影变量（`--sh-*`）
+- 半透明 `rgba` 内衬在暗色下必须复核凹凸方向：比表面亮的内衬会把"凹"翻转成"凸"
+- 暗色高光是**比表面略亮的同色系**（非白色）；暗色投影用黑系不用彩色
+- 导出（docx/PDF/print）永远走亮色字面值；SVG `stroke=`/`fill=` **属性**不吃 `var()`，保持字面值
 
 ## 十六、SVG 图标规则
 
@@ -341,16 +353,7 @@ box-shadow: inset 4px 4px 9px #2a4f6e, inset -4px -4px 9px #FFFFFF;
 | 右箭头 | `14×12` | path: `M6 1L12 6L6 11M12 6H1`，stroke `#266ea7`，width 2 |
 | 日历 | `26×26` | 顶栏 h=5，横线 y=9，数字 x=13 y=17，`dominant-baseline="central"` |
 
-**图标阴影（统一三态）：**
-```css
-/* 默认 */
-filter: drop-shadow(2.5px 2.5px 3px rgba(38,110,167,.6)) drop-shadow(-1.5px -1.5px 2px #fff);
-/* hover */
-filter: drop-shadow(3.5px 3.5px 5px rgba(38,110,167,.8)) drop-shadow(-2px -2px 3px #fff);
-/* active */
-filter: drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .5px rgba(255,255,255,.7));
-```
-
+**图标阴影（统一三态）：** `var(--icon-shadow)` / `var(--icon-shadow-hover)` / `var(--icon-shadow-active)`（暗色有黑系覆盖，展开值查设计文档第三节）。
 三态 filter 通过 CSS class 实现，不写在 SVG inline style 里。
 
 ---
@@ -468,13 +471,13 @@ result = c[:s] + new_block + c[e:]
 | 说这个 | 不说这个 |
 |---|---|
 | 「标准凸起效果」 | `var(--neu-raised)` |
-| 「sidebar 凹陷效果」 | `var(--neu-inset-val)` |
-| 「七日效果」 | 2C/2E 组合 |
-| 「新纪录效果」 | 2G |
-| 「周报告效果」 | 2H |
-| 「竖向雕刻线」 | 2I |
-| 「项目徽章效果」 | 2J |
-| 「布凹效果」 | 2K |
+| 「sidebar 凹陷效果」 | `var(--neu-inset)` |
+| 「七日效果」 | 3px 版 `--sh-dark/light` 组合 |
+| 「新纪录效果」 | `--sh-btn-*` / `--sh-blue-inset` |
+| 「周报告效果」 | `--sh-wr-*` |
+| 「竖向雕刻线」 | `--line-dark/light` |
+| 「项目徽章效果」 | `.proj-badge` + `--pc` |
+| 「布凹效果」 | `--sh-cloth` + `--cloth-wash/sheen` |
 | 「entry card 选项标签」 | `.ec-selval` |
 | 「表单字段标题颜色」 | `.var-label` |
 | 「跳过按钮」 | `.skip-btn` |
@@ -488,11 +491,6 @@ result = c[:s] + new_block + c[e:]
 | 「凹陷中的凹陷」 | 具体数值 |
 | 「toggle 开关」 | `.wr-toggle-track` |
 
-### 阴影数值来源
-全站阴影以 `catvweb-design-system.md` 第二节为准，不凭记忆填写。
-
-### 翻译决策
-遇到不确定的英文翻译，列出 2-3 个选项问 ZONZON，不自行决定。
 
 ---
 
@@ -512,7 +510,7 @@ result = c[:s] + new_block + c[e:]
 | `.tracker-proj-name` | 项目名称文字 |
 | `.tracker-proj-meta` | 右侧信息区（records + last） |
 | `.tracker-proj-records` | 记录数文字，12px，数字 800/深色，文字 700/灰 |
-| `.tracker-proj-last` | last · 日期，9px，#9AA0A8 |
+| `.tracker-proj-last` | last · 日期，9px，`var(--c-last)` |
 | `.tracker-proj-chevron` | 展开箭头容器，含三态 filter CSS |
 | `.tracker-proj-chevron.open` | 展开时 rotate(90deg) |
 | `.tracker-proj-body` | 展开区容器，横向雕刻线分隔 |
@@ -552,4 +550,4 @@ result = c[:s] + new_block + c[e:]
 
 ### 状态徽章规格
 - Active/Done：凹陷胶囊（inset 2px），`.proj-status.active/.done`
-- Archived：印章，`border: 1.5px solid #A32D2D; border-radius: 3px; transform: rotate(-7deg); box-shadow: none;`
+- Archived：印章，`border: 1.5px solid var(--c-archived); border-radius: 3px; transform: rotate(-7deg); box-shadow: none;`

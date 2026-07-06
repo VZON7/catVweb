@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第175次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第179次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 > ⚠️ 第175次起：全站颜色已变量化。数值唯一来源 = journal.html 的 `:root`，本文档为「效果名 → 变量名 → 亮色值」对照表。改颜色改变量值，不改引用处。
 
 ⚠️ **Claude 使用规则：任何 SVG 图标、阴影数值、颜色在写入代码前，必须先查本文档对应章节，不可凭记忆写入。**
@@ -504,13 +504,55 @@ const getISOWeek = d => {
 
 ---
 
+## 主题系统（第176–179次）
+
+**机制**：`[data-theme="dark"]` 覆盖 `:root` 变量子集；🌙 按钮（`#stats-btn`）toggle；`cj_theme` 持久化；`color-scheme` 让原生控件（日历下拉）跟随主题；防闪白：脚本顶部即时设 attribute。
+
+### 暗色 palette（方案A · 表面 #2C2F38）
+| 变量 | 暗色值 | 备注 |
+|---|---|---|
+| `--lavender` | `#2C2F38` | 全站表面 |
+| `--dark` / `--mid` | `#E6E9F0` / `#8B919E` | 文字层级 |
+| `--sh-dark` / `--sh-light` | `#202228` / `#3A3E48` | 高光=比表面略亮的同色系，非白 |
+| `--sh-btn-dark/hover` | `#1D1F26` / `#1A1C23` | |
+| `--sh-wr-dark/hover` | `#1F2129` / `#1B1D24` | |
+| `--sh-cloth` / `--sh-light-soft` | `#1E2028` / `#363A44` | |
+| `--sh-sel-out/in` | `#3A3948` / `#232030` | |
+| `--sh-num-out/in` | `#323C39` / `#1E2825` | |
+| `--line-dark/light` | `#1F2128` / `#3A3E48` | |
+| `--c-pill-body` | `#ABB2C0` | 文字层级强制提亮 |
+| `--c-muted` / `--c-empty` / `--c-faint` / `--c-unit-hint` | `#9299A6` / `#6B717E` / `#767D8A` / `#6A7180` | |
+| `--c-token-bg/text/alt` | `#3A342A` / `#E5C285` / `#C99B54` | 金棕翻转 |
+| `--cb-chip-bg/hover/sub-hover` | `#343842` / `#3A3E49` / `#383C46` | |
+| `--c-tint0~3` | `#7FA6C9` `#8FB4D1` `#A3C2D8` `#7FABC4` | 第177次提亮 |
+| `--cloth-wash/sheen` | `rgba(0,0,0,.38)` / `rgba(255,255,255,.07)` | 真凹陷（第177次） |
+| `--cloth-wash-sm/sheen-sm` | `rgba(0,0,0,.30)` / `rgba(255,255,255,.06)` | Modal badge 小号 |
+| `--cal-sel-bg` / `--c-other-month` | `rgba(0,0,0,0.25)` / `rgba(230,233,240,0.28)` | 第178次 |
+| `--badge-shade/sheen` | `rgba(0,0,0,.35)` / `rgba(255,255,255,.08)` | 第179次 |
+| `--c-icon-idle/edit` | `#767D8A` / `#7FA6C9` | 第179次 |
+| `--icon-shadow(/-hover)` | 黑系投影 `rgba(0,0,0,.55/.7)` | 第178次去蓝晕 |
+| `color-scheme` | `dark` | 原生控件 |
+
+**沿用亮色值（ZONZON 决定）**：`--purple` `--danger` `--cyan` `--white` `--sh-blue-inset` `--c-select` `--c-number` `--c-active` `--c-done` `--c-archived` `--c-past-hint` `--c-note` `--c-last` `--c-coin-hint` `--c-undo`。
+
+### 亮色专属新变量（第177–179次，亮色值）
+`--cloth-wash:rgba(180,190,210,0.55)` `--cloth-sheen:rgba(255,255,255,0.9)`（-sm: 0.45/0.85）、`--cal-sel-bg:rgba(255,255,255,0.9)`、`--c-other-month:rgba(90,88,112,0.35)`、`--badge-shade:rgba(0,0,0,.12)`、`--badge-sheen:rgba(255,255,255,.5)`、`--c-icon-idle:#C8C8D8`、`--c-icon-edit:#266ea7`
+
+### 项目自定义色暗色规则
+`.proj-badge` 走 `--pc` 自定义属性；暗色：`color-mix(in srgb, var(--pc) 55%, white)` 提亮文字和边框。纯 CSS，不重渲染。
+
+### 暗色专属 CSS 规则
+`[data-theme="dark"] .proj-badge`（color-mix）、`.page-title` 三态（黑系投影替换蓝晕）。
+
+---
+
 ## 十一、待办
 
 | 项目 | 说明 |
 |---|---|
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
-| Night Mode 按钮 | 阶段一✅(第175次)。阶段二：暗色 palette + toggle + `cj_theme`；阶段三：Chart.js 主题、导出强制亮色。暗面参考 `≈#2C2F38`，高光为比表面略亮的同色系（非白），强调色沿用现有数值 |
+| Night Mode 阶段三 | 剩余：Chart.js 图表暗色主题（或确认保持白底）、Chart Builder 统计面板灰字、剩余 rgba(255,255,255,x) 覆盖层复核、ARCHIVED 印章红提亮（可选，ZONZON 决定） |
 
 ### 已完成
 | 项目 | 完成于 |
@@ -524,6 +566,10 @@ const getISOWeek = d => {
 | Night Mode 占位、月报告入口 | 第158次 |
 | 周报告全面重设计 | 第159–174次 |
 | 夜间模式·阶段一：全站颜色变量化（456处，17个新变量，修复 --neu-inset，废弃 -val） | 第175次 |
+| 夜间模式·阶段二：方案A暗色 palette + 🌙 toggle + cj_theme + 防闪白 | 第176次 |
+| 布凹真凹陷修复 + tint 四件套暗色提亮 | 第177次 |
+| 图标蓝晕修复 + 日历弹窗暗色修复（下拉/邻月/color-scheme） | 第178次 |
+| 项目徽章 color-mix 自体提亮 + Modal 图标语义变量（--c-icon-*） | 第179次 |
 
 ---
 
