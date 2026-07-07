@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第186次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第187次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 > ⚠️ 第175次起：全站颜色已变量化。数值唯一来源 = journal.html 的 `:root`，本文档为「效果名 → 变量名 → 亮色值」对照表。改颜色改变量值，不改引用处。
 
 ⚠️ **Claude 使用规则：任何 SVG 图标、阴影数值、颜色在写入代码前，必须先查本文档对应章节，不可凭记忆写入。**
@@ -191,6 +191,70 @@ background: #fff; box-shadow: 1px 1px 3px #B8BEC8;
 left: 3px（关闭） / left: 17px（开启）; transition: left 0.2s;
 ```
 → 用在：周报告「显示使用提示」开关
+
+### 键帽效果（双层立体按钮，可复用）
+
+通用键帽组件——外层深色底座 + 内层浅色键面，模拟物理按键。中间文字可替换（如 `SPACE`、`ESC`、`TAB`），右侧可放图标。
+
+**结构**
+```
+button.tr-space-key（底座）
+  └── span.tr-sk-face（键面）
+      ├── span.tr-sk-label（文字，如 SPACE）
+      └── span.tr-sk-arrow（图标区，如 ↑ 箭头 SVG）
+```
+
+**尺寸**
+```
+底座：width 66px · height 34px · border-radius 8px
+键面：left 3px · top 2px · right 3px · height 28px · border-radius 6px
+文字：Nunito 9px 800 · letter-spacing 0.6px
+图标：12×12 SVG · stroke-width 2.2 · stroke currentColor
+```
+
+**CSS 自定义属性**
+| 属性 | 亮色值 | 暗色值 | 用途 |
+|---|---|---|---|
+| `--sk-base` | `#C8CDD6` | `#1E2028` | 底座背景 |
+| `--sk-face` | `var(--lavender)` | `var(--lavender)` | 键面背景 |
+| `--sk-text` | `#999` | `#6B717E` | 文字/图标色 |
+
+**三态（亮色）**
+```css
+/* 默认 — 键面凸起，侧壁可见 */
+底座  box-shadow: 3px 3px 6px var(--sh-btn-dark), -3px -3px 6px var(--sh-light)
+键面  top: 2px; box-shadow: inset 0 -2px 1px rgba(0,0,0,0.06), 0 -1px 1px rgba(255,255,255,0.9)
+文字  color: #999
+
+/* hover — 阴影加深，文字变蓝 */
+底座  background: #BEC4CF; box-shadow: 4px 4px 8px var(--sh-btn-hover), -4px -4px 8px var(--sh-light)
+文字  color: var(--purple)
+
+/* active — 键面微沉 2px，侧壁缩窄 */
+底座  box-shadow: 2px 2px 4px var(--sh-btn-dark), -2px -2px 4px var(--sh-light)
+键面  top: 4px; height: 27px; background: #E6E9F0; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06)
+```
+
+**三态（暗色）**
+```css
+/* 默认 */
+底座  background: #1E2028
+键面  box-shadow: inset 0 -2px 1px rgba(0,0,0,0.15), 0 -1px 1px rgba(255,255,255,0.05)
+文字  color: #6B717E
+
+/* hover */
+底座  background: #1A1C23
+文字  color: var(--purple)
+
+/* active */
+键面  background: #292C34; box-shadow: inset 0 1px 2px rgba(0,0,0,0.15)
+```
+
+**设计要点**
+- 按下 ≠ 凹陷：键面保持平面，只是位置下沉（top 2→4），模拟真实键帽行程
+- 底座位置不动，按下时外阴影缩小（立体感降低）
+- 键面底部高光（`inset 0 -2px`）在按下时消失，换成顶部微 inset（底座边缘挡光）
+→ 用在：Tracker 分页排右侧「SPACE ↑」收起按钮（第187次）
 
 ---
 
@@ -605,7 +669,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
 | Night Mode 阶段三 | 剩余：Chart.js 图表暗色主题（或确认保持白底）、Chart Builder 统计面板灰字、剩余 rgba(255,255,255,x) 覆盖层复核 |
-| 记录列表待做 | 空格键收缩所有展开项目；记录行「回到当天」按钮；侧滑导出面板（字段勾选+范围+预览） |
+| 记录列表待做 | 记录行「回到当天」按钮；侧滑导出面板（字段勾选+范围+预览） |
 
 ### 已完成
 | 项目 | 完成于 |
@@ -630,6 +694,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 同天二级排序修复；翻页不跳图表（scrollTop 保存恢复） | 第184次 |
 | 记录列表 View 面板（4+2显示模式+月份切换器A+E，localStorage持久化，dk()补零） | 第185次 |
 | View 按钮+Detailed Records 结构；DD/MM/YYYY 显示；scrollIntoView 展开聚焦 | 第186次 |
+| 空格键收起展开项目；双层键帽按钮（.tr-space-key，可复用组件） | 第187次 |
 
 ---
 
@@ -657,6 +722,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 「周日历格子」 | `.wr-cal-day` |
 | 「凹陷中的凹陷」 | 具体数值 |
 | 「toggle 开关」 | `.wr-toggle-track` |
+| 「键帽效果」 | `.tr-space-key` + `--sk-base/face/text` |
 
 ---
 
