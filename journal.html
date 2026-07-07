@@ -459,6 +459,18 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .tr-pg-dots { font-size:11px; color:var(--mid); padding:0 2px; }
 .tr-pg-jump { display:flex; align-items:center; gap:4px; margin-left:6px; font-size:11px; color:var(--mid); }
 .tr-pg-inp { width:36px; height:22px; padding:0 4px; font-size:11px; border:0.5px solid var(--line-dark); border-radius:4px; background:var(--lavender); color:var(--dark); text-align:center; font-family:'Nunito',sans-serif; box-shadow:inset 2px 2px 4px var(--sh-dark),inset -2px -2px 4px var(--sh-light); outline:none; }
+.tr-space-key { position:relative; width:66px; height:34px; border:none; border-radius:8px; background:var(--sk-base); box-shadow:3px 3px 6px var(--sh-btn-dark),-3px -3px 6px var(--sh-light); cursor:pointer; padding:0; margin-left:auto; flex-shrink:0; --sk-base:#C8CDD6; --sk-face:var(--lavender); --sk-text:#999; }
+.tr-sk-face { position:absolute; left:3px; top:2px; right:3px; height:28px; border-radius:6px; background:var(--sk-face); box-shadow:inset 0 -2px 1px rgba(0,0,0,0.06),0 -1px 1px rgba(255,255,255,0.9); display:flex; align-items:center; pointer-events:none; transition:top .1s,height .1s,box-shadow .1s,background .1s; }
+.tr-sk-label { font-family:'Nunito',sans-serif; font-size:9px; font-weight:800; letter-spacing:0.6px; color:var(--sk-text); margin-left:7px; transition:color .15s; }
+.tr-sk-arrow { margin-left:auto; margin-right:5px; transition:color .15s; color:var(--sk-text); }
+.tr-sk-arrow svg { display:block; }
+.tr-space-key:hover { --sk-base:#BEC4CF; box-shadow:4px 4px 8px var(--sh-btn-hover),-4px -4px 8px var(--sh-light); --sk-text:var(--purple); }
+.tr-space-key:active .tr-sk-face { top:4px; height:27px; box-shadow:inset 0 1px 2px rgba(0,0,0,0.06); background:#E6E9F0; }
+.tr-space-key:active { box-shadow:2px 2px 4px var(--sh-btn-dark),-2px -2px 4px var(--sh-light); }
+[data-theme="dark"] .tr-space-key { --sk-base:#1E2028; --sk-text:#6B717E; }
+[data-theme="dark"] .tr-sk-face { box-shadow:inset 0 -2px 1px rgba(0,0,0,0.15),0 -1px 1px rgba(255,255,255,0.05); }
+[data-theme="dark"] .tr-space-key:hover { --sk-base:#1A1C23; --sk-text:var(--purple); }
+[data-theme="dark"] .tr-space-key:active .tr-sk-face { background:#292C34; box-shadow:inset 0 1px 2px rgba(0,0,0,0.15); }
 .tracker-entry-row { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:0.5px solid rgba(123,104,238,0.07); }
 .tracker-entry-row:last-child { border:none; }
 .tracker-date { font-size:11px; color:var(--mid); min-width:44px; flex-shrink:0; margin-top:2px; }
@@ -1005,6 +1017,13 @@ function renderTracker(){
           row.innerHTML='<span class="tracker-date">'+(d2.length<2?'0':'')+d2+'/'+(m2.length<2?'0':'')+m2+'/'+parts[0]+'</span><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+(fHTML?'<div class="tracker-fields">'+fHTML+'</div>':'')+(e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">🔗 ${e.link}</a>`:'')+(e.note?'<div class="ec-note">'+e.note+'</div>':'')+'<span class="ec-coin">½ · +'+calcCoins(e,e.dateKey)+'</span>'+'</div>';
           body.appendChild(row);
         });
+        function mkSpaceKey(){
+          const btn=document.createElement('button');btn.className='tr-space-key';
+          btn.title=lang==='zh'?'收起 (Space)':'Collapse (Space)';
+          btn.innerHTML='<span class="tr-sk-face"><span class="tr-sk-label">SPACE</span><span class="tr-sk-arrow"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 11L8 5L12 11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>';
+          btn.onclick=ev=>{ev.stopPropagation();window._trackerOpenId=null;renderTracker();};
+          return btn;
+        }
         if(totalPg>1){
           const pgBar=document.createElement('div');pgBar.className='tracker-pagination';
           function mkBtn(label,pg,isCur,isArr,disabled){
@@ -1031,7 +1050,12 @@ function renderTracker(){
           const inp=jmp.querySelector('input');
           inp.onkeydown=ev=>{if(ev.key==='Enter'){const v=parseInt(inp.value);if(v>=1&&v<=totalPg){window._tpg[pgKey]=v;const _sc=document.querySelector('.main-content')||document.documentElement;const _y=_sc.scrollTop;renderTracker();requestAnimationFrame(()=>{_sc.scrollTop=_y;});}}};
           pgBar.appendChild(jmp);
+          pgBar.appendChild(mkSpaceKey());
           body.appendChild(pgBar);
+        }else{
+          const skRow=document.createElement('div');skRow.style.cssText='display:flex;justify-content:flex-end;padding:6px 0 2px;';
+          skRow.appendChild(mkSpaceKey());
+          body.appendChild(skRow);
         }
         // ── 显示模式控件 ──
         const vbar=document.createElement('div');vbar.className='tr-view-bar';
@@ -3589,7 +3613,10 @@ const _dateStr=lang==='zh'
 document.getElementById('page-date').textContent=_dateStr;
 
 renderAll();
-document.addEventListener('keydown',e=>{if(e.key==='Shift')document.body.classList.add('shift-down')});
+document.addEventListener('keydown',e=>{
+if(e.key===' '&&view==='tracker'&&window._trackerOpenId&&!e.target.matches('input,textarea,select,[contenteditable]')){e.preventDefault();window._trackerOpenId=null;renderTracker();}
+if(e.key==='Shift')document.body.classList.add('shift-down');
+});
 document.addEventListener('keyup',e=>{if(e.key==='Shift')document.body.classList.remove('shift-down')});
 window.addEventListener('blur',()=>document.body.classList.remove('shift-down'));
 </script>
