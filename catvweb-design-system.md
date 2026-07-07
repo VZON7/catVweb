@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第179次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第182次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 > ⚠️ 第175次起：全站颜色已变量化。数值唯一来源 = journal.html 的 `:root`，本文档为「效果名 → 变量名 → 亮色值」对照表。改颜色改变量值，不改引用处。
 
 ⚠️ **Claude 使用规则：任何 SVG 图标、阴影数值、颜色在写入代码前，必须先查本文档对应章节，不可凭记忆写入。**
@@ -533,6 +533,10 @@ const getISOWeek = d => {
 | `--icon-shadow(/-hover)` | 黑系投影 `rgba(0,0,0,.55/.7)` | 第178次去蓝晕 |
 | `color-scheme` | `dark` | 原生控件 |
 
+| `--paper-shadow` | 亮：`0 1px 6px rgba(0,0,0,.08)` / 暗：`0 2px 8px rgba(0,0,0,.35)` | 白纸卡片投影 |
+| `--cb-radio` | `#6E7B96`（两主题同值） | Chart Builder 单选组选中填充 |
+| `--cb-multi` | `#5A6270`（两主题同值） | Chart Builder 多选组选中填充 |
+
 **沿用亮色值（ZONZON 决定）**：`--purple` `--danger` `--cyan` `--white` `--sh-blue-inset` `--c-select` `--c-number` `--c-active` `--c-done` `--c-archived` `--c-past-hint` `--c-note` `--c-last` `--c-coin-hint` `--c-undo`。
 
 ### 亮色专属新变量（第177–179次，亮色值）
@@ -540,6 +544,19 @@ const getISOWeek = d => {
 
 ### 项目自定义色暗色规则
 `.proj-badge` 走 `--pc` 自定义属性；暗色：`color-mix(in srgb, var(--pc) 55%, white)` 提亮文字和边框。纯 CSS，不重渲染。
+
+### 导出按钮规格（`.tracker-export-btn`）
+新拟态表面凸起 + 蓝字（`var(--purple)`）+ `border-radius:10px` + `padding:9px 20px` + `font-size:13px`；hover 阴影加强，按下凹陷。两主题同款。
+
+### Chart Builder 胶囊四组语言
+| 组 | Class | 选中填充 | 语义 |
+|---|---|---|---|
+| 变量（多选） | `.cb-var-chip` | `t-sel`→紫 `#7B68EE` / `t-num`→绿 `#1D9E75` | 复用 Modal 字段类型色 |
+| 单选（Palette+图表类型） | `.cb-type-btn` | 灰蓝 `--cb-radio` | 互斥单选 |
+| 视图开关+数据操作（多选） | `.cb-tog` | 深灰 `--cb-multi` | 非破坏性多选 |
+| 导出（操作按钮） | `.tracker-export-btn` | 新拟态表面+蓝字 | 动作不是状态 |
+
+三态：闲置 3px 轻凸 → hover 4px → 按下凹陷 → 选中填充。图标固定不切换。
 
 ### 暗色专属 CSS 规则
 `[data-theme="dark"] .proj-badge`（color-mix）、`.page-title` 三态（黑系投影替换蓝晕）。
@@ -570,6 +587,9 @@ const getISOWeek = d => {
 | 布凹真凹陷修复 + tint 四件套暗色提亮 | 第177次 |
 | 图标蓝晕修复 + 日历弹窗暗色修复（下拉/邻月/color-scheme） | 第178次 |
 | 项目徽章 color-mix 自体提亮 + Modal 图标语义变量（--c-icon-*） | 第179次 |
+| 移除全部装饰星星；Chart Builder B+ 新拟态全迁移（浅凹托盘、白纸卡片、四组胶囊语言、SVG 图标、死规则清除） | 第180次 |
+| cb-tog 家族固定 SVG 图标（8颗）；清除 JS textContent 动态替换 | 第181次 |
+| ARCHIVED 印章暗色提亮（#A32D2D→#C45050）；文档结账 | 第182次 |
 
 ---
 
