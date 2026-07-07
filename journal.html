@@ -77,6 +77,7 @@ window.addEventListener('load', function(){
   --cloth-wash:rgba(0,0,0,0.38); --cloth-sheen:rgba(255,255,255,0.07);
   --cloth-wash-sm:rgba(0,0,0,0.30); --cloth-sheen-sm:rgba(255,255,255,0.06);
   --c-tint0:#7FA6C9; --c-tint1:#8FB4D1; --c-tint2:#A3C2D8; --c-tint3:#7FABC4;
+  --c-archived:#C45050;
   --cal-sel-bg:rgba(0,0,0,0.25); --c-other-month:rgba(230,233,240,0.28);
   --badge-shade:rgba(0,0,0,.35); --badge-sheen:rgba(255,255,255,.08);
   --paper-shadow:0 2px 8px rgba(0,0,0,.35);
@@ -1286,22 +1287,22 @@ function buildChartBuilderHTML(pid){
     </div>
     <div class="cb-step-lbl" style="margin-top:10px">${t('cb_type')}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="cb-type-btn on" id="cb-t-stacked-${pid}" onclick="cbSetType('${pid}','stacked')">${t('cb_stacked')}</button>
-      <button class="cb-type-btn" id="cb-t-grouped-${pid}" onclick="cbSetType('${pid}','grouped')">${t('cb_grouped')}</button>
-      <button class="cb-type-btn" id="cb-t-donut-${pid}" onclick="cbSetType('${pid}','donut')">${t('cb_donut')}</button>
+      <button class="cb-type-btn on" id="cb-t-stacked-${pid}" onclick="cbSetType('${pid}','stacked')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><rect x="1" y="9" width="3.5" height="4" rx=".8" fill="currentColor" opacity=".5"/><rect x="1" y="6" width="3.5" height="3" rx=".8" fill="currentColor" opacity=".75"/><rect x="1" y="3" width="3.5" height="3" rx=".8" fill="currentColor"/><rect x="5.5" y="7" width="3.5" height="6" rx=".8" fill="currentColor" opacity=".5"/><rect x="5.5" y="4" width="3.5" height="3" rx=".8" fill="currentColor" opacity=".75"/><rect x="5.5" y="2" width="3.5" height="2" rx=".8" fill="currentColor"/><rect x="10" y="8" width="3.5" height="5" rx=".8" fill="currentColor" opacity=".5"/><rect x="10" y="5" width="3.5" height="3" rx=".8" fill="currentColor" opacity=".75"/></svg> ${t('cb_stacked')}</button>
+      <button class="cb-type-btn" id="cb-t-grouped-${pid}" onclick="cbSetType('${pid}','grouped')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><rect x="1" y="5" width="2.5" height="8" rx=".8" fill="currentColor" opacity=".5"/><rect x="4" y="3" width="2.5" height="10" rx=".8" fill="currentColor" opacity=".5"/><rect x="7.5" y="5" width="2.5" height="8" rx=".8" fill="currentColor"/><rect x="10.5" y="3" width="2.5" height="10" rx=".8" fill="currentColor"/></svg> ${t('cb_grouped')}</button>
+      <button class="cb-type-btn" id="cb-t-donut-${pid}" onclick="cbSetType('${pid}','donut')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="2.2" fill="none" opacity=".5"/><circle cx="7" cy="7" r="2.8" stroke="currentColor" stroke-width="2.2" fill="none"/></svg> ${t('cb_donut')}</button>
     </div>
     <div id="cb-ctrl-bar-${pid}" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="cb-tog" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')">🔢 ${t('cb_nums')}</button>
-      <button class="cb-tog on" id="cb-titles-${pid}" onclick="cbTogTitles('${pid}')">✅ ${t('cb_title')}</button>
-      <button class="cb-tog" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')">${t('cb_stats')}</button>
+      <button class="cb-tog" id="cb-nums-${pid}" onclick="cbTogNum('${pid}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".6"/><text x="2.5" y="10" font-size="7.5" fill="currentColor" font-family="monospace" font-weight="900">99</text></svg> ${t('cb_nums')}</button>
+      <button class="cb-tog on" id="cb-titles-${pid}" onclick="cbTogTitles('${pid}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><text x="1" y="9" font-size="9" fill="currentColor" font-weight="900" font-family="serif">T</text><rect x="1" y="10.5" width="12" height="1.2" rx=".6" fill="currentColor" opacity=".4"/><rect x="1" y="12.5" width="8" height="1.2" rx=".6" fill="currentColor" opacity=".3"/></svg> ${t('cb_title')}</button>
+      <button class="cb-tog" id="cb-panel-${pid}" onclick="cbTogPanel('${pid}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="2.5" cy="4" r="1.5" fill="currentColor" opacity=".7"/><rect x="5" y="3" width="8" height="2" rx="1" fill="currentColor" opacity=".5"/><circle cx="2.5" cy="9.5" r="1.5" fill="currentColor"/><rect x="5" y="8.5" width="8" height="2" rx="1" fill="currentColor"/></svg> ${t('cb_stats')}</button>
     </div>
     <div id="cb-ctrl-donut-${pid}" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="cb-tog on" id="cb-dnums-${pid}" onclick="cbTogDNums('${pid}')">🔢 ${t('cb_nums')}</button>
+      <button class="cb-tog on" id="cb-dnums-${pid}" onclick="cbTogDNums('${pid}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".6"/><text x="2.5" y="10" font-size="7.5" fill="currentColor" font-family="monospace" font-weight="900">99</text></svg> ${t('cb_nums')}</button>
       <div style="display:flex;gap:2px;padding:3px 5px;border-radius:999px" id="cb-dmode-${pid}">
         <button class="cb-sub on" id="cb-ddirect-${pid}" onclick="cbSetDonutMode('${pid}','direct')">${t('cb_direct')}</button>
         <button class="cb-sub" id="cb-dline-${pid}" onclick="cbSetDonutMode('${pid}','line')">${t('cb_line')}</button>
       </div>
-      <button class="cb-tog" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')">${t('cb_stats')}</button>
+      <button class="cb-tog" id="cb-dpanel-${pid}" onclick="cbTogPanel('${pid}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><circle cx="2.5" cy="4" r="1.5" fill="currentColor" opacity=".7"/><rect x="5" y="3" width="8" height="2" rx="1" fill="currentColor" opacity=".5"/><circle cx="2.5" cy="9.5" r="1.5" fill="currentColor"/><rect x="5" y="8.5" width="8" height="2" rx="1" fill="currentColor"/></svg> ${t('cb_stats')}</button>
     </div>
     <div id="cb-legend-${pid}" style="margin-bottom:8px"></div>
     <div id="cb-chart-wrap-${pid}">
@@ -1310,8 +1311,8 @@ function buildChartBuilderHTML(pid){
     <div id="cb-statpanel-${pid}" class="cb-side-panel"></div>
     <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <span style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0">${t('cb_export_label')}</span>
-      <button id="cb-tog-text-${pid}" class="cb-tog on" onclick="cbTogExportContent('${pid}','text')">📝 ${t('cb_export_text')}</button>
-      <button id="cb-tog-chart-${pid}" class="cb-tog" onclick="cbTogExportContent('${pid}','chart')">＋ ${t('cb_export_chart')}</button>
+      <button id="cb-tog-text-${pid}" class="cb-tog on" onclick="cbTogExportContent('${pid}','text')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><rect x="2" y="1" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".7"/><rect x="4" y="4" width="6" height="1.2" rx=".6" fill="currentColor"/><rect x="4" y="6.5" width="5" height="1.2" rx=".6" fill="currentColor" opacity=".7"/><rect x="4" y="9" width="4" height="1.2" rx=".6" fill="currentColor" opacity=".5"/></svg> ${t('cb_export_text')}</button>
+      <button id="cb-tog-chart-${pid}" class="cb-tog" onclick="cbTogExportContent('${pid}','chart')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><rect x="1" y="4" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="8" y1="1" x2="8" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="4" x2="11" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="6" y="8" width="6" height="4" rx="1" fill="currentColor" opacity=".4"/></svg> ${t('cb_export_chart')}</button>
       <div style="width:1px;height:18px;background:rgba(123,104,238,0.2);margin:0 2px;flex-shrink:0"></div>
       <button class="tracker-export-btn" onclick="cbExport('${pid}','docx')">${t('cb_export_docx')}</button>
       <button class="tracker-export-btn" onclick="cbExport('${pid}','pdf')">${t('cb_export_pdf')}</button>
@@ -1721,8 +1722,8 @@ function cbTogExportContent(pid,type){
   // 更新按钮样式
   const tb=document.getElementById('cb-tog-text-'+pid);
   const cb=document.getElementById('cb-tog-chart-'+pid);
-  if(tb){tb.classList.toggle('on',s._exportContent.text);tb.textContent=s._exportContent.text?'✓ '+t('cb_export_text'):'📝 '+t('cb_export_text');}
-  if(cb){cb.classList.toggle('on',s._exportContent.chart);cb.textContent=s._exportContent.chart?'✓ '+t('cb_export_chart_on'):'＋ '+t('cb_export_chart');}
+  if(tb)tb.classList.toggle('on',s._exportContent.text);
+  if(cb)cb.classList.toggle('on',s._exportContent.chart);
 }
 
 function cbExport(pid,type){
