@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第182次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第186次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 > ⚠️ 第175次起：全站颜色已变量化。数值唯一来源 = journal.html 的 `:root`，本文档为「效果名 → 变量名 → 亮色值」对照表。改颜色改变量值，不改引用处。
 
 ⚠️ **Claude 使用规则：任何 SVG 图标、阴影数值、颜色在写入代码前，必须先查本文档对应章节，不可凭记忆写入。**
@@ -533,6 +533,7 @@ const getISOWeek = d => {
 | `--icon-shadow(/-hover)` | 黑系投影 `rgba(0,0,0,.55/.7)` | 第178次去蓝晕 |
 | `color-scheme` | `dark` | 原生控件 |
 
+**其他新变量（两主题同值）**
 | `--paper-shadow` | 亮：`0 1px 6px rgba(0,0,0,.08)` / 暗：`0 2px 8px rgba(0,0,0,.35)` | 白纸卡片投影 |
 | `--cb-radio` | `#6E7B96`（两主题同值） | Chart Builder 单选组选中填充 |
 | `--cb-multi` | `#5A6270`（两主题同值） | Chart Builder 多选组选中填充 |
@@ -563,13 +564,48 @@ const getISOWeek = d => {
 
 ---
 
+## 记录列表系统（第183–186次）
+
+### 分页规格
+每页 10 条；总页数 ≤ 7 显示全部页码，> 7 用省略号；首末页始终显示；「跳至」输入框 Enter 确认。
+分页箭头：字符 `⮜` / `⮞`，class `.tr-pg-btn.arr`，到边界 `disabled + opacity:.3`，无外框。
+
+### View 面板结构
+```
+未展开：[DETAILED RECORDS（下划线）]          [👁 View]
+展开后：[VIEW 标签        👁 View] ← panel 顶部
+        [DISPLAY 模式胶囊]
+        [月份切换器（按月模式）]
+        [SORT 排序]
+        [DETAILED RECORDS（下划线）]          [空]
+        记录列表...
+```
+View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选中）。
+
+### 显示模式
+| mode | 逻辑 | 默认排序 |
+|---|---|---|
+| `all` | 全量 | desc（新→旧） |
+| `week` | 近7天 | desc |
+| `month` | 选定年月 | asc（旧→新） |
+| `n10/n20/n50` | 排序后取前N条 | desc |
+
+状态存 `cj_view_${pid}`；月份切换器 A+E：`⮜ YYYY年 ⮞ · N records` + 有记录月份胶囊。
+
+### 日期格式
+- 存储：`YYYY-MM-DD`（`dk()` 补零，用于排序）
+- 显示：`DD/MM/YYYY`（渲染层转换，如 `28/06/2026`）
+
+---
+
 ## 十一、待办
 
 | 项目 | 说明 |
 |---|---|
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
-| Night Mode 阶段三 | 剩余：Chart.js 图表暗色主题（或确认保持白底）、Chart Builder 统计面板灰字、剩余 rgba(255,255,255,x) 覆盖层复核、ARCHIVED 印章红提亮（可选，ZONZON 决定） |
+| Night Mode 阶段三 | 剩余：Chart.js 图表暗色主题（或确认保持白底）、Chart Builder 统计面板灰字、剩余 rgba(255,255,255,x) 覆盖层复核 |
+| 记录列表待做 | 空格键收缩所有展开项目；记录行「回到当天」按钮；侧滑导出面板（字段勾选+范围+预览） |
 
 ### 已完成
 | 项目 | 完成于 |
@@ -590,6 +626,10 @@ const getISOWeek = d => {
 | 移除全部装饰星星；Chart Builder B+ 新拟态全迁移（浅凹托盘、白纸卡片、四组胶囊语言、SVG 图标、死规则清除） | 第180次 |
 | cb-tog 家族固定 SVG 图标（8颗）；清除 JS textContent 动态替换 | 第181次 |
 | ARCHIVED 印章暗色提亮（#A32D2D→#C45050）；文档结账 | 第182次 |
+| 记录列表分页（每页10条，省略号，分页箭头⮜⮞，跳至输入） | 第183次 |
+| 同天二级排序修复；翻页不跳图表（scrollTop 保存恢复） | 第184次 |
+| 记录列表 View 面板（4+2显示模式+月份切换器A+E，localStorage持久化，dk()补零） | 第185次 |
+| View 按钮+Detailed Records 结构；DD/MM/YYYY 显示；scrollIntoView 展开聚焦 | 第186次 |
 
 ---
 
@@ -604,6 +644,9 @@ const getISOWeek = d => {
 | 「周报告效果」 | 具体数值 |
 | 「竖向雕刻线」 | `.ec-vdivider` |
 | 「布凹效果」 | 复杂 box-shadow 数值 |
+| 「白纸卡片」 | `.cb-chart-area`/`.cb-side-panel` + `--paper-shadow` |
+| 「浅凹托盘」 | `.cb-wrap` 的 3px inset |
+| 「分页箭头」 | `.tr-pg-btn.arr`，字符 `⮜`/`⮞` |
 | 「模糊红框」 | `nameAlert` |
 | 「背景关闭」 | `onmousedown` modal-bg |
 | 「失焦保存」 | `onblur` |

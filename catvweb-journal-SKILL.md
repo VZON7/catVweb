@@ -151,13 +151,19 @@ window.addEventListener('load', function(){
 | `catTokens` | Cat Token 总余额 |
 | `cj_mypalette` | color picker 已保存颜色 |
 | `cj_lang` | 语言设定（'zh' / 'en'，默认 'zh'） |
+| `cj_theme` | 主题（'light' / 'dark'，默认 'light'） |
+| `cj_view_${pid}` | 记录列表显示模式 `{mode, sort, year, month, _sortSet}`，每个项目独立 |
+| `cj_keymig` | dateKey 格式迁移版本标记（当前 '2'） |
 
 ---
 
-## 九、dateKey 格式
+## 九、dateKey 格式与日期显示
 
-`dk(date)` 返回 `YYYY-M-D`（月日不补零），例如 `2026-6-12`。
-所有 entries 的 key、比较操作都使用这个格式，不要使用 ISO 格式（`2026-06-12`）以免 key 不匹配。
+**存储格式**：`dk(date)` 返回 `YYYY-MM-DD`（月日**补零**），例如 `2026-06-12`。
+`dk()` 必须补零，确保字符串排序等同日期排序。旧数据通过 `migrateKeys()` 自动迁移（`cj_keymig='2'` 标记）。
+
+**显示格式**：一律 `DD/MM/YYYY`，如 `28/06/2026`，由渲染层转换，不影响存储。
+
 
 ---
 
@@ -291,43 +297,12 @@ Chart.js doughnut 的圆心是 `chartArea` 中心，`arc.outerRadius` 基于 `ch
 
 ⚠️ 凹陷容器内子元素 box-shadow 失效是高频踩坑，务必遵守：
 
-**凹陷容器内的 box-shadow 规则**
-父容器为 `inset` 阴影时，子元素的凸起 `box-shadow` 视觉上会被抵消。
-正确做法：子元素阴影参数缩小（3px 而非 6px），背景色保持 `var(--lavender)` 不变：
-```css
-/* 凹陷容器内子元素 — 轻凸起 */
-box-shadow: 3px 3px 7px #C8C8D8, -3px -3px 7px #FFFFFF;
-/* 凹陷容器内子元素 — hover 加强 */
-box-shadow: 4px 4px 9px #C8C8D8, -4px -4px 9px #FFFFFF;
-/* 凹陷容器内子元素 — active / selected 凹陷 */
-box-shadow: inset 3px 3px 7px #C8C8D8, inset -3px -3px 7px #FFFFFF;
-```
-
-**蓝底按钮 active 不用白色高光**
-蓝底（`var(--purple)`）按钮的 active 状态禁止使用双向 inset（会出现白色穿帮反光）。
-正确做法：只用单向深蓝 inset，不加白色那层：
-```css
-/* ✅ 正确 */
-box-shadow: inset 4px 4px 9px #2a4f6e;
-/* ❌ 错误 — 白色高光在蓝底上穿帮 */
-box-shadow: inset 4px 4px 9px #2a4f6e, inset -4px -4px 9px #FFFFFF;
-```
-
-**白纸卡片 vs 浅凹托盘**
-- 白纸卡片（`.cb-chart-area` / `.cb-side-panel`）用 `--paper-shadow`，两主题均为实色白底——纸内文字禁用 `--dark`/`--mid` 等主题翻转变量
-- 浅凹托盘（`.cb-wrap`）用 3px inset，背景跟随 `--lavender`
-
-**阴影数值唯一来源**
-全站阴影数值以 `catvweb-design-system.md` 第二节为准，不得凭记忆自行填写。
-
-**带颜色背景的新拟态元素**
-当元素背景为纯色（如蓝色顶栏 `#266ea7`），不依赖 `overflow:hidden` 裁切来实现圆角衔接。
-正确做法：让外层容器背景色 = 顶栏色，内容区域单独设背景色，避免抗锯齿留白：
-```css
-/* ✅ 外层背景即顶栏色，不需要裁切 */
-.outer { background: #266ea7; border-radius: 18px; }
-.inner { background: var(--lavender); border-radius: 0 0 15px 15px; }
-```
+- **凹陷容器内子元素**：阴影缩小为 3px（非 6px），具体数值查设计文档第二节「七日效果」
+- **蓝底按钮 active**：只用单向 `inset var(--sh-blue-inset)`，不加白色高光（穿帮）
+- **白纸卡片**（`.cb-chart-area`/`.cb-side-panel`）：用 `--paper-shadow`；纸内文字禁用 `--dark`/`--mid` 主题翻转变量
+- **浅凹托盘**（`.cb-wrap`）：3px inset，背景跟随 `--lavender`
+- **纯色背景元素**：不用 `overflow:hidden` 裁切，外层容器背景=顶栏色，内容区单独设背景
+- **阴影数值唯一来源**：查 `catvweb-design-system.md`，不凭记忆填写
 
 ---
 
@@ -470,38 +445,9 @@ result = c[:s] + new_block + c[e:]
 
 ## 二十二、与 ZONZON 沟通约定
 
-### 效果名称（用「我看到的东西」描述，不用 CSS class 名）
+效果名称、颜色用语、沟通词汇完整表见 **`catvweb-design-system.md` 第十二节**。
 
-| 说这个 | 不说这个 |
-|---|---|
-| 「标准凸起效果」 | `var(--neu-raised)` |
-| 「sidebar 凹陷效果」 | `var(--neu-inset-val)` |
-| 「七日效果」 | 2C/2E 组合 |
-| 「新纪录效果」 | 2G |
-| 「周报告效果」 | 2H |
-| 「竖向雕刻线」 | 2I |
-| 「项目徽章效果」 | 2J |
-| 「布凹效果」 | `--sh-cloth` + `--cloth-wash/sheen` |
-| 「白纸卡片」 | `.cb-chart-area` / `.cb-side-panel` + `--paper-shadow` |
-| 「浅凹托盘」 | `.cb-wrap` 的 3px inset（Chart Builder 外壳） |
-| 「entry card 选项标签」 | `.ec-selval` |
-| 「表单字段标题颜色」 | `.var-label` |
-| 「跳过按钮」 | `.skip-btn` |
-| 「Note/Link 切换按钮」 | `.extra-toggle` |
-| 「新记录/编辑表单外层背景」 | `.form-card` |
-| 「entry card 字段分隔线」 | `.ec-vdivider` |
-| 「entry card note 文字」 | `.ec-note` |
-| 「猫爪币」 | `.ec-coin` |
-| 「周日历框」 | `.wr-cal-outer` |
-| 「周日历格子」 | `.wr-cal-day` |
-| 「凹陷中的凹陷」 | 具体数值 |
-| 「toggle 开关」 | `.wr-toggle-track` |
-
-### 阴影数值来源
-全站阴影以 `catvweb-design-system.md` 第二节为准，不凭记忆填写。
-
-### 翻译决策
-遇到不确定的英文翻译，列出 2-3 个选项问 ZONZON，不自行决定。
+翻译决策：遇到不确定的英文翻译，列出 2-3 个选项问 ZONZON，不自行决定。
 
 ---
 
