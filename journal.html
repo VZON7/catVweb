@@ -436,6 +436,29 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .tracker-proj-last { font-size:9px; color:var(--c-last); flex-shrink:0; margin-top:1px; }
 .tracker-proj-archived { opacity:.8; }
 .tracker-proj-body { padding:0 16px 12px; border-top:1px solid var(--line-dark); box-shadow:0 -1px 0 var(--line-light); }
+.tr-view-btn { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:999px; border:0.5px solid var(--purple); background:var(--lavender); color:var(--purple); font-size:11px; font-family:'Nunito',sans-serif; cursor:pointer; transition:all .15s; box-shadow:2px 2px 5px var(--sh-dark),-2px -2px 5px var(--sh-light); flex-shrink:0; }
+.tr-view-btn:hover { color:var(--dark); box-shadow:3px 3px 7px var(--sh-dark),-3px -3px 7px var(--sh-light); }
+.tr-view-btn.open { color:var(--purple); border-color:var(--purple); box-shadow:inset 2px 2px 5px var(--sh-dark),inset -2px -2px 5px var(--sh-light); }
+.tr-view-panel { padding:10px 16px 6px; border-top:0.5px solid var(--line-dark); border-bottom:0.5px solid var(--line-dark); display:flex; flex-direction:column; gap:10px; }
+.tr-view-panel-row { display:flex; flex-direction:column; gap:5px; }
+.tr-view-panel-label { font-size:9px; font-weight:700; color:var(--mid); letter-spacing:.07em; text-transform:uppercase; }
+.tr-view-panel-pills { display:flex; gap:5px; flex-wrap:wrap; }
+.tr-detail-title { font-size:11px; font-weight:700; color:var(--mid); letter-spacing:.05em; text-transform:uppercase; text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--line-dark); }
+.tr-view-bar { display:flex; gap:5px; flex-wrap:wrap; align-items:center; padding:10px 0 4px; }
+.tr-view-sep { width:1px; height:16px; background:var(--line-dark); margin:0 3px; flex-shrink:0; }
+.tr-month-wrap { display:flex; flex-direction:column; gap:6px; padding:6px 0 2px; }
+.tr-month-year { display:flex; align-items:center; gap:4px; }
+.tr-month-pills { display:flex; gap:5px; flex-wrap:wrap; }
+.tracker-pagination { display:flex; align-items:center; gap:4px; padding:10px 0 4px; flex-wrap:wrap; }
+.tr-pg-btn { background:none; border:none; cursor:pointer; padding:2px 3px; font-size:11px; display:flex; align-items:center; justify-content:center; filter:var(--icon-shadow); transition:filter .15s; color:var(--purple); min-width:22px; height:22px; border-radius:4px; font-family:'Nunito',sans-serif; }
+.tr-pg-btn:hover { filter:var(--icon-shadow-hover); }
+.tr-pg-btn:active { filter:var(--icon-shadow-active); }
+.tr-pg-btn.cur { font-weight:800; color:var(--purple); filter:var(--icon-shadow); }
+.tr-pg-btn.arr { font-size:11px; }
+.tr-pg-btn:disabled { opacity:.3; cursor:default; filter:none; }
+.tr-pg-dots { font-size:11px; color:var(--mid); padding:0 2px; }
+.tr-pg-jump { display:flex; align-items:center; gap:4px; margin-left:6px; font-size:11px; color:var(--mid); }
+.tr-pg-inp { width:36px; height:22px; padding:0 4px; font-size:11px; border:0.5px solid var(--line-dark); border-radius:4px; background:var(--lavender); color:var(--dark); text-align:center; font-family:'Nunito',sans-serif; box-shadow:inset 2px 2px 4px var(--sh-dark),inset -2px -2px 4px var(--sh-light); outline:none; }
 .tracker-entry-row { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:0.5px solid rgba(123,104,238,0.07); }
 .tracker-entry-row:last-child { border:none; }
 .tracker-date { font-size:11px; color:var(--mid); min-width:44px; flex-shrink:0; margin-top:2px; }
@@ -637,6 +660,11 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 // ════════════════════════════════════════════════════════
 const I18N={
   zh:{
+    page_prev:'⮜',page_next:'⮞',page_jump:'跳至',page_unit:'页',
+    detailed_records:'详细记录',view_toggle:'View',
+    view_all:'全部',view_week:'近一周',view_month:'按月',view_n10:'近10条',view_n20:'近20条',view_n50:'近50条',
+    sort_desc:'新→旧',sort_asc:'旧→新',
+    month_records:'条记录',
     theme_night:'夜间模式',theme_day:'日间模式',
     page_title:'项目日记',page_subtitle:'项目追踪',
     btn_new:'新记录',btn_weekly:'周报告',btn_month:'月报告',
@@ -718,6 +746,11 @@ const I18N={
     add_field:'＋ 添加',sel_at_least:'请先点「＋ 加入图表」选择至少一个图表',
   },
   en:{
+    page_prev:'⮜',page_next:'⮞',page_jump:'Go to',page_unit:'',
+    detailed_records:'Detailed Records',view_toggle:'View',
+    view_all:'All',view_week:'This week',view_month:'By month',view_n10:'Last 10',view_n20:'Last 20',view_n50:'Last 50',
+    sort_desc:'New→Old',sort_asc:'Old→New',
+    month_records:'records',
     theme_night:'Night Mode',theme_day:'Day Mode',
     page_title:'Project Journal',page_subtitle:'Project Tracker',
     btn_new:'New Log',btn_weekly:'Week in Review',btn_month:'Month in Review',
@@ -808,7 +841,7 @@ const COLORS=['#000000','#FFFFFF','#808080','#FF0000','#FF8C00','#FFD700','#0080
 const DAYS=['日','一','二','三','四','五','六'];
 const WD=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
 const today=new Date();today.setHours(0,0,0,0);
-function dk(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function dk(d){const m=d.getMonth()+1,dy=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dy<10?'0':'')+dy;}
 const todayKey=dk(today);
 
 // STATE
@@ -900,12 +933,12 @@ function renderTracker(){
   filtered.forEach(p=>{
     const pe=[];
     Object.entries(entries).forEach(([dk2,arr])=>arr.forEach(e=>{if(e.projId===p.id)pe.push({...e,dateKey:dk2});}));
-    pe.sort((a,b)=>b.dateKey.localeCompare(a.dateKey));
+    pe.sort((a,b)=>a.id-b.id);
     const totalC=pe.reduce((s,e)=>s+calcCoins(e,e.dateKey),0);
     const days=new Set(pe.map(e=>e.dateKey)).size;
     const isOpen=window._trackerOpenId===p.id;
     const isArchived=(p.status||'active')==='archived';
-    const card=document.createElement('div');card.className='tracker-proj-card'+(isArchived?' archived':'');
+    const card=document.createElement('div');card.className='tracker-proj-card'+(isArchived?' archived':'');card.id='tcard-'+p.id;
       const hdr=document.createElement('div');hdr.className='tracker-proj-header';
     const lastDate=pe.length?(()=>{const p=pe[0].dateKey.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);})():'--';
     const recLabel=lang==='zh'?
@@ -921,20 +954,189 @@ function renderTracker(){
       +'<span class="tracker-proj-records">'+recLabel+'</span>'
       +'<span class="tracker-proj-last" style="margin-left:2px">last · '+lastDate+'</span>'
       +'</div>'
-      +'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M6 1L12 6L6 11M12 6H1" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
-    hdr.onclick=()=>{window._trackerOpenId=(window._trackerOpenId===p.id)?null:p.id;renderTracker();};
++'<span class="tracker-proj-chevron'+(isOpen?' open':'')+'"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M6 1L12 6L6 11M12 6H1" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+    hdr.onclick=()=>{
+      const opening=window._trackerOpenId!==p.id;
+      window._trackerOpenId=opening?p.id:null;
+      renderTracker();
+      if(opening)requestAnimationFrame(()=>{
+        const el=document.getElementById('tcard-'+p.id);
+        if(el){
+          const rect=el.getBoundingClientRect();
+          const sc=document.scrollingElement||document.documentElement;
+          const target=sc.scrollTop+rect.top-60;
+          sc.scrollTo({top:Math.max(0,target),behavior:'smooth'});
+        }
+      });
+    };
     card.appendChild(hdr);
     if(isOpen){
       const body=document.createElement('div');body.className='tracker-proj-body';
       if(!pe.length){body.innerHTML='<div class="tracker-empty" style="padding:1rem 0">'+t('no_records')+'</div>';}
-      else{pe.forEach(e=>{
-        const row=document.createElement('div');row.className='tracker-entry-row';
-        const parts=e.dateKey.split('-');const m2=parts[1],d2=parts[2];
-        let fHTML='';
-        (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;let dv;if(f.type==='number'&&Array.isArray(v)){dv=v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' \u00b7 ');}else if(Array.isArray(v)){dv=v.join(', ');}else{dv=v;}fHTML+='<span class="tracker-field-tag">'+f.label+': '+dv+'</span>';});
-        row.innerHTML='<span class="tracker-date">'+m2+'/'+d2+'</span><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+''+(fHTML?'<div class="tracker-entry-fields">'+fHTML+'</div>':'')+(e.note?'<div class="tracker-entry-note">'+e.note+'</div>':'')+'</div><span style="font-size:10px;color:var(--c-token-alt);background:var(--c-token-bg);border-radius:999px;padding:2px 7px;flex-shrink:0">🐾 +'+calcCoins(e,e.dateKey)+'</span>';
-        body.appendChild(row);
-      });}
+      else{
+        const vKey='cj_view_'+p.id;
+        let vs=JSON.parse(localStorage.getItem(vKey)||'null')||{mode:'all',sort:'desc',year:0,month:0};
+        function saveVs(){localStorage.setItem(vKey,JSON.stringify(vs));}
+        const ymSet={};
+        pe.forEach(e=>{const[y,m]=e.dateKey.split('-');if(!ymSet[y])ymSet[y]={};ymSet[y][m]=(ymSet[y][m]||0)+1;});
+        const years=Object.keys(ymSet).map(Number).sort((a,b)=>a-b);
+        if(!vs.year||!ymSet[vs.year]){vs.year=years[years.length-1]||new Date().getFullYear();}
+        const monthsInYear=Object.keys(ymSet[vs.year]||{}).map(Number).sort((a,b)=>a-b);
+        if(!vs.month||!monthsInYear.includes(vs.month)){vs.month=monthsInYear[monthsInYear.length-1]||new Date().getMonth()+1;}
+        if(vs.mode==='month'&&!vs._sortSet)vs.sort='asc';
+        let peF=[...pe];
+        if(vs.mode==='week'){const d7=new Date();d7.setDate(d7.getDate()-6);const d7s=d7.toISOString().slice(0,10);peF=pe.filter(e=>e.dateKey>=d7s);}
+        else if(vs.mode==='month'){const ym=vs.year+'-'+(vs.month<10?'0':'')+vs.month;peF=pe.filter(e=>e.dateKey.startsWith(ym));}
+        else if(vs.mode==='n10'||vs.mode==='n20'||vs.mode==='n50'){peF=[...pe];}
+        peF.sort((a,b)=>vs.sort==='desc'?(b.dateKey.localeCompare(a.dateKey)||(a.id>b.id?-1:1)):(a.dateKey.localeCompare(b.dateKey)||(a.id>b.id?1:-1)));
+        if(vs.mode==='n10'||vs.mode==='n20'||vs.mode==='n50'){const n={n10:10,n20:20,n50:50}[vs.mode];peF=peF.slice(0,n);}
+        const PG=10;
+        const pgKey='cj_pg_'+p.id;
+        if(!window._tpg)window._tpg={};
+        const curPg=window._tpg[pgKey]||1;
+        const totalPg=Math.ceil(peF.length/PG);
+        const start=(curPg-1)*PG,end=Math.min(start+PG,peF.length);
+        peF.slice(start,end).forEach(e=>{
+          const row=document.createElement('div');row.className='tracker-entry-row';
+          const parts=e.dateKey.split('-');const m2=parts[1],d2=parts[2];
+          let fHTML='';
+          (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;let dv;if(f.type==='number'&&Array.isArray(v)){dv=v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' · ');}else if(Array.isArray(v)){dv=v.join(', ');}else{dv=String(v);}if(!dv)return;fHTML+=`<span class="tracker-field-tag">${f.label}: ${dv}</span>`;});
+          if(e.total)fHTML+=`<span class="tracker-field-tag">Total: ${e.total}</span>`;
+          row.innerHTML='<span class="tracker-date">'+(d2.length<2?'0':'')+d2+'/'+(m2.length<2?'0':'')+m2+'/'+parts[0]+'</span><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+(fHTML?'<div class="tracker-fields">'+fHTML+'</div>':'')+(e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">🔗 ${e.link}</a>`:'')+(e.note?'<div class="ec-note">'+e.note+'</div>':'')+'<span class="ec-coin">½ · +'+calcCoins(e,e.dateKey)+'</span>'+'</div>';
+          body.appendChild(row);
+        });
+        if(totalPg>1){
+          const pgBar=document.createElement('div');pgBar.className='tracker-pagination';
+          function mkBtn(label,pg,isCur,isArr,disabled){
+            const b=document.createElement('button');
+            b.className='tr-pg-btn'+(isCur?' cur':'')+(isArr?' arr':'');
+            b.textContent=label;
+            if(disabled)b.disabled=true;
+            else b.onclick=()=>{window._tpg[pgKey]=pg;const _sc=document.querySelector('.main-content')||document.documentElement;const _y=_sc.scrollTop;renderTracker();requestAnimationFrame(()=>{_sc.scrollTop=_y;});};
+            return b;
+          }
+          pgBar.appendChild(mkBtn(t('page_prev'),curPg-1,false,true,curPg===1));
+          if(totalPg<=7){
+            for(let i=1;i<=totalPg;i++)pgBar.appendChild(mkBtn(i,i,i===curPg,false,false));
+          }else{
+            pgBar.appendChild(mkBtn(1,1,curPg===1,false,false));
+            if(curPg>3){const d=document.createElement('span');d.className='tr-pg-dots';d.textContent='…';pgBar.appendChild(d);}
+            for(let i=Math.max(2,curPg-1);i<=Math.min(totalPg-1,curPg+1);i++)pgBar.appendChild(mkBtn(i,i,i===curPg,false,false));
+            if(curPg<totalPg-2){const d=document.createElement('span');d.className='tr-pg-dots';d.textContent='…';pgBar.appendChild(d);}
+            pgBar.appendChild(mkBtn(totalPg,totalPg,curPg===totalPg,false,false));
+          }
+          pgBar.appendChild(mkBtn(t('page_next'),curPg+1,false,true,curPg===totalPg));
+          const jmp=document.createElement('div');jmp.className='tr-pg-jump';
+          jmp.innerHTML=`<span>${t('page_jump')}</span><input class="tr-pg-inp" type="number" min="1" max="${totalPg}" placeholder="${totalPg}"><span>${t('page_unit')}</span>`;
+          const inp=jmp.querySelector('input');
+          inp.onkeydown=ev=>{if(ev.key==='Enter'){const v=parseInt(inp.value);if(v>=1&&v<=totalPg){window._tpg[pgKey]=v;const _sc=document.querySelector('.main-content')||document.documentElement;const _y=_sc.scrollTop;renderTracker();requestAnimationFrame(()=>{_sc.scrollTop=_y;});}}};
+          pgBar.appendChild(jmp);
+          body.appendChild(pgBar);
+        }
+        // ── 显示模式控件 ──
+        const vbar=document.createElement('div');vbar.className='tr-view-bar';
+        const modes=[['all',t('view_all')],['week',t('view_week')],['month',t('view_month')],['n10',t('view_n10')],['n20',t('view_n20')],['n50',t('view_n50')]];
+        modes.forEach(([m,lbl])=>{
+          const b=document.createElement('button');b.className='cb-type-btn'+(vs.mode===m?' on':'');b.textContent=lbl;
+          b.onclick=()=>{vs.mode=m;if(m==='month'&&!vs._sortSet){vs.sort='asc';}else if(m!=='month'&&!vs._sortSet){vs.sort='desc';}window._tpg[pgKey]=1;saveVs();renderTracker();};
+          vbar.appendChild(b);
+        });
+        // 详细记录标题
+        const dtrow=document.createElement('div');dtrow.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px;';
+        const dtitle=document.createElement('span');dtitle.className='tr-detail-title';dtitle.textContent=t('detailed_records');
+        const vbtn=document.createElement('button');
+        vbtn.className='tr-view-btn'+(window._vsOpen&&window._vsOpen[p.id]?' open':'');
+        vbtn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> '+t('view_toggle');
+        vbtn.onclick=e=>{e.stopPropagation();window._vsOpen=window._vsOpen||{};window._vsOpen[p.id]=!window._vsOpen[p.id];renderTracker();};
+        dtrow.appendChild(dtitle);dtrow.appendChild(vbtn);
+        // View panel 只在 _vsOpen 时显示
+        if(window._vsOpen&&window._vsOpen[p.id]){
+          const vpanel=document.createElement('div');vpanel.className='tr-view-panel';
+          const phdr=document.createElement('div');phdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;';
+          const phlbl=document.createElement('span');phlbl.style.cssText='font-size:9px;font-weight:700;color:var(--mid);letter-spacing:.07em;text-transform:uppercase;';phlbl.textContent=t('view_toggle');
+          phdr.appendChild(phlbl);phdr.appendChild(vbtn);vpanel.appendChild(phdr);
+          // 显示模式行
+          const r1=document.createElement('div');r1.className='tr-view-panel-row';
+          const lb1=document.createElement('div');lb1.className='tr-view-panel-label';lb1.textContent=lang==='zh'?'显示模式':'Display';
+          const p1=document.createElement('div');p1.className='tr-view-panel-pills';
+          const modes=[['all',t('view_all')],['week',t('view_week')],['month',t('view_month')],['n10',t('view_n10')],['n20',t('view_n20')],['n50',t('view_n50')]];
+          modes.forEach(([m,lbl])=>{
+            const b=document.createElement('button');b.className='cb-type-btn'+(vs.mode===m?' on':'');b.textContent=lbl;
+            b.onclick=e=>{e.stopPropagation();vs.mode=m;if(m==='month'&&!vs._sortSet){vs.sort='asc';}else if(m!=='month'&&!vs._sortSet){vs.sort='desc';}window._tpg[pgKey]=1;saveVs();renderTracker();};
+            p1.appendChild(b);
+          });
+          r1.appendChild(lb1);r1.appendChild(p1);vpanel.appendChild(r1);
+          // 月份行
+          if(vs.mode==='month'){
+            const r2=document.createElement('div');r2.className='tr-view-panel-row';
+            const lb2=document.createElement('div');lb2.className='tr-view-panel-label';lb2.textContent=lang==='zh'?'月份':'Month';
+            const mwrap2=document.createElement('div');mwrap2.className='tr-month-wrap';
+            const yrow2=document.createElement('div');yrow2.className='tr-month-year';
+            const yIdx=years.indexOf(vs.year);
+            const yPrev2=document.createElement('button');yPrev2.className='tr-pg-btn arr';yPrev2.textContent='⮜';
+            yPrev2.disabled=yIdx<=0;
+            yPrev2.onclick=e=>{e.stopPropagation();vs.year=years[yIdx-1];vs.month=Object.keys(ymSet[vs.year]).map(Number).sort((a,b)=>b-a)[0];window._tpg[pgKey]=1;saveVs();renderTracker();};
+            const yNext2=document.createElement('button');yNext2.className='tr-pg-btn arr';yNext2.textContent='⮞';
+            yNext2.disabled=yIdx>=years.length-1;
+            yNext2.onclick=e=>{e.stopPropagation();vs.year=years[yIdx+1];vs.month=Object.keys(ymSet[vs.year]).map(Number).sort((a,b)=>b-a)[0];window._tpg[pgKey]=1;saveVs();renderTracker();};
+            const yrec2=(ymSet[vs.year]&&ymSet[vs.year][(vs.month<10?'0':'')+vs.month])||0;
+            const yLabel2=document.createElement('span');yLabel2.style.cssText='font-size:12px;font-weight:500;color:var(--dark);margin:0 2px;';
+            yLabel2.textContent=vs.year+(lang==='zh'?'年':'');
+            const yCount2=document.createElement('span');yCount2.style.cssText='font-size:11px;color:var(--mid);margin-left:4px;';
+            yCount2.textContent=yrec2+' '+t('month_records');
+            yrow2.appendChild(yPrev2);yrow2.appendChild(yLabel2);yrow2.appendChild(yNext2);yrow2.appendChild(yCount2);
+            const mpills2=document.createElement('div');mpills2.className='tr-month-pills';
+            monthsInYear.forEach(m=>{
+              const b=document.createElement('button');b.className='cb-type-btn'+(vs.month===m?' on':'');
+              b.textContent=(lang==='zh'?m+'月':(new Date(vs.year,m-1).toLocaleString('en',{month:'short'})));
+              b.onclick=e=>{e.stopPropagation();vs.month=m;window._tpg[pgKey]=1;saveVs();renderTracker();};
+              mpills2.appendChild(b);
+            });
+            mwrap2.appendChild(yrow2);mwrap2.appendChild(mpills2);
+            r2.appendChild(lb2);r2.appendChild(mwrap2);vpanel.appendChild(r2);
+          }
+          // 排序行
+          const r3=document.createElement('div');r3.className='tr-view-panel-row';
+          const lb3=document.createElement('div');lb3.className='tr-view-panel-label';lb3.textContent=lang==='zh'?'排序':'Sort';
+          const p3=document.createElement('div');p3.className='tr-view-panel-pills';
+          ['desc','asc'].forEach(s=>{
+            const b=document.createElement('button');b.className='cb-type-btn'+(vs.sort===s?' on':'');b.textContent=s==='desc'?t('sort_desc'):t('sort_asc');
+            b.onclick=e=>{e.stopPropagation();vs.sort=s;vs._sortSet=true;window._tpg[pgKey]=1;saveVs();renderTracker();};
+            p3.appendChild(b);
+          });
+          r3.appendChild(lb3);r3.appendChild(p3);vpanel.appendChild(r3);
+          body.insertBefore(vpanel,body.firstChild);
+          body.insertBefore(dtrow,vpanel.nextSibling);
+        } else {
+          body.insertBefore(dtrow,body.firstChild);
+        }
+        if(false){
+          const mwrap=document.createElement('div');mwrap.className='tr-month-wrap';
+          const yrow=document.createElement('div');yrow.className='tr-month-year';
+          const yIdx=years.indexOf(vs.year);
+          const yPrev=document.createElement('button');yPrev.className='tr-pg-btn arr';yPrev.textContent='⮜';
+          yPrev.disabled=yIdx<=0;
+          yPrev.onclick=()=>{vs.year=years[yIdx-1];vs.month=Object.keys(ymSet[vs.year]).map(Number).sort((a,b)=>b-a)[0];window._tpg[pgKey]=1;saveVs();renderTracker();};
+          const yNext=document.createElement('button');yNext.className='tr-pg-btn arr';yNext.textContent='⮞';
+          yNext.disabled=yIdx>=years.length-1;
+          yNext.onclick=()=>{vs.year=years[yIdx+1];vs.month=Object.keys(ymSet[vs.year]).map(Number).sort((a,b)=>b-a)[0];window._tpg[pgKey]=1;saveVs();renderTracker();};
+          const yrec=(ymSet[vs.year]&&ymSet[vs.year][(vs.month<10?'0':'')+vs.month])||0;
+          const yLabel=document.createElement('span');yLabel.style.cssText='font-size:13px;font-weight:500;color:var(--dark);margin:0 2px;';
+          yLabel.textContent=vs.year+(lang==='zh'?'年':'');
+          const yCount=document.createElement('span');yCount.style.cssText='font-size:11px;color:var(--mid);margin-left:4px;';
+          yCount.textContent=yrec+' '+t('month_records');
+          yrow.appendChild(yPrev);yrow.appendChild(yLabel);yrow.appendChild(yNext);yrow.appendChild(yCount);
+          const mpills=document.createElement('div');mpills.className='tr-month-pills';
+          monthsInYear.forEach(m=>{
+            const b=document.createElement('button');b.className='cb-type-btn'+(vs.month===m?' on':'');
+            b.textContent=(lang==='zh'?m+'月':(new Date(vs.year,m-1).toLocaleString('en',{month:'short'})));
+            b.onclick=()=>{vs.month=m;window._tpg[pgKey]=1;saveVs();renderTracker();};
+            mpills.appendChild(b);
+          });
+          mwrap.appendChild(yrow);mwrap.appendChild(mpills);
+          body.insertBefore(mwrap,vbar.nextSibling);
+        }
+      }
       card.appendChild(body);
       if(isArchived){
         const actRow=document.createElement('div');
@@ -3355,6 +3557,20 @@ function updateThemeBtn(){
   const btn=document.getElementById('stats-btn');if(btn)btn.title=txt;
 }
 function applyTheme(){document.documentElement.setAttribute('data-theme',theme);updateThemeBtn();}
+(function migrateKeys(){
+  const raw=localStorage.getItem('cj_entries');
+  if(!raw||localStorage.getItem('cj_keymig')==='2')return;
+  try{
+    const data=JSON.parse(raw),fixed={};
+    Object.entries(data).forEach(([k,v])=>{
+      const p=k.split('-');
+      if(p.length===3){const nk=p[0]+'-'+(p[1].length<2?'0':'')+p[1]+'-'+(p[2].length<2?'0':'')+p[2];fixed[nk]=(fixed[nk]||[]).concat(v);}
+      else fixed[k]=(fixed[k]||[]).concat(v);
+    });
+    localStorage.setItem('cj_entries',JSON.stringify(fixed));
+    localStorage.setItem('cj_keymig','2');
+  }catch(e){}
+})();
 function toggleTheme(){theme=theme==='light'?'dark':'light';localStorage.setItem('cj_theme',theme);applyTheme();}
 applyTheme();
 document.getElementById('stats-nav-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
