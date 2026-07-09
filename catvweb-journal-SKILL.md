@@ -480,6 +480,15 @@ result = c[:s] + new_block + c[e:]
 | `.tracker-entry-note` | Note 文字，11px，斜体 |
 | `.tracker-empty` | 空状态提示 |
 | `.cb-wrap` | Chart Builder 容器（每个项目展开区底部） |
+| `.tr-space-key` | 键帽收起按钮（分页排右侧），含 `--sk-base/face/text` 自定义属性 |
+| `.tr-sk-face / .tr-sk-label / .tr-sk-arrow` | 键帽内部结构（键面/文字/图标） |
+| `.tr-date-area` | 记录行日期跳转容器（包裹日期+图标+tooltip） |
+| `.tr-date-icon` | 跳转返回图标（↩），默认 opacity .3 |
+| `.tr-date-tip` | 跳转 tooltip（「回到当天」），position absolute |
+| `.tr-detail-title` | 详细记录标题（带详细记录雕刻线） |
+| `.tr-view-panel` | View 面板容器（显示模式+排序） |
+| `.journal-date-hdr` | Journal 日期标头（统计卡片和记录之间） |
+| `.cb-canvas-wrap` | 图表 canvas 容器（主题感知背景） |
 
 ### JS 函数速查
 | 函数 | 用途 |
@@ -487,13 +496,19 @@ result = c[:s] + new_block + c[e:]
 | `renderTracker()` | 整体渲染 Tracker 视图，读 `window._trackerTab` 和 `window._trackerOpenId` |
 | `window._trackerTab` | 当前筛选标签（'all'/'active'/'done'/'archived'） |
 | `window._trackerOpenId` | 当前展开的项目 id（null = 全收起） |
+| `applyChartTheme()` | 更新 Chart.js 全局默认值（颜色/网格线），在 `applyTheme()` 内调用 |
+| `mkSpaceKey()` | 创建键帽收起按钮 DOM 元素 |
 
 ### 展开区结构（重要：不要破坏 Chart Builder）
 ```
 .tracker-proj-body
-  └── entry rows（pe.forEach 渲染）
-  └── 已归档操作按钮行（仅 isArchived，右对齐，↩复原 + 🗑永久删除）
-  └── .cb-wrap（Chart Builder，id="cb-{p.id}"，由 buildChartBuilderHTML(p.id) 生成）
+  ├── .tr-view-panel（View 面板，仅 _vsOpen 时）
+  ├── dtrow（含 .tr-detail-title + View 按钮）
+  ├── entry rows（peF.slice 渲染，每行含 .tr-date-area 跳转区）
+  ├── 空筛选提示（peF 为空但 pe 有记录时）
+  ├── pagination bar + .tr-space-key / 独立 skRow + .tr-space-key
+  ├── 已归档操作按钮行（仅 isArchived）
+  └── .cb-wrap（Chart Builder，id="cb-{p.id}"）
 ```
 ⚠️ Chart Builder 在每个项目展开区底部，改动展开区时不要误删或破坏 `.cb-wrap`。
 
@@ -508,3 +523,70 @@ result = c[:s] + new_block + c[e:]
 ### 状态徽章规格
 - Active/Done：凹陷胶囊（inset 2px），`.proj-status.active/.done`
 - Archived：印章，`border: 1.5px solid #A32D2D; border-radius: 3px; transform: rotate(-7deg); box-shadow: none;`
+
+---
+
+## 二十四、暗色模式硬编码审计规则
+
+⚠️ 本次开发（#195–197）同类错误出现 5 次以上，每次创建新 UI 时硬编码颜色都会溜进去。
+
+**输出前必须跑以下 grep，每个命中必须确认是否需要替换为主题变量：**
+
+```bash
+# 排除 CSS 变量定义行、I18N 块、注释行，只看渲染逻辑
+grep -n "#fff\|#333\|#444\|#555\|#666" journal.html | grep -v "var(\|I18N\|//\|--"
+grep -n "rgba(255,255,255" journal.html | grep -v "var(\|sh-light\|line-light\|inset\|sk-face"
+grep -n "rgba(0,0,0" journal.html | grep -v "var(\|sh-dark\|tooltip\|inset"
+```
+
+**canvas 特别规则：**
+- `ctx.fillStyle` 和 `ctx.strokeStyle` 禁止硬编码 `#fff`、`#333` 等，必须用 `theme==='dark'?暗色值:亮色值` 三元
+- 图表背景：亮 `#fff` / 暗 `#2C2F38`
+- 标签浮框背景：亮 `rgba(255,255,255,0.97)` / 暗 `rgba(44,47,56,0.95)`
+- 标签浮框文字：亮 `#333` / 暗 `#C8CDD6`
+
+**导出特别规则：**
+- DOCX / PDF 导出前必须临时 `theme='light'; applyChartTheme(); chart.update('none');`，截图后还原
+- 不要让暗色主题的图表颜色泄漏到导出文件里
+
+---
+
+## 二十五、CSS 暗色模式优先级规则
+
+⚠️ `[data-theme="dark"] .class`（0-1-1）和 `.class:hover`（0-1-1）权重相同，后写的覆盖先写的。
+
+**一条规则：** 写暗色模式覆盖（`[data-theme="dark"] .xxx`）时，必须同时重新声明所有 hover / active 状态会改变的 CSS 自定义属性，不能只覆盖基础值。
+
+```css
+/* ❌ 错误：只覆盖基础值，hover 的 --sk-text 被暗色默认值覆盖 */
+.tr-space-key:hover { --sk-text: var(--purple); }  /* 0-1-1 */
+[data-theme="dark"] .tr-space-key { --sk-text: #6B717E; }  /* 0-1-1，后写，覆盖 hover */
+
+/* ✅ 正确：暗色 hover 显式重新声明 */
+[data-theme="dark"] .tr-space-key:hover { --sk-text: var(--purple); }
+```
+
+**速记：** 暗色默认改了什么属性 → 暗色 hover/active 必须重新设回交互态的值。
+
+---
+
+## 二十六、i18n 完整性检查规则
+
+⚠️ 双语数组/标签只定义了中文版、到处使用却没有 lang 判断，是高频遗漏。
+
+**每次更新后，跑以下检查：**
+
+```bash
+# 找 I18N.zh 块以外的渲染代码中的中文字符（排除注释和字符串定义）
+START=$(grep -nP "^let lang=" journal.html | head -1 | cut -d: -f1)
+sed -n "${START},\$p" journal.html | grep -nP "[\x{4e00}-\x{9fff}]" | grep -v "//\|I18N\|console\|t('"
+```
+
+**每个命中必须确认：**
+- 是否在 `lang==='zh'` 分支内（✅ 正确）
+- 还是在无 lang 判断的通用路径内（❌ 需要加三元或 t() 调用）
+
+**高风险区域：**
+- 天/月名数组（如 `['日','一','二','三','四','五','六']`）必须有 `lang==='zh'?中文:英文` 三元
+- 日期格式化字符串（如 `年`、`月`、`日`、`星期`）必须走 lang 分支
+- canvas 内绘制的文字（不走 DOM，无法用 CSS 变量，必须 JS 层判断）

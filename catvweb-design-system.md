@@ -1,5 +1,5 @@
 # catvweb journal.html — 新拟态设计系统参考文档
-> 更新于 第187次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
+> 更新于 第201次 update｜用于和 Claude 沟通时指定颜色、阴影、效果
 > ⚠️ 第175次起：全站颜色已变量化。数值唯一来源 = journal.html 的 `:root`，本文档为「效果名 → 变量名 → 亮色值」对照表。改颜色改变量值，不改引用处。
 
 ⚠️ **Claude 使用规则：任何 SVG 图标、阴影数值、颜色在写入代码前，必须先查本文档对应章节，不可凭记忆写入。**
@@ -114,6 +114,17 @@ border-left: 1px solid #C9D0DC; border-right: 1px solid #FFFFFF;
 ```css
 border-top: 1px solid #C9D0DC; border-bottom: 1px solid #FFFFFF;
 ```
+
+### 详细记录雕刻线（文字等宽）
+
+与横向雕刻线不同，此线只跟文字一样长，不横跨整行。元素必须设 `display:inline-block`。
+
+```css
+display: inline-block;
+border-bottom: 1px solid var(--line-dark);
+box-shadow: 0 1px 0 var(--line-light);
+```
+→ 用在：Tracker「详细记录」标题 `.tr-detail-title`（第190次）、Journal 日期标头 `.journal-date-hdr`（第200次）
 
 ### Project 徽章效果（双层立体）
 ```
@@ -373,8 +384,36 @@ SVG 尺寸：width="26" height="26" viewBox="0 0 26 26"
 
 ### Tracker 项目卡片三态
 - 默认：标准凸起（`6px 6px 12px`）
-- hover：轻微白色高亮（`rgba(255,255,255,0.15)`）
+- hover：白色叠加 `rgba(255,255,255,0.35)` + 轻凸阴影 `2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)`（第194次）
+- active（非 archived）：`inset 2px 2px 5px var(--sh-dark), inset -1px -1px 3px var(--sh-light)`（第193次）
 - 已归档：`opacity: 0.8`，名称色 `#666`
+
+### Tracker 筛选标签四态（第192次）
+| 状态 | 效果 |
+|---|---|
+| 默认 | 凸起 `3px 3px 7px` |
+| hover | 加深 `4px 4px 9px` + 文字变亮 `var(--dark)` |
+| 点击瞬间 | 七日效果凹陷 `inset 3px 3px 7px` |
+| 选中 `.active` | 蓝底 `var(--purple)` + `inset 3px 3px 7px rgba(0,0,0,.25), inset -2px -2px 5px rgba(255,255,255,.1)` |
+
+### 胶囊按钮选中态（统一，第191次）
+所有 `.on` 选中态统一使用有色底 + inset 阴影：
+```css
+box-shadow: inset 3px 3px 7px rgba(0,0,0,.25), inset -2px -2px 5px rgba(255,255,255,.1);
+```
+→ 用在：`.cb-var-chip.on`、`.cb-type-btn.on`、`.cb-tog.on`、`.tracker-tab.active`
+
+### 记录行「回到当天」跳转（第199次）
+```
+.tr-date-area 容器 — 包裹日期 + 图标 + tooltip
+  ├── .tracker-date — 默认 var(--mid)
+  ├── .tr-date-icon — ↩ SVG 12×12，默认 opacity .3
+  └── .tr-date-tip — tooltip「回到当天」/ 「Jump to date」
+```
+- 默认：日期原色 `var(--mid)`，图标淡灰
+- hover（整个 .tr-date-area）：日期 + 图标同步变 `var(--purple)`，tooltip 从上方浮出
+- tooltip：`position:absolute; bottom:calc(100% + 5px); border:.5px solid var(--purple); border-radius:5px`，带小三角箭头
+- 点击：`selDate = record.dateKey → view='journal' → renderAll()`
 
 ### Modal Status 按钮
 | 状态 | 效果 | 文字色 |
@@ -636,15 +675,23 @@ const getISOWeek = d => {
 
 ### View 面板结构
 ```
-未展开：[DETAILED RECORDS（下划线）]          [👁 View]
-展开后：[VIEW 标签        👁 View] ← panel 顶部
-        [DISPLAY 模式胶囊]
+未展开：[详细记录（详细记录雕刻线）]          [👁 View]
+展开后：[DISPLAY 模式胶囊]
         [月份切换器（按月模式）]
         [SORT 排序]
-        [DETAILED RECORDS（下划线）]          [空]
+        ──── View panel 底部 padding 14px ────
+        [详细记录（详细记录雕刻线）]          [👁 View]
         记录列表...
+        [分页 / SPACE 键帽按钮]
 ```
-View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选中）。
+View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选中，inset 凹陷）。
+第188次移除了 VIEW 标签行，展开后直接显示显示模式和排序。
+
+### 空筛选状态（第198次）
+当 View 筛选（如「近一周」）导致 peF 为空但 pe 有记录时：
+- 显示居中提示「当前筛选「{模式名}」下没有记录」
+- 附带「显示全部」蓝色链接按钮（重置 vs.mode='all'）
+- 自动展开 View 面板（`_vsOpen[p.id]=true`）
 
 ### 显示模式
 | mode | 逻辑 | 默认排序 |
@@ -660,6 +707,25 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 - 存储：`YYYY-MM-DD`（`dk()` 补零，用于排序）
 - 显示：`DD/MM/YYYY`（渲染层转换，如 `28/06/2026`）
 
+### Journal 日期标头（第200次）
+位于统计卡片和记录列表之间，使用「详细记录雕刻线」样式。
+```css
+.journal-date-hdr { font-size:13px; font-weight:700; color:var(--purple); display:inline-block; }
+/* + 详细记录雕刻线 */
+```
+- 中文：`2026年7月7日·星期二·今天`
+- 英文：`Tue, 07/07/2026 · Today`
+
+### 双语日期规则（第201次）
+| 区域 | 中文 | 英文 |
+|---|---|---|
+| Journal 日期标头 | `YYYY年M月D日·星期X` | `Weekday, DD/MM/YYYY` |
+| page-date 副标题 | 同上 | 同上 |
+| 周报告 Most Active Day | `星期X · DD/MM/YY` | `Monday · DD/MM/YY` |
+| 日历弹窗标题 | `2026年 6月` | `June 2026` |
+| 日历弹窗天数表头 | `日 一 二 三 四 五 六` | `Su Mo Tu We Th Fr Sa` |
+| 日历弹窗月份下拉 | `1月 2月...` | `January February...` |
+
 ---
 
 ## 十一、待办
@@ -668,8 +734,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 |---|---|
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
-| Night Mode 阶段三 | 剩余：Chart.js 图表暗色主题（或确认保持白底）、Chart Builder 统计面板灰字、剩余 rgba(255,255,255,x) 覆盖层复核 |
-| 记录列表待做 | 记录行「回到当天」按钮；侧滑导出面板（字段勾选+范围+预览） |
+| 侧滑导出面板 | 字段勾选 + 范围选择 + 预览 |
 
 ### 已完成
 | 项目 | 完成于 |
@@ -695,6 +760,15 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 记录列表 View 面板（4+2显示模式+月份切换器A+E，localStorage持久化，dk()补零） | 第185次 |
 | View 按钮+Detailed Records 结构；DD/MM/YYYY 显示；scrollIntoView 展开聚焦 | 第186次 |
 | 空格键收起展开项目；双层键帽按钮（.tr-space-key，可复用组件） | 第187次 |
+| VIEW 标签移除；View 面板底部 padding 增加 | 第188次 |
+| 详细记录雕刻线（文字等宽 inline-block） | 第189–190次 |
+| 胶囊按钮 .on 选中态统一凹陷（cb-var-chip、cb-type-btn、cb-tog） | 第191次 |
+| 筛选标签四态 + 项目卡片 hover/active 反馈 | 第192–194次 |
+| 夜间模式阶段三收尾：Chart.js 动态主题、统计面板、canvas 暗色、图表即时刷新 | 第195–197次 |
+| 空筛选状态提示 +「显示全部」重置 + 自动展开 View | 第198次 |
+| 记录行「回到当天」跳转（日期+图标+tooltip） | 第199次 |
+| Journal 日期标头（详细记录雕刻线，双语格式） | 第200次 |
+| i18n 修复：中文星期前缀、日历弹窗英文化、周报告英文星期名 | 第201次 |
 
 ---
 
@@ -723,6 +797,10 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 「凹陷中的凹陷」 | 具体数值 |
 | 「toggle 开关」 | `.wr-toggle-track` |
 | 「键帽效果」 | `.tr-space-key` + `--sk-base/face/text` |
+| 「详细记录雕刻线」 | `display:inline-block` + `border-bottom` + `box-shadow`（文字等宽） |
+| 「横向雕刻线」 | `border-top` + `border-bottom`（整行宽度） |
+| 「胶囊选中凹陷」 | `.on` 态 `inset 3px 3px 7px rgba(0,0,0,.25)` |
+| 「回到当天」 | `.tr-date-area` 跳转容器 + tooltip |
 
 ---
 
