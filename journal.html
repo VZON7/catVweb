@@ -117,6 +117,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .page-title:hover { color:var(--purple); filter:drop-shadow(3.5px 3.5px 5px rgba(38,110,167,0.75)) drop-shadow(-2px -2px 3px var(--sh-light)); }
 .page-title:active { filter:drop-shadow(0.5px 0.5px 1px rgba(38,110,167,0.3)) drop-shadow(-0.5px -0.5px 0.5px rgba(255,255,255,0.7)); }
 .page-date { font-size:12px; color:var(--mid); margin-top:4px; }
+.journal-date-hdr { font-size:13px; font-weight:700; color:var(--purple); letter-spacing:.03em; padding:6px 0 4px; margin-bottom:4px; display:inline-block; border-bottom:1px solid var(--line-dark); box-shadow:0 1px 0 var(--line-light); }
 .new-btn { display:flex; align-items:center; gap:6px; background:var(--purple); color:#fff; border:none; border-radius:999px; padding:10px 22px; font-size:14px; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:5px 5px 10px var(--sh-btn-dark), -5px -5px 10px var(--sh-light); transition:box-shadow .15s; }
 .new-btn:hover { box-shadow:10px 10px 18px var(--sh-btn-hover), -10px -10px 18px var(--sh-light); }
 .new-btn:active { box-shadow:inset 4px 4px 9px var(--sh-blue-inset), inset -2px -2px 5px rgba(255,255,255,0.15); }
@@ -475,7 +476,14 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 [data-theme="dark"] .tr-space-key:active .tr-sk-face { background:#292C34; box-shadow:inset 0 1px 2px rgba(0,0,0,0.15); }
 .tracker-entry-row { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:0.5px solid rgba(123,104,238,0.07); }
 .tracker-entry-row:last-child { border:none; }
-.tracker-date { font-size:11px; color:var(--mid); min-width:44px; flex-shrink:0; margin-top:2px; }
+.tracker-date { font-size:11px; color:var(--mid); min-width:44px; flex-shrink:0; margin-top:2px; transition:color .15s; }
+.tr-date-area { display:flex; align-items:center; gap:3px; flex-shrink:0; cursor:pointer; position:relative; }
+.tr-date-icon { font-size:12px; color:var(--mid); opacity:.3; transition:color .15s, opacity .15s; line-height:1; }
+.tr-date-tip { position:absolute; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); font-size:9px; font-weight:700; color:var(--purple); background:var(--lavender); border:.5px solid var(--purple); border-radius:5px; padding:2px 7px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s; z-index:2; }
+.tr-date-tip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:3px solid transparent; border-top-color:var(--purple); }
+.tr-date-area:hover .tracker-date { color:var(--purple); }
+.tr-date-area:hover .tr-date-icon { color:var(--purple); opacity:1; }
+.tr-date-area:hover .tr-date-tip { opacity:1; }
 .tracker-entry-content { flex:1; min-width:0; }
 .tracker-entry-title { font-size:12px; font-weight:600; color:var(--dark); }
 .tracker-entry-fields { display:flex; gap:5px; flex-wrap:wrap; margin-top:3px; }
@@ -1018,9 +1026,23 @@ function renderTracker(){
           let fHTML='';
           (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;let dv;if(f.type==='number'&&Array.isArray(v)){dv=v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' · ');}else if(Array.isArray(v)){dv=v.join(', ');}else{dv=String(v);}if(!dv)return;fHTML+=`<span class="tracker-field-tag">${f.label}: ${dv}</span>`;});
           if(e.total)fHTML+=`<span class="tracker-field-tag">Total: ${e.total}</span>`;
-          row.innerHTML='<span class="tracker-date">'+(d2.length<2?'0':'')+d2+'/'+(m2.length<2?'0':'')+m2+'/'+parts[0]+'</span><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+(fHTML?'<div class="tracker-fields">'+fHTML+'</div>':'')+(e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">🔗 ${e.link}</a>`:'')+(e.note?'<div class="ec-note">'+e.note+'</div>':'')+'<span class="ec-coin">½ · +'+calcCoins(e,e.dateKey)+'</span>'+'</div>';
+          const dateStr=(d2.length<2?'0':'')+d2+'/'+(m2.length<2?'0':'')+m2+'/'+parts[0];
+          const tipText=lang==='zh'?'回到当天':'Jump to date';
+          row.innerHTML='<div class="tr-date-area" data-dk="'+e.dateKey+'"><span class="tracker-date">'+dateStr+'</span><svg class="tr-date-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 1 1 0 8h-1"/></svg><span class="tr-date-tip">'+tipText+'</span></div><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+(fHTML?'<div class="tracker-fields">'+fHTML+'</div>':'')+(e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">🔗 ${e.link}</a>`:'')+(e.note?'<div class="ec-note">'+e.note+'</div>':'')+'<span class="ec-coin">½ · +'+calcCoins(e,e.dateKey)+'</span>'+'</div>';
+          row.querySelector('.tr-date-area').onclick=ev=>{ev.stopPropagation();selDate=new Date(e.dateKey+'T00:00:00');view='journal';showForm=false;renderAll();};
           body.appendChild(row);
         });
+        if(!peF.length&&pe.length){
+          const modeLabels={all:t('view_all'),week:t('view_week'),month:t('view_month'),n10:t('view_n10'),n20:t('view_n20'),n50:t('view_n50')};
+          const emptyMsg=document.createElement('div');emptyMsg.style.cssText='padding:12px 16px;font-size:12px;color:var(--mid);font-style:italic;text-align:center;';
+          emptyMsg.textContent=(lang==='zh'?'当前筛选「'+modeLabels[vs.mode]+'」下没有记录':'No records for current filter: '+modeLabels[vs.mode]);
+          const resetBtn=document.createElement('button');resetBtn.style.cssText='display:block;margin:8px auto 0;font-size:11px;font-weight:600;color:var(--purple);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif;text-decoration:underline;';
+          resetBtn.textContent=lang==='zh'?'显示全部':'Show All';
+          resetBtn.onclick=ev=>{ev.stopPropagation();vs.mode='all';window._tpg[pgKey]=1;saveVs();renderTracker();};
+          emptyMsg.appendChild(resetBtn);
+          body.appendChild(emptyMsg);
+          window._vsOpen=window._vsOpen||{};window._vsOpen[p.id]=true;
+        }
         function mkSpaceKey(){
           const btn=document.createElement('button');btn.className='tr-space-key';
           btn.title=lang==='zh'?'收起 (Space)':'Collapse (Space)';
@@ -2298,11 +2320,18 @@ function renderJournal(){
   const key=dk(selDate),isToday=key===todayKey,d=selDate;
   const _wd2=t('weekdays')[d.getDay()];
   document.getElementById('page-date').textContent=lang==='zh'
-    ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+_wd2+(isToday?' · '+t('today'):'')
+    ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · 星期'+_wd2+(isToday?' · '+t('today'):'')
     :_wd2+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+(isToday?' · '+t('today'):'');
   const sbwk=document.getElementById('sb-this-week');if(sbwk)sbwk.textContent=t('this_week');
   const area=document.getElementById('main-area');area.innerHTML='';
   if(showForm)area.appendChild(buildNewForm());
+  // Date header above records
+  const dateHdr=document.createElement('div');dateHdr.className='journal-date-hdr';
+  const dateFullStr=lang==='zh'
+    ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · 星期'+_wd2+(isToday?' · '+t('today'):'')
+    :_wd2+', '+(d.getDate()<10?'0':'')+d.getDate()+'/'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'/'+d.getFullYear()+(isToday?' · '+t('today'):'');
+  dateHdr.textContent=dateFullStr;
+  area.appendChild(dateHdr);
   const dayEs=entries[key]||[];
   if(!dayEs.length&&!showForm){
     const em=document.createElement('div');em.className='empty-hint';
@@ -3136,7 +3165,8 @@ function renderStats(){
     const hw=document.createElement('div');hw.className='wr-highlights';
     if(maxDay.cnt>0){
       const _md=maxDay.d,_dd=String(_md.getDate()).padStart(2,'0'),_mm=String(_md.getMonth()+1).padStart(2,'0'),_yy=String(_md.getFullYear()).slice(2);
-      const dayLabel=(lang==='zh'?'周':'')+zhWD[maxDay.d.getDay()]+' · '+_dd+'/'+_mm+'/'+_yy;
+      const enWD=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const dayLabel=lang==='zh'?'星期'+zhWD[maxDay.d.getDay()]+' · '+_dd+'/'+_mm+'/'+_yy:enWD[maxDay.d.getDay()]+' · '+_dd+'/'+_mm+'/'+_yy;
       hw.innerHTML+='<div class="wr-pill"><div class="wr-pill-title">'+t('wr_active_day')+'</div><div class="wr-pill-sub">'+dayLabel+'</div></div>';
     }
     if(mostActiveProj){
@@ -3289,7 +3319,9 @@ function renderCalPopup(){
   }
 
   // Build month options
-  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const monthNames = lang==='zh'
+    ?['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+    :['January','February','March','April','May','June','July','August','September','October','November','December'];
   let monthOpts = monthNames.map((m,i) => `<option value="${i}"${month===i?' selected':''}>${m}</option>`).join('');
 
   // Build calendar grid
@@ -3297,7 +3329,8 @@ function renderCalPopup(){
   const daysInMonth = new Date(year, month+1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
 
-  let gridHTML = ['日','一','二','三','四','五','六'].map(d => `<div class="cal-day-hdr">${d}</div>`).join('');
+  const dayHdrs=lang==='zh'?['日','一','二','三','四','五','六']:['Su','Mo','Tu','We','Th','Fr','Sa'];
+  let gridHTML = dayHdrs.map(d => `<div class="cal-day-hdr">${d}</div>`).join('');
 
   // Prev month filler
   for(let i = firstDay - 1; i >= 0; i--){
@@ -3332,7 +3365,7 @@ function renderCalPopup(){
   popup.innerHTML = `
     <div class="cal-popup-header">
       <button class="cal-nav" onclick="shiftCalMonth(-1)">‹</button>
-      <span class="cal-popup-title">${year}年 ${monthNames[month]}</span>
+      <span class="cal-popup-title">${lang==='zh'?year+'年 '+monthNames[month]:monthNames[month]+' '+year}</span>
       <button class="cal-nav" onclick="shiftCalMonth(1)">›</button>
     </div>
     <div class="cal-selects">
@@ -3623,7 +3656,7 @@ document.getElementById('cal-icon-btn').onclick=(e)=>{e.stopPropagation();openCa
 const d=new Date();
 const _wd=t('weekdays')[d.getDay()];
 const _dateStr=lang==='zh'
-  ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · '+_wd+' · '+t('today')
+  ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · 星期'+_wd+' · '+t('today')
   :_wd+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' · '+t('today');
 document.getElementById('page-date').textContent=_dateStr;
 
