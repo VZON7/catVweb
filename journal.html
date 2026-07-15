@@ -214,7 +214,7 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 
 /* INLINE EDIT */
 .inline-edit { padding:0 14px 12px; }
-.ie-title input { width:100%; font-size:13px; font-weight:700; margin-bottom:8px; font-family:'Nunito',sans-serif; background:var(--lavender); border:none; border-radius:10px; padding:8px 12px; color:var(--dark); box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.ie-title input, .ie-title textarea { width:100%; font-size:13px; font-weight:700; margin-bottom:8px; font-family:'Nunito',sans-serif; background:var(--lavender); border:none; border-radius:10px; padding:8px 12px; color:var(--dark); box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); resize:none; overflow:hidden; line-height:1.5; }
 .ie-var-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
 .ie-var-label { font-size:12px; color:var(--mid); min-width:72px; flex-shrink:0; }
 .ie-var-val { flex:1; position:relative; }
@@ -238,9 +238,10 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 
 /* FORM */
 .form-card { background:var(--lavender); border:none; border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:inset 6px 6px 12px var(--sh-dark), inset -6px -6px 12px var(--sh-light); }
-.form-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-.form-row input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; background:var(--lavender); border:none; border-radius:8px; padding:6px 10px; color:var(--dark); outline:none; box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
-.form-row input:focus { box-shadow:inset 4px 4px 9px var(--sh-dark), inset -4px -4px 9px var(--sh-light); }
+.form-row { display:flex; gap:8px; margin-bottom:8px; align-items:flex-start; }
+.form-row input, .form-row textarea { flex:1; font-size:12px; font-family:'Nunito',sans-serif; background:var(--lavender); border:none; border-radius:8px; padding:6px 10px; color:var(--dark); outline:none; box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.form-row input:focus, .form-row textarea:focus { box-shadow:inset 4px 4px 9px var(--sh-dark), inset -4px -4px 9px var(--sh-light); }
+.form-row textarea { resize:none; overflow:hidden; line-height:1.5; }
 .proj-sel-btn { display:flex; align-items:center; gap:5px; padding:0 12px; height:36px; border-radius:999px; border:none; background:var(--lavender); color:var(--purple); font-size:12px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; white-space:nowrap; flex-shrink:0; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); transition:box-shadow .15s; }
 .proj-sel-btn:hover { box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
 .proj-sel-btn:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
@@ -709,7 +710,7 @@ const I18N={
     form_add_opt:'添加新选项…',form_add_sub:'添加新子选项…',
     form_no_records:'这天还没有记录',
     form_start_hint:'点右上角「新记录」开始',
-    form_past:'过去日期',form_earn:'预计获得',form_half:'减半',
+    form_past:'过去日期',form_earn:'预计获得',form_half:'减半',form_discard:'放弃未保存的记录？',form_discard_yes:'放弃',form_discard_no:'继续编辑',
     edit_reselect:'重新选择',edit_no_proj:'未选择',
     modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
     modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',modal_sel_title:'文字选择项',modal_sel_desc:'建立一组选项，记录时从中勾选，如工具、状态、项目阶段',modal_num_title:'数字栏位',modal_num_desc:'记录可量化的数据，例如时间、距离、次数',
@@ -795,7 +796,7 @@ const I18N={
     form_add_opt:'Add new option...',form_add_sub:'Add sub-option...',
     form_no_records:'No entries for this day',
     form_start_hint:'Click "New Log" to start',
-    form_past:'Past date',form_earn:'Will earn',form_half:'Half',
+    form_past:'Past date',form_earn:'Will earn',form_half:'Half',form_discard:'Discard unsaved entry?',form_discard_yes:'Discard',form_discard_no:'Keep editing',
     edit_reselect:'Reselect',edit_no_proj:'No project',
     modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
     modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',modal_sel_title:'Text Options',modal_sel_desc:'Create a set of options to pick from when logging, e.g. tools, status, project stage',modal_num_title:'Number Field',modal_num_desc:'Record quantifiable data, e.g. time, distance, count',
@@ -1029,7 +1030,7 @@ function renderTracker(){
           const dateStr=(d2.length<2?'0':'')+d2+'/'+(m2.length<2?'0':'')+m2+'/'+parts[0];
           const tipText=lang==='zh'?'回到当天':'Jump to date';
           row.innerHTML='<div class="tr-date-area" data-dk="'+e.dateKey+'"><span class="tracker-date">'+dateStr+'</span><svg class="tr-date-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 1 1 0 8h-1"/></svg><span class="tr-date-tip">'+tipText+'</span></div><div class="tracker-entry-content">'+(e.title&&e.title.trim()?'<div class="tracker-entry-title">'+e.title+'</div>':'')+(fHTML?'<div class="tracker-fields">'+fHTML+'</div>':'')+(e.link?`<a href="${e.link}" target="_blank" style="font-size:11px;color:var(--cyan);text-decoration:none">🔗 ${e.link}</a>`:'')+(e.note?'<div class="ec-note">'+e.note+'</div>':'')+'<span class="ec-coin">½ · +'+calcCoins(e,e.dateKey)+'</span>'+'</div>';
-          row.querySelector('.tr-date-area').onclick=ev=>{ev.stopPropagation();selDate=new Date(e.dateKey+'T00:00:00');view='journal';showForm=false;renderAll();};
+          row.querySelector('.tr-date-area').onclick=ev=>{ev.stopPropagation();tryNavigateDate(new Date(e.dateKey+'T00:00:00'));};
           body.appendChild(row);
         });
         if(!peF.length&&pe.length){
@@ -2255,9 +2256,9 @@ function renderAll(){
   else renderJournal();
   renderDayStats();
   const el=document.getElementById('f-title');
-  if(el&&formTitle)el.value=formTitle;
+  if(el&&formTitle){el.value=formTitle;autoGrow(el,5);}
   const elNote=document.getElementById('f-note');
-  if(elNote&&formNote)elNote.value=formNote;
+  if(elNote&&formNote){elNote.value=formNote;autoGrow(elNote,10);}
   const elLink=document.getElementById('f-link');
   if(elLink&&formLink)elLink.value=formLink;
   const elLabel=document.getElementById('f-linklabel');
@@ -2290,7 +2291,7 @@ function renderSidebar(){
     const d=new Date(ws);d.setDate(d.getDate()+i);
     const key=dk(d),isSel=key===dk(selDate)&&view==='journal',isT=key===todayKey,isFut=d>today,cnt=(entries[key]||[]).length;
     const div=document.createElement('div');div.className='day-item'+(isSel?' active':'');div.style.opacity=isFut?.4:1;
-    if(!isFut)div.onclick=()=>{selDate=new Date(d);view='journal';editingId=null;renderAll()};
+    if(!isFut)div.onclick=()=>{tryNavigateDate(d)};
     const dm=(d.getMonth()+1)+'/'+d.getDate();
     div.innerHTML=`<div class="day-dot${cnt?' has':''}"></div><span class="day-name">${t('weekdays')[d.getDay()]} <span style="font-size:10px;opacity:.6">${dm}</span>${isT?' · '+t('today'):''}</span>${cnt?`<span class="day-cnt">${cnt}</span>`:''}`;
     dl.appendChild(div);
@@ -2324,14 +2325,14 @@ function renderJournal(){
     :_wd2+', '+(d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+(isToday?' · '+t('today'):'');
   const sbwk=document.getElementById('sb-this-week');if(sbwk)sbwk.textContent=t('this_week');
   const area=document.getElementById('main-area');area.innerHTML='';
-  if(showForm)area.appendChild(buildNewForm());
-  // Date header above records
+  // Date header above everything (including form)
   const dateHdr=document.createElement('div');dateHdr.className='journal-date-hdr';
   const dateFullStr=lang==='zh'
     ?d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · 星期'+_wd2+(isToday?' · '+t('today'):'')
     :_wd2+', '+(d.getDate()<10?'0':'')+d.getDate()+'/'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'/'+d.getFullYear()+(isToday?' · '+t('today'):'');
   dateHdr.textContent=dateFullStr;
   area.appendChild(dateHdr);
+  if(showForm)area.appendChild(buildNewForm());
   const dayEs=entries[key]||[];
   if(!dayEs.length&&!showForm){
     const em=document.createElement('div');em.className='empty-hint';
@@ -2416,7 +2417,7 @@ function startEdit(id,key){
   });
   editState={title:e.title,projId:e.projId||'',fields:editFields,skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link),showProjPicker:false};
   openDropId=null;renderAll();
-  setTimeout(()=>{const el=document.getElementById('edit-title');if(el)el.focus()},50);
+  setTimeout(()=>{const el=document.getElementById('edit-title');if(el){el.focus();autoGrow(el,5);}const n=document.getElementById('edit-note');if(n)autoGrow(n,10);},50);
 }
 
 function buildEditForm(e,p){
@@ -2461,7 +2462,7 @@ function buildEditForm(e,p){
     ${editPpHTML}
     <div class="form-row">
       ${projBadge}
-      <input type="text" id="edit-title" value="${es.title}" autocomplete="off" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="editState.title=this.value">
+      <textarea id="edit-title" rows="1" autocomplete="off" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="editState.title=this.value;autoGrow(this,5)">${es.title}</textarea>
     </div>
     ${varsHTML.length?`<div class="var-rows">${varsHTML}</div>`:''}
     <div class="extras-row">
@@ -2469,7 +2470,7 @@ function buildEditForm(e,p){
       <div class="extra-toggle${es.showLink?' on':''}" onclick="editState.showLink=!editState.showLink;renderAll()"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M5.5 8.5a3 3 0 0 0 4.243 0l1.5-1.5a3 3 0 0 0-4.243-4.243L6.25 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 5.5a3 3 0 0 0-4.243 0l-1.5 1.5a3 3 0 0 0 4.243 4.243L7.75 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value" placeholder="${t('form_note_ph')}">${es.note}</textarea>`:''}
+      ${es.showNote?`<textarea class="ie-textarea" id="edit-note" rows="2" oninput="editState.note=this.value;autoGrow(this,10)" placeholder="${t('form_note_ph')}">${es.note}</textarea>`:''}
       ${es.showLink?`<div style="display:flex;gap:6px"><input type="url" id="edit-link" value="${es.link}" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px var(--sh-dark),inset -3px -3px 7px var(--sh-light)" oninput="editState.link=this.value"><input type="text" id="edit-linklabel" value="${es.linkLabel}" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px var(--sh-dark),inset -3px -3px 7px var(--sh-light)" oninput="editState.linkLabel=this.value"></div>`:''}
     </div>
     <div class="form-btns">
@@ -2597,7 +2598,7 @@ function buildNewForm(){
         ?`<div class="proj-badge-wrap" onclick="toggleProjPicker()" style="cursor:pointer"><div class="proj-badge" style="--pc:${p.color};background:rgba(${hexRgb(p.color)},.16)">${p.name} <span style="opacity:.5;font-size:10px">▾</span></div></div>`
         :`<button class="proj-sel-btn" onclick="toggleProjPicker()">＋ ${t('proj_sel_prompt')}<span style="opacity:.4;margin-left:2px">▾</span></button>`
       }
-      <input type="text" id="f-title" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="formTitle=this.value" autocomplete="off">
+      <textarea id="f-title" rows="1" placeholder="${t('form_placeholder')}" style="font-weight:700" oninput="formTitle=this.value;autoGrow(this,5)" autocomplete="off"></textarea>
     </div>
     ${dynHTML}
     <div class="extras-row">
@@ -2605,7 +2606,7 @@ function buildNewForm(){
       <div class="extra-toggle${formExtras.link?' on':''}" onclick="toggleExtra('link')"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M5.5 8.5a3 3 0 0 0 4.243 0l1.5-1.5a3 3 0 0 0-4.243-4.243L6.25 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8.5 5.5a3 3 0 0 0-4.243 0l-1.5 1.5a3 3 0 0 0 4.243 4.243L7.75 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> ${t('form_link')}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
-      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="${t('field_note_ph')}" oninput="formNote=this.value"></textarea>`:''}
+      ${formExtras.note?`<textarea class="ie-textarea" id="f-note" rows="2" placeholder="${t('field_note_ph')}" oninput="formNote=this.value;autoGrow(this,10)"></textarea>`:''}
       ${formExtras.link?`<div style="display:flex;gap:6px"><input type="url" id="f-link" placeholder="https://..." style="flex:2;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px var(--sh-dark),inset -3px -3px 7px var(--sh-light)" oninput="formLink=this.value"><input type="text" id="f-linklabel" placeholder="${t('form_link_label')}" style="flex:1;font-size:12px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:6px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 3px 3px 7px var(--sh-dark),inset -3px -3px 7px var(--sh-light)" oninput="formLinkLabel=this.value"></div>`:''}
     </div>
     <div class="coin-preview">🐾 ${t('form_earn')} <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?`<span style="color:var(--c-past-hint);font-size:10px;margin-left:6px">(${t('form_past')} ×½)</span>`:''}</div>
@@ -2653,11 +2654,46 @@ function selectProj(id){
 }
 function toggleExtra(k){formExtras[k]=!formExtras[k];renderAll()}
 
+function hasFormContent(){
+  if(formTitle.trim()||formNote.trim()||formLink.trim()||formLinkLabel.trim())return true;
+  if(window._fv){for(const k in window._fv){const v=window._fv[k];if(Array.isArray(v)?v.length:v)return true;}}
+  return false;
+}
+function autoGrow(el,maxRows){
+  if(!el)return;
+  el.style.height='auto';
+  const lh=parseFloat(getComputedStyle(el).lineHeight)||20;
+  const max=lh*(maxRows||6)+16;
+  if(el.scrollHeight>max){el.style.height=max+'px';el.style.overflowY='auto';}
+  else{el.style.height=el.scrollHeight+'px';el.style.overflowY='hidden';}
+}
 function openForm(){
   formTitle='';formNote='';formLink='';formLinkLabel='';formProj=null;showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
 }
 function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
+function tryNavigateDate(newDate,cb){
+  if(showForm&&hasFormContent()){
+    window._pendingNav={date:newDate,cb:cb};
+    const mc=document.getElementById('modal-container');
+    mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)_closePendingNav()">
+    <div class="modal" style="max-width:300px">
+      <div class="modal-title" style="color:var(--purple)">${t('form_discard')}</div>
+      <div class="modal-btns" style="border-top:0.5px solid var(--sh-dark);padding-top:12px;margin-top:8px">
+        <button class="m-cancel" onclick="_closePendingNav()">${t('form_discard_no')}</button>
+        <button class="m-save" style="background:var(--pink)" onclick="_doPendingNav()">${t('form_discard_yes')}</button>
+      </div>
+    </div></div>`;
+    return;
+  }
+  cancelForm();
+  if(cb){cb();}else{selDate=new Date(newDate);selDate.setHours(0,0,0,0);view='journal';editingId=null;renderAll();}
+}
+function _closePendingNav(){document.getElementById('modal-container').innerHTML='';modal=null;window._pendingNav=null;}
+function _doPendingNav(){
+  const nav=window._pendingNav;_closePendingNav();cancelForm();
+  if(nav&&nav.cb){nav.cb();}else if(nav){selDate=new Date(nav.date);selDate.setHours(0,0,0,0);view='journal';editingId=null;renderAll();}
+}
 
 function saveEntry(){
   // 没选 project 不允许保存
@@ -3384,24 +3420,24 @@ function setCalYear(y){ calPickerDate.setFullYear(parseInt(y)); renderCalPopup()
 function setCalMonth(m){ calPickerDate.setMonth(parseInt(m)); renderCalPopup(); }
 
 function pickCalDate(y, m, d){
-  selDate = new Date(y, m, d);
-  selDate.setHours(0,0,0,0);
-  // Adjust weekOffset so sidebar shows the right week
-  const diffDays = Math.round((selDate - today) / 86400000);
-  const diffWeeks = Math.floor(diffDays / 7);
-  weekOffset = diffDays < 0 ? Math.ceil((selDate - today) / (7 * 86400000)) : 0;
-  // Fine-tune: find correct week
-  const ws = getWeekStart();
-  const we = new Date(ws); we.setDate(we.getDate() + 6);
-  if(selDate < ws || selDate > we){
-    const dow = selDate.getDay();
-    const wsDiff = selDate - today;
-    weekOffset = Math.floor(wsDiff / (7 * 86400000));
-    if(selDate < getWeekStart()) weekOffset--;
-  }
-  view = 'journal';
-  document.getElementById('cal-popup').style.display = 'none';
-  renderAll();
+  const target=new Date(y, m, d);target.setHours(0,0,0,0);
+  const doNav=()=>{
+    selDate=target;
+    const diffDays = Math.round((selDate - today) / 86400000);
+    weekOffset = diffDays < 0 ? Math.ceil((selDate - today) / (7 * 86400000)) : 0;
+    const ws = getWeekStart();
+    const we = new Date(ws); we.setDate(we.getDate() + 6);
+    if(selDate < ws || selDate > we){
+      const wsDiff = selDate - today;
+      weekOffset = Math.floor(wsDiff / (7 * 86400000));
+      if(selDate < getWeekStart()) weekOffset--;
+    }
+    view = 'journal';
+    document.getElementById('cal-popup').style.display = 'none';
+    renderAll();
+  };
+  if(showForm&&hasFormContent()){tryNavigateDate(target,doNav);}
+  else{if(showForm)cancelForm();doNav();}
 }
 
 // Close picker when clicking outside
