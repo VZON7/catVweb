@@ -710,7 +710,7 @@ const I18N={
     form_add_opt:'添加新选项…',form_add_sub:'添加新子选项…',
     form_no_records:'这天还没有记录',
     form_start_hint:'点右上角「新记录」开始',
-    form_past:'过去日期',form_earn:'预计获得',form_half:'减半',form_discard:'放弃未保存的记录？',form_discard_yes:'放弃',form_discard_no:'继续编辑',
+    form_past:'过去日期',form_earn:'预计获得',form_half:'减半',form_discard:'放弃未保存的记录？',form_discard_yes:'放弃',form_discard_no:'继续编辑',form_discard_title:'未保存的记录',form_discard_body_zh:'你正在编辑一条记录，要先保存还是放弃？',form_save_leave:'先保存再离开',
     edit_reselect:'重新选择',edit_no_proj:'未选择',
     modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
     modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',modal_sel_title:'文字选择项',modal_sel_desc:'建立一组选项，记录时从中勾选，如工具、状态、项目阶段',modal_num_title:'数字栏位',modal_num_desc:'记录可量化的数据，例如时间、距离、次数',
@@ -796,7 +796,7 @@ const I18N={
     form_add_opt:'Add new option...',form_add_sub:'Add sub-option...',
     form_no_records:'No entries for this day',
     form_start_hint:'Click "New Log" to start',
-    form_past:'Past date',form_earn:'Will earn',form_half:'Half',form_discard:'Discard unsaved entry?',form_discard_yes:'Discard',form_discard_no:'Keep editing',
+    form_past:'Past date',form_earn:'Will earn',form_half:'Half',form_discard:'Discard unsaved entry?',form_discard_yes:'Discard',form_discard_no:'Keep editing',form_discard_title:'Unsaved entry',form_discard_body_en:'Save your entry first or discard it?',form_save_leave:'Save and leave',
     edit_reselect:'Reselect',edit_no_proj:'No project',
     modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
     modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',modal_sel_title:'Text Options',modal_sel_desc:'Create a set of options to pick from when logging, e.g. tools, status, project stage',modal_num_title:'Number Field',modal_num_desc:'Record quantifiable data, e.g. time, distance, count',
@@ -965,7 +965,7 @@ function renderTracker(){
     const isArchived=(p.status||'active')==='archived';
     const card=document.createElement('div');card.className='tracker-proj-card'+(isArchived?' archived':'');card.id='tcard-'+p.id;
       const hdr=document.createElement('div');hdr.className='tracker-proj-header';
-    const lastDate=pe.length?(()=>{const p=pe[0].dateKey.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);})():'--';
+    const lastDate=pe.length?(()=>{const p=pe[pe.length-1].dateKey.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);})():'--';
     const recLabel=lang==='zh'?
       '<span style="font-weight:800;color:var(--dark)">'+pe.length+'</span><span style="font-weight:700;color:var(--mid)"> 条记录</span>':
       '<span style="font-weight:800;color:var(--dark)">'+pe.length+'</span><span style="font-weight:700;color:var(--mid)"> records</span>';
@@ -2611,7 +2611,7 @@ function buildNewForm(){
     </div>
     <div class="coin-preview">🐾 ${t('form_earn')} <strong id="coin-preview">${previewCoins}</strong> Cat Token${dk(selDate)!==todayKey?`<span style="color:var(--c-past-hint);font-size:10px;margin-left:6px">(${t('form_past')} ×½)</span>`:''}</div>
     <div class="form-btns">
-      <button class="f-cancel" onclick="cancelForm()">${t('form_cancel')}</button>
+      <button class="f-cancel" onclick="safeCancelForm()">${t('form_cancel')}</button>
       <button class="f-save" onclick="saveEntry()">${'✓ '+t('field_record')}</button>
     </div>`;
   return wrap;
@@ -2672,27 +2672,64 @@ function openForm(){
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
 }
 function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
+function safeCancelForm(){
+  if(!hasFormContent()){cancelForm();return;}
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this){document.getElementById('modal-container').innerHTML='';modal=null;}">
+  <div class="modal" style="max-width:280px">
+    <div class="modal-title" style="color:var(--purple);font-size:14px">${t('form_discard_title')}</div>
+    <div style="font-size:12px;color:var(--mid);line-height:1.6;margin:6px 0 14px">${lang==='zh'?t('form_discard_body_zh'):t('form_discard_body_en')}</div>
+    <div style="border-top:0.5px solid var(--sh-dark);padding-top:14px;display:flex;gap:8px">
+      <button class="m-cancel" style="flex:1;padding:8px 0;font-size:12px" onclick="document.getElementById('modal-container').innerHTML='';modal=null;">${t('form_discard_no')}</button>
+      <button class="m-save" style="flex:1;padding:8px 0;font-size:12px;background:var(--pink)" onclick="document.getElementById('modal-container').innerHTML='';modal=null;cancelForm();">${t('form_discard_yes')}</button>
+    </div>
+  </div></div>`;
+}
+function _showNavConfirm(cb){
+  window._pendingNav={cb:cb};
+  const mc=document.getElementById('modal-container');
+  const bodyTxt=lang==='zh'?t('form_discard_body_zh'):t('form_discard_body_en');
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)_closePendingNav()">
+  <div class="modal" style="max-width:300px">
+    <div class="modal-title" style="color:var(--purple);font-size:14px">${t('form_discard_title')}</div>
+    <div style="font-size:12px;color:var(--mid);line-height:1.6;margin:6px 0 14px">${bodyTxt}</div>
+    <div style="border-top:0.5px solid var(--sh-dark);padding-top:14px;display:flex;flex-direction:column;gap:8px">
+      <button class="m-save" style="width:100%;padding:9px 0;font-size:13px;background:var(--purple)" onclick="_doSaveAndNav()">✓ ${t('form_save_leave')}</button>
+      <div style="display:flex;gap:8px">
+        <button class="m-cancel" style="flex:1;padding:8px 0;font-size:12px" onclick="_closePendingNav()">${t('form_discard_no')}</button>
+        <button class="m-save" style="flex:1;padding:8px 0;font-size:12px;background:var(--pink)" onclick="_doPendingNav()">${t('form_discard_yes')}</button>
+      </div>
+    </div>
+  </div></div>`;
+}
 function tryNavigateDate(newDate,cb){
   if(showForm&&hasFormContent()){
-    window._pendingNav={date:newDate,cb:cb};
-    const mc=document.getElementById('modal-container');
-    mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)_closePendingNav()">
-    <div class="modal" style="max-width:300px">
-      <div class="modal-title" style="color:var(--purple)">${t('form_discard')}</div>
-      <div class="modal-btns" style="border-top:0.5px solid var(--sh-dark);padding-top:12px;margin-top:8px">
-        <button class="m-cancel" onclick="_closePendingNav()">${t('form_discard_no')}</button>
-        <button class="m-save" style="background:var(--pink)" onclick="_doPendingNav()">${t('form_discard_yes')}</button>
-      </div>
-    </div></div>`;
-    return;
+    const navCb=cb||(()=>{selDate=new Date(newDate);selDate.setHours(0,0,0,0);view='journal';editingId=null;renderAll();});
+    _showNavConfirm(navCb);return;
   }
   cancelForm();
   if(cb){cb();}else{selDate=new Date(newDate);selDate.setHours(0,0,0,0);view='journal';editingId=null;renderAll();}
 }
+function tryNavAway(targetView){
+  if(showForm&&hasFormContent()){
+    _showNavConfirm(()=>{if(targetView==='tracker')showTracker();else{view=targetView;showForm=false;renderAll();}});return;
+  }
+  if(targetView==='tracker')showTracker();else{view=targetView;showForm=false;renderAll();}
+}
 function _closePendingNav(){document.getElementById('modal-container').innerHTML='';modal=null;window._pendingNav=null;}
 function _doPendingNav(){
   const nav=window._pendingNav;_closePendingNav();cancelForm();
-  if(nav&&nav.cb){nav.cb();}else if(nav){selDate=new Date(nav.date);selDate.setHours(0,0,0,0);view='journal';editingId=null;renderAll();}
+  if(nav&&nav.cb)nav.cb();
+}
+function _doSaveAndNav(){
+  if(!formProj){
+    _closePendingNav();
+    setTimeout(()=>{const btn=document.querySelector('.proj-sel-btn');if(btn){btn.classList.remove('error');void btn.offsetWidth;btn.classList.add('error');setTimeout(()=>btn.classList.remove('error'),600);}},80);
+    return;
+  }
+  const nav=window._pendingNav;_closePendingNav();
+  saveEntry();
+  if(!showForm&&nav&&nav.cb)nav.cb();
 }
 
 function saveEntry(){
@@ -3681,9 +3718,9 @@ function applyTheme(){document.documentElement.setAttribute('data-theme',theme);
 })();
 function toggleTheme(){theme=theme==='light'?'dark':'light';localStorage.setItem('cj_theme',theme);applyTheme();}
 applyTheme();
-document.getElementById('stats-nav-btn').onclick=()=>{view='stats';showForm=false;renderAll()};
-document.getElementById('month-nav-btn').onclick=()=>{view='month';showForm=false;renderAll()};
-document.getElementById('tracker-nav-btn').onclick=()=>showTracker();
+document.getElementById('stats-nav-btn').onclick=()=>tryNavAway('stats');
+document.getElementById('month-nav-btn').onclick=()=>tryNavAway('month');
+document.getElementById('tracker-nav-btn').onclick=()=>tryNavAway('tracker');
 document.getElementById('add-proj-btn').onclick=openAddProject;
 document.getElementById('prev-week').onclick=()=>{weekOffset--;renderAll()};
 document.getElementById('next-week').onclick=()=>{if(weekOffset<0){weekOffset++;renderAll()}};
