@@ -735,6 +735,11 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
 | 侧滑导出面板 | 字段勾选 + 范围选择 + 预览 |
+| Print report 主题重设计 | 默认旧紫色主题需更改，提升可读性 |
+| Print 内容自定义 | 与侧滑导出面板关联，用户可选择导出哪些内容 |
+| Print 加星期几 | 目前只有月/日，需补上星期 |
+| PDF vs HTML 导出格式 | 确认当前 print 输出是 PDF 还是 HTML；评估两种方案的优劣 |
+| Textarea 滚动条新拟态设计 | 上下/左右拖动 bar 需配合 neumorphism 风格 |
 
 ### 已完成
 | 项目 | 完成于 |
@@ -769,6 +774,14 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 记录行「回到当天」跳转（日期+图标+tooltip） | 第199次 |
 | Journal 日期标头（详细记录雕刻线，双语格式） | 第200次 |
 | i18n 修复：中文星期前缀、日历弹窗英文化、周报告英文星期名 | 第201次 |
+| Form 安全确认（hasFormContent + tryNavigateDate）；title/note auto-grow textarea | 第202次 |
+| 内联 modal 确认弹窗取代 browser confirm()；_pendingNav 模式 | 第203次 |
+| autoGrow 修复（renderAll 后恢复高度 + overflow-y:auto 滚动） | 第204次 |
+| 日期雕刻线移到 form card 上方 | 第205次 |
+| 三按钮确认弹窗（保存+继续+放弃）+ 全视图切换拦截（周/月/tracker） | 第206次 |
+| 方案 B 点击引导：未选 project 时闪烁引导而非 disabled | 第207次 |
+| Cancel 安全锁：safeCancelForm()，有内容时弹两按钮确认 | 第208次 |
+| Tracker last date 取反方向修复：pe[0] → pe[pe.length-1] | 第209次 |
 
 ---
 

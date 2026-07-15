@@ -590,3 +590,47 @@ sed -n "${START},\$p" journal.html | grep -nP "[\x{4e00}-\x{9fff}]" | grep -v "/
 - 天/月名数组（如 `['日','一','二','三','四','五','六']`）必须有 `lang==='zh'?中文:英文` 三元
 - 日期格式化字符串（如 `年`、`月`、`日`、`星期`）必须走 lang 分支
 - canvas 内绘制的文字（不走 DOM，无法用 CSS 变量，必须 JS 层判断）
+
+## 二十七、内联确认弹窗规范
+
+⚠️ **永远不使用** `confirm()` / `alert()` / `prompt()` — 它们与 neumorphic 风格不一致。所有用户确认统一使用 `modal-container` 内联弹窗。
+
+**三按钮模板（导航离开时）：**
+用于 form 有内容时用户要切换日期/视图。调用 `_showNavConfirm(callback)`。
+- ✓ 先保存再离开（紫色主按钮，全宽）— 调用 `saveEntry()` 后执行 callback；未选 project 时点击会关闭弹窗并闪烁 project 按钮
+- 继续编辑（灰色副按钮）— 关闭弹窗，回到 form
+- 放弃（红色副按钮）— 调用 `cancelForm()` 后执行 callback
+
+**两按钮模板（Cancel 时）：**
+用于 form 有内容时用户点 Cancel。调用 `safeCancelForm()`。
+- 继续编辑 — 关闭弹窗
+- 放弃 — 调用 `cancelForm()`
+
+**关键函数映射：**
+| 场景 | 调用 |
+|---|---|
+| sidebar 日期点击 | `tryNavigateDate(d)` |
+| 日历弹窗选日期 | `pickCalDate` 内部调 `tryNavigateDate` |
+| tracker 记录行跳转 | `tryNavigateDate(date)` |
+| 视图切换（周/月/tracker） | `tryNavAway('stats'\|'month'\|'tracker')` |
+| Cancel 按钮 | `safeCancelForm()` |
+
+**新增导航入口时**，必须判断 `showForm && hasFormContent()`，走 `tryNavigateDate` 或 `tryNavAway`。
+
+## 二十八、renderAll 后状态恢复清单
+
+⚠️ `renderAll()` 会重建整个 DOM。以下动态状态必须在 `renderAll()` 返回后立即恢复：
+
+| 状态 | 恢复方式 | 位置 |
+|---|---|---|
+| form title 值 | `el.value = formTitle` | renderAll 末尾 |
+| form note 值 | `el.value = formNote` | renderAll 末尾 |
+| form link/label 值 | `el.value = formLink/formLinkLabel` | renderAll 末尾 |
+| **textarea 高度** | `autoGrow(el, maxRows)` | 紧跟值恢复之后 |
+
+**规则：任何通过 JS 动态设定的 DOM 属性（style.height、scrollTop、classList），如果不在 HTML 模板里声明，renderAll 后都会丢失，必须补恢复代码。**
+
+新增 textarea 或可变高元素时，检查：
+1. 值是否在 renderAll 末尾恢复 ✓
+2. autoGrow 是否在值恢复后调用 ✓
+3. overflow 是否正确（≤maxRows 时 hidden，超出时 auto）✓
