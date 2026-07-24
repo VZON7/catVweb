@@ -671,6 +671,7 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
       <button class="sb-nav-btn" id="stats-nav-btn">📊 <span id="stats-nav-label">周报告</span></button>
       <button class="sb-nav-btn" id="month-nav-btn">📅 <span id="month-nav-label">月报告</span></button>
       <button class="sb-nav-btn" id="tracker-nav-btn">📁 <span id="tracker-nav-label">项目追踪</span></button>
+      <button class="sb-nav-btn" id="backup-nav-btn">💾 <span id="backup-nav-label">备份</span></button>
     </div>
     <div class="main-area" id="main-area"></div>
   </div>
@@ -712,6 +713,14 @@ const I18N={
     form_start_hint:'点右上角「新记录」开始',
     form_past:'过去日期',form_earn:'预计获得',form_half:'减半',form_discard:'放弃未保存的记录？',form_discard_yes:'放弃',form_discard_no:'继续编辑',form_discard_title:'未保存的记录',form_discard_body_zh:'你正在编辑一条记录，要先保存还是放弃？',form_save_leave:'先保存再离开',
     edit_reselect:'重新选择',edit_no_proj:'未选择',
+    bk_nav:'备份',bk_title:'备份与恢复',bk_tab_out:'导出',bk_tab_in:'导入',
+    bk_out_hint:'复制下面全部文字，或下载文件。转移到新设备后用「导入」还原。',
+    bk_copy:'复制',bk_copied:'已复制 ✓',bk_download:'下载文件',
+    bk_in_hint:'贴上备份文字，或选择备份文件。',bk_pick_file:'选择文件',
+    bk_preview:'即将导入',bk_projs:'个项目',bk_entries:'条记录',bk_days:'天',
+    bk_mode:'导入方式',bk_merge:'合并（保留现有）',bk_replace:'覆盖（清空现有）',
+    bk_do:'开始导入',bk_bad:'格式不正确，请确认贴上的是完整备份内容',
+    bk_ok:'导入完成',bk_safe:'导入前会自动备份当前数据',bk_close:'关闭',
     modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
     modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',modal_sel_title:'文字选择项',modal_sel_desc:'建立一组选项，记录时从中勾选，如工具、状态、项目阶段',modal_num_title:'数字栏位',modal_num_desc:'记录可量化的数据，例如时间、距离、次数',
     modal_unit:'单位',modal_unit_ph:'如 min、km、次…',
@@ -798,6 +807,14 @@ const I18N={
     form_start_hint:'Click "New Log" to start',
     form_past:'Past date',form_earn:'Will earn',form_half:'Half',form_discard:'Discard unsaved entry?',form_discard_yes:'Discard',form_discard_no:'Keep editing',form_discard_title:'Unsaved entry',form_discard_body_en:'Save your entry first or discard it?',form_save_leave:'Save and leave',
     edit_reselect:'Reselect',edit_no_proj:'No project',
+    bk_nav:'Backup',bk_title:'Backup & Restore',bk_tab_out:'Export',bk_tab_in:'Import',
+    bk_out_hint:'Copy all the text below, or download the file. Use Import on your new device to restore.',
+    bk_copy:'Copy',bk_copied:'Copied ✓',bk_download:'Download file',
+    bk_in_hint:'Paste your backup text, or choose a backup file.',bk_pick_file:'Choose file',
+    bk_preview:'Ready to import',bk_projs:'projects',bk_entries:'entries',bk_days:'days',
+    bk_mode:'Import mode',bk_merge:'Merge (keep existing)',bk_replace:'Replace (wipe existing)',
+    bk_do:'Start import',bk_bad:'Invalid format — make sure you pasted the complete backup',
+    bk_ok:'Import complete',bk_safe:'Your current data is auto-backed up before importing',bk_close:'Close',
     modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
     modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',modal_sel_title:'Text Options',modal_sel_desc:'Create a set of options to pick from when logging, e.g. tools, status, project stage',modal_num_title:'Number Field',modal_num_desc:'Record quantifiable data, e.g. time, distance, count',
     modal_unit:'Unit',modal_unit_ph:'e.g. min, km, times...',
@@ -2235,6 +2252,7 @@ function updateStaticI18N(){
   set('stats-nav-label',t('btn_weekly'));
   set('month-nav-label',t('btn_month'));
   set('tracker-nav-label',t('tracker'));
+  set('backup-nav-label',t('bk_nav'));
   if(typeof updateThemeBtn==='function')updateThemeBtn();
   const zh=document.getElementById('lang-zh');
   const en=document.getElementById('lang-en');
@@ -3718,9 +3736,148 @@ function applyTheme(){document.documentElement.setAttribute('data-theme',theme);
 })();
 function toggleTheme(){theme=theme==='light'?'dark':'light';localStorage.setItem('cj_theme',theme);applyTheme();}
 applyTheme();
+// ════════════════════════════════════════════════════════
+// 备份与恢复（第210次）
+// ════════════════════════════════════════════════════════
+let bkTab='out', bkMode='merge', bkParsed=null;
+
+function bkBuild(){
+  return JSON.stringify({
+    app:'catVweb-journal', version:1, exportedAt:new Date().toISOString(),
+    data:{
+      projects:JSON.parse(localStorage.getItem('cj_projects')||'null')||projects,
+      entries:JSON.parse(localStorage.getItem('cj_entries')||'{}'),
+      totalCoins:parseInt(localStorage.getItem('catTokens')||'0',10),
+      palette:JSON.parse(localStorage.getItem('cj_mypalette')||'[]')
+    }
+  },null,2);
+}
+function bkStats(d){
+  const days=Object.keys(d.entries||{}).length;
+  const ent=Object.values(d.entries||{}).reduce((n,a)=>n+(Array.isArray(a)?a.length:0),0);
+  return {projs:(d.projects||[]).length, days:days, entries:ent};
+}
+function openBackupModal(){
+  bkTab='out';bkMode='merge';bkParsed=null;renderBackupModal();
+}
+function bkSwitch(tab){bkTab=tab;bkParsed=null;renderBackupModal();}
+function bkSetMode(m){bkMode=m;renderBackupModal();}
+
+function renderBackupModal(){
+  const mc=document.getElementById('modal-container');
+  const tabBtn=(id,label)=>`<button onclick="bkSwitch('${id}')" style="flex:1;padding:7px 0;font-size:12px;font-weight:700;border:none;border-radius:9px;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:${bkTab===id?'var(--purple)':'var(--mid)'};box-shadow:${bkTab===id?'inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)':'3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)'}">${label}</button>`;
+  let inner='';
+  if(bkTab==='out'){
+    const json=bkBuild();
+    const s=bkStats(JSON.parse(json).data);
+    inner=`<div style="font-size:11px;color:var(--mid);line-height:1.6;margin:12px 0 8px">${t('bk_out_hint')}</div>
+    <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px">${s.projs} ${t('bk_projs')} · ${s.entries} ${t('bk_entries')} · ${s.days} ${t('bk_days')}</div>
+    <textarea id="bk-out" readonly onclick="this.select()" style="width:100%;height:120px;font-size:10px;font-family:monospace;resize:none;border:none;border-radius:10px;padding:8px 10px;background:var(--lavender);color:var(--dark);line-height:1.4;box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)">${json.replace(/</g,'&lt;')}</textarea>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="m-save" id="bk-copy-btn" style="flex:1;padding:7px 0;font-size:12px" onclick="bkCopy()">${t('bk_copy')}</button>
+      <button class="m-cancel" style="flex:1;padding:7px 0;font-size:12px;box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)" onclick="bkDownload()">${t('bk_download')}</button>
+    </div>`;
+  } else {
+    let prev='';
+    if(bkParsed){
+      const s=bkStats(bkParsed);
+      prev=`<div style="font-size:11px;font-weight:700;color:var(--purple);margin:10px 0 8px">${t('bk_preview')}：${s.projs} ${t('bk_projs')} · ${s.entries} ${t('bk_entries')} · ${s.days} ${t('bk_days')}</div>
+      <div style="font-size:10px;font-weight:700;color:var(--mid);margin-bottom:6px">${t('bk_mode')}</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        ${['merge','replace'].map(m=>`<button onclick="bkSetMode('${m}')" style="flex:1;padding:6px 0;font-size:11px;font-weight:600;border:none;border-radius:999px;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:${bkMode===m?'var(--purple)':'var(--mid)'};box-shadow:${bkMode===m?'inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)':'2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)'}">${m==='merge'?t('bk_merge'):t('bk_replace')}</button>`).join('')}
+      </div>
+      <div style="font-size:10px;color:var(--mid);margin-bottom:10px">🛡 ${t('bk_safe')}</div>
+      <button class="m-save" style="width:100%;padding:8px 0;font-size:12px" onclick="bkRun()">${t('bk_do')}</button>`;
+    }
+    inner=`<div style="font-size:11px;color:var(--mid);line-height:1.6;margin:12px 0 8px">${t('bk_in_hint')}</div>
+    <textarea id="bk-in" placeholder="{ ... }" oninput="bkCheck(this.value)" style="width:100%;height:100px;font-size:10px;font-family:monospace;resize:none;border:none;border-radius:10px;padding:8px 10px;background:var(--lavender);color:var(--dark);line-height:1.4;box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)"></textarea>
+    <input type="file" id="bk-file" accept=".json,application/json" style="display:none" onchange="bkReadFile(this)">
+    <button class="m-cancel" style="width:100%;padding:7px 0;font-size:12px;margin-top:8px;box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)" onclick="document.getElementById('bk-file').click()">${t('bk_pick_file')}</button>
+    <div id="bk-msg" style="font-size:11px;color:var(--danger);margin-top:8px;display:none"></div>
+    ${prev}`;
+  }
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)bkClose()">
+  <div class="modal" style="width:330px">
+    <div class="modal-title">${t('bk_title')}</div>
+    <div style="display:flex;gap:6px">${tabBtn('out',t('bk_tab_out'))}${tabBtn('in',t('bk_tab_in'))}</div>
+    ${inner}
+    <div class="modal-btns"><button class="m-cancel" onclick="bkClose()">${t('bk_close')}</button></div>
+  </div></div>`;
+}
+function bkClose(){document.getElementById('modal-container').innerHTML='';modal=null;bkParsed=null;}
+function bkCopy(){
+  const ta=document.getElementById('bk-out');ta.select();
+  try{document.execCommand('copy');}catch(e){}
+  if(navigator.clipboard)navigator.clipboard.writeText(ta.value).catch(()=>{});
+  const b=document.getElementById('bk-copy-btn');if(b){b.textContent=t('bk_copied');setTimeout(()=>{if(b)b.textContent=t('bk_copy')},1600);}
+}
+function bkDownload(){
+  const blob=new Blob([bkBuild()],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='catVweb-journal-'+dk(new Date())+'.json';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+function bkReadFile(inp){
+  const f=inp.files&&inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{const ta=document.getElementById('bk-in');if(ta)ta.value=r.result;bkCheck(r.result);};
+  r.readAsText(f);
+}
+function bkCheck(txt){
+  const msg=document.getElementById('bk-msg');
+  bkParsed=null;
+  if(!txt||!txt.trim()){if(msg)msg.style.display='none';renderBackupModal();return;}
+  try{
+    const o=JSON.parse(txt);
+    const d=o&&o.app==='catVweb-journal'?o.data:(o&&o.entries?o:null);
+    if(!d||typeof d.entries!=='object')throw 0;
+    bkParsed={projects:d.projects||[],entries:d.entries||{},totalCoins:d.totalCoins||0,palette:d.palette||[]};
+    const keep=txt;renderBackupModal();
+    const ta=document.getElementById('bk-in');if(ta)ta.value=keep;
+  }catch(e){
+    if(msg){msg.textContent=t('bk_bad');msg.style.display='block';}
+  }
+}
+function bkRun(){
+  if(!bkParsed)return;
+  // 1. 导入前自动备份当前数据
+  try{localStorage.setItem('cj_backup_'+Date.now(),bkBuild());}catch(e){}
+  const inc=bkParsed;
+  if(bkMode==='replace'){
+    projects=inc.projects;entries=inc.entries;totalCoins=inc.totalCoins;
+    cpMyPalette=inc.palette;
+  } else {
+    // 合并：项目按 id 去重，记录按 id 去重
+    const have=new Set(projects.map(p=>p.id));
+    inc.projects.forEach(p=>{if(!have.has(p.id))projects.push(p)});
+    Object.entries(inc.entries).forEach(([dkey,arr])=>{
+      if(!Array.isArray(arr))return;
+      if(!entries[dkey])entries[dkey]=[];
+      const ids=new Set(entries[dkey].map(e=>e.id));
+      arr.forEach(e=>{if(!ids.has(e.id))entries[dkey].push(e)});
+    });
+    totalCoins=Math.max(totalCoins,inc.totalCoins);
+    inc.palette.forEach(c=>{if(!cpMyPalette.includes(c))cpMyPalette.push(c)});
+  }
+  localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));
+  saveData();
+  bkClose();
+  view='journal';showForm=false;renderAll();
+  const mc=document.getElementById('modal-container');
+  const s=bkStats(inc);
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)bkClose()">
+  <div class="modal" style="width:280px">
+    <div class="modal-title" style="color:var(--purple)">${t('bk_ok')}</div>
+    <div style="font-size:12px;color:var(--mid);line-height:1.6;margin:6px 0 4px">${s.projs} ${t('bk_projs')} · ${s.entries} ${t('bk_entries')} · ${s.days} ${t('bk_days')}</div>
+    <div class="modal-btns"><button class="m-save" onclick="bkClose()">${t('bk_close')}</button></div>
+  </div></div>`;
+}
+
 document.getElementById('stats-nav-btn').onclick=()=>tryNavAway('stats');
 document.getElementById('month-nav-btn').onclick=()=>tryNavAway('month');
 document.getElementById('tracker-nav-btn').onclick=()=>tryNavAway('tracker');
+document.getElementById('backup-nav-btn').onclick=()=>openBackupModal();
 document.getElementById('add-proj-btn').onclick=openAddProject;
 document.getElementById('prev-week').onclick=()=>{weekOffset--;renderAll()};
 document.getElementById('next-week').onclick=()=>{if(weekOffset<0){weekOffset++;renderAll()}};
