@@ -372,6 +372,21 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .m-save { padding:6px 16px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:5px 5px 10px var(--sh-btn-dark), -5px -5px 10px var(--sh-light); transition:box-shadow .15s; }
 .m-save:hover { box-shadow:8px 8px 14px var(--sh-btn-hover), -8px -8px 14px var(--sh-light); }
 .m-save:active { box-shadow:inset 4px 4px 9px var(--sh-blue-inset); }
+.bk-chip { font-size:10px; font-weight:700; color:var(--mid); background:var(--lavender); border:none; border-radius:999px; padding:3px 12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s, color .15s; }
+.bk-chip:hover { box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); color:var(--dark); }
+.bk-chip:active { box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.bk-chip.on { color:var(--purple); box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.bk-tray { padding:7px 5px; border-radius:10px; background:var(--lavender); box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.bk-tray-hdr { display:flex; align-items:center; gap:7px; width:100%; font-size:11px; font-weight:700; color:var(--mid); cursor:pointer; background:none; border:none; padding:2px 6px 7px; margin-bottom:5px; font-family:'Nunito',sans-serif; border-bottom:0.5px solid var(--sh-dark); }
+.bk-tray-hdr.pri { color:var(--dark); }
+.bk-row { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:8px; cursor:pointer; margin-bottom:3px; transition:box-shadow .15s; }
+.bk-row:hover { box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); }
+.bk-row:active { box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.bk-tog { display:flex; align-items:center; gap:7px; width:100%; font-size:11px; font-weight:700; color:var(--dark); cursor:pointer; padding:8px 10px; border:none; border-radius:9px; background:var(--lavender); font-family:'Nunito',sans-serif; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s; }
+.bk-tog:hover { box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); }
+.bk-tog:active { box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.bk-tog.sec { color:var(--mid); margin-top:7px; }
+.bk-caret { font-size:8px; color:var(--mid); flex-shrink:0; }
 .m-delete { padding:6px 12px; border-radius:999px; border:none; background:var(--lavender); color:var(--pink); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:none; transition:box-shadow .15s; }
 .m-delete:hover { box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
 .m-delete:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
@@ -721,6 +736,21 @@ const I18N={
     bk_mode:'导入方式',bk_merge:'合并（保留现有）',bk_replace:'覆盖（清空现有）',
     bk_do:'开始导入',bk_bad:'格式不正确，请确认贴上的是完整备份内容',
     bk_ok:'导入完成',bk_safe:'导入前会自动备份当前数据',bk_close:'关闭',
+    bk_size:'大小',bk_rec:'建议',
+    bk_choose:'选择要备份的项目',bk_sel_all:'全选',bk_sel_none:'全不选',bk_sel_cnt:'已选',
+    bk_content:'备份内容',bk_view_data:'查看数据',bk_arch_n:'个已归档',
+    bk_data:'备份数据',bk_copy_this:'复制这段数据',
+    bk_renamed:'个同名项目已自动重命名',bk_imported:'导入',
+    bk_arch_note:'已归档项目不显示在侧边栏，但仍会被备份',
+    bk_none_sel:'请至少选择一个项目',
+    bk_warn_btn:'两边同时记录会怎样？',
+    bk_warn_1:'删除不会同步 — 在 A 删掉的记录，从 B 导入后会复活',
+    bk_warn_2:'同一条记录两边都改过，合并时只保留现有那份，另一份静默丢失',
+    bk_warn_3:'同名项目新增的自定义字段不会合并过去，记录会缺字段',
+    bk_warn_tip:'建议：迁移后只在一台设备继续记录。',
+    bk_rec_paste:'小于 50 KB 建议用复制粘贴，更快哦~',
+    bk_rec_either:'超过 50 KB — 粘贴请走邮件，即时通讯可能截断',
+    bk_rec_file:'超过 200 KB — 粘贴容易被截断，请用「下载文件」',
     modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
     modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',modal_sel_title:'文字选择项',modal_sel_desc:'建立一组选项，记录时从中勾选，如工具、状态、项目阶段',modal_num_title:'数字栏位',modal_num_desc:'记录可量化的数据，例如时间、距离、次数',
     modal_unit:'单位',modal_unit_ph:'如 min、km、次…',
@@ -815,6 +845,21 @@ const I18N={
     bk_mode:'Import mode',bk_merge:'Merge (keep existing)',bk_replace:'Replace (wipe existing)',
     bk_do:'Start import',bk_bad:'Invalid format — make sure you pasted the complete backup',
     bk_ok:'Import complete',bk_safe:'Your current data is auto-backed up before importing',bk_close:'Close',
+    bk_size:'Size',bk_rec:'Recommended',
+    bk_choose:'Choose projects to back up',bk_sel_all:'All',bk_sel_none:'None',bk_sel_cnt:'selected',
+    bk_content:'Backup contents',bk_view_data:'View data',bk_arch_n:'archived',
+    bk_data:'Backup data',bk_copy_this:'Copy this data',
+    bk_renamed:'projects renamed to avoid a name clash',bk_imported:'imported',
+    bk_arch_note:'Archived projects are hidden from the sidebar but still backed up',
+    bk_none_sel:'Select at least one project',
+    bk_warn_btn:'What happens if I record on both devices?',
+    bk_warn_1:'Deletions do not sync — an entry deleted on A comes back when you import from B',
+    bk_warn_2:'If the same entry was edited on both, merging keeps only the existing one; the other is silently lost',
+    bk_warn_3:'Custom fields added to a same-named project will not carry over, leaving entries missing fields',
+    bk_warn_tip:'Recommended: after migrating, keep recording on one device only.',
+    bk_rec_paste:'Under 50 KB — copy-paste is faster',
+    bk_rec_either:'Over 50 KB — if pasting, use email; messaging apps may truncate',
+    bk_rec_file:'Over 200 KB — paste gets truncated, use Download file',
     modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
     modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',modal_sel_title:'Text Options',modal_sel_desc:'Create a set of options to pick from when logging, e.g. tools, status, project stage',modal_num_title:'Number Field',modal_num_desc:'Record quantifiable data, e.g. time, distance, count',
     modal_unit:'Unit',modal_unit_ph:'e.g. min, km, times...',
@@ -3739,14 +3784,44 @@ applyTheme();
 // ════════════════════════════════════════════════════════
 // 备份与恢复（第210次）
 // ════════════════════════════════════════════════════════
-let bkTab='out', bkMode='merge', bkParsed=null;
+let bkTab='out', bkMode='merge', bkParsed=null, bkSel=null, bkWarn=false, bkRaw='', bkArchOpen=false, bkJsonOpen=false, bkRenamed=0;
+
+function bkToggleArch(){
+  bkArchOpen=!bkArchOpen;
+  if(bkArchOpen)bkJsonOpen=false;
+  renderBackupModal();
+  if(bkArchOpen)setTimeout(()=>{const el=document.getElementById('bk-arch-tray');if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'})},60);
+}
+function bkToggleJson(){
+  bkJsonOpen=!bkJsonOpen;
+  if(bkJsonOpen)bkArchOpen=false;
+  renderBackupModal();
+  if(bkJsonOpen)setTimeout(()=>{const el=document.getElementById('bk-out');if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'})},60);
+}
+
+function bkAllProjects(){return JSON.parse(localStorage.getItem('cj_projects')||'null')||projects;}
+function bkEnsureSel(){if(!bkSel)bkSel=new Set(bkAllProjects().map(p=>p.id));return bkSel;}
+function bkToggleProj(id){const s=bkEnsureSel();if(s.has(id))s.delete(id);else s.add(id);renderBackupModal();}
+function bkSelAll(v){bkSel=v?new Set(bkAllProjects().map(p=>p.id)):new Set();renderBackupModal();}
+function bkToggleWarn(){bkWarn=!bkWarn;renderBackupModal();}
 
 function bkBuild(){
+  const allP=bkAllProjects();
+  const allE=JSON.parse(localStorage.getItem('cj_entries')||'{}');
+  const sel=bkEnsureSel();
+  const known=new Set(allP.map(p=>p.id));
+  const outP=allP.filter(p=>sel.has(p.id));
+  const outE={};
+  Object.entries(allE).forEach(([k,arr])=>{
+    if(!Array.isArray(arr))return;
+    // 保留：所属项目被选中的记录 + 孤儿记录（不属于任何现存项目，永远带走）
+    const keep=arr.filter(e=>sel.has(e.projId)||!known.has(e.projId));
+    if(keep.length)outE[k]=keep;
+  });
   return JSON.stringify({
     app:'catVweb-journal', version:1, exportedAt:new Date().toISOString(),
     data:{
-      projects:JSON.parse(localStorage.getItem('cj_projects')||'null')||projects,
-      entries:JSON.parse(localStorage.getItem('cj_entries')||'{}'),
+      projects:outP, entries:outE,
       totalCoins:parseInt(localStorage.getItem('catTokens')||'0',10),
       palette:JSON.parse(localStorage.getItem('cj_mypalette')||'[]')
     }
@@ -3758,9 +3833,11 @@ function bkStats(d){
   return {projs:(d.projects||[]).length, days:days, entries:ent};
 }
 function openBackupModal(){
-  bkTab='out';bkMode='merge';bkParsed=null;renderBackupModal();
+  bkTab='out';bkMode='merge';bkParsed=null;bkSel=null;bkWarn=false;bkRaw='';bkArchOpen=false;bkJsonOpen=false;bkRenamed=0;
+  const b=document.getElementById('backup-nav-btn');if(b)b.classList.add('active');
+  renderBackupModal();
 }
-function bkSwitch(tab){bkTab=tab;bkParsed=null;renderBackupModal();}
+function bkSwitch(tab){bkTab=tab;bkParsed=null;bkRaw='';renderBackupModal();}
 function bkSetMode(m){bkMode=m;renderBackupModal();}
 
 function renderBackupModal(){
@@ -3768,14 +3845,85 @@ function renderBackupModal(){
   const tabBtn=(id,label)=>`<button onclick="bkSwitch('${id}')" style="flex:1;padding:7px 0;font-size:12px;font-weight:700;border:none;border-radius:9px;cursor:pointer;font-family:'Nunito',sans-serif;background:var(--lavender);color:${bkTab===id?'var(--purple)':'var(--mid)'};box-shadow:${bkTab===id?'inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)':'3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)'}">${label}</button>`;
   let inner='';
   if(bkTab==='out'){
-    const json=bkBuild();
-    const s=bkStats(JSON.parse(json).data);
-    inner=`<div style="font-size:11px;color:var(--mid);line-height:1.6;margin:12px 0 8px">${t('bk_out_hint')}</div>
-    <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px">${s.projs} ${t('bk_projs')} · ${s.entries} ${t('bk_entries')} · ${s.days} ${t('bk_days')}</div>
-    <textarea id="bk-out" readonly onclick="this.select()" style="width:100%;height:120px;font-size:10px;font-family:monospace;resize:none;border:none;border-radius:10px;padding:8px 10px;background:var(--lavender);color:var(--dark);line-height:1.4;box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)">${json.replace(/</g,'&lt;')}</textarea>
-    <div style="display:flex;gap:6px;margin-top:10px">
-      <button class="m-save" id="bk-copy-btn" style="flex:1;padding:7px 0;font-size:12px" onclick="bkCopy()">${t('bk_copy')}</button>
-      <button class="m-cancel" style="flex:1;padding:7px 0;font-size:12px;box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)" onclick="bkDownload()">${t('bk_download')}</button>
+    const allP=bkAllProjects();
+    const sel=bkEnsureSel();
+    const activeP=allP.filter(p=>(p.status||'active')!=='archived');
+    const archP=allP.filter(p=>(p.status||'active')==='archived');
+    const none=sel.size===0;
+    const json=none?'':bkBuild();
+    const s=none?{projs:0,entries:0,days:0}:bkStats(JSON.parse(json).data);
+    const bytes=none?0:new Blob([json]).size;
+    const kb=bytes<1024?bytes+' B':(bytes/1024).toFixed(1)+' KB';
+    let rec,recCol,pasteFirst;
+    if(bytes<50*1024){rec=t('bk_rec_paste');recCol='var(--mid)';pasteFirst=true;}
+    else if(bytes<200*1024){rec=t('bk_rec_either');recCol='var(--c-past-hint)';pasteFirst=true;}
+    else{rec=t('bk_rec_file');recCol='var(--danger)';pasteFirst=false;}
+    const primary="class=\"m-save\" style=\"flex:1;padding:8px 0;font-size:12px\"";
+    const secondary="class=\"m-cancel\" style=\"flex:1;padding:8px 0;font-size:12px;box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)\"";
+    const row=p=>{
+      const on=sel.has(p.id);
+      const isArch=(p.status||'active')==='archived';
+      const badge=isArch?`<span style="font-size:8px;font-weight:800;color:var(--c-archived);border:1px solid var(--c-archived);border-radius:3px;padding:0 3px;margin-left:5px;flex-shrink:0">${t('status_archived')}</span>`:'';
+      return `<div class="bk-row" onclick="bkToggleProj('${p.id}')">
+        <span style="width:13px;height:13px;flex-shrink:0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;background:${on?'var(--purple)':'transparent'};box-shadow:${on?'none':'inset 2px 2px 4px var(--sh-dark), inset -1px -1px 3px var(--sh-light)'}">${on?'✓':''}</span>
+        <span style="font-size:12px;color:${on?'var(--dark)':'var(--mid)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${badge}
+      </div>`;
+    };
+    const archSelN=archP.filter(p=>sel.has(p.id)).length;
+    const archCnt=lang==='zh'
+      ?t('bk_sel_cnt')+' '+archSelN+'/'+archP.length
+      :archSelN+'/'+archP.length+' '+t('bk_sel_cnt');
+    const statBlock=none
+      ?`<div style="font-size:12px;color:var(--danger);padding:14px 0;text-align:center">${t('bk_none_sel')}</div>`
+      :`<div style="padding:11px 12px;border-radius:10px;user-select:none;background:var(--lavender);box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)">
+        <div style="font-size:19px;font-weight:800;color:var(--purple);line-height:1.15">${s.entries} ${t('bk_entries')}</div>
+        <div style="font-size:11px;color:var(--mid);margin-top:3px">${s.projs} ${t('bk_projs')} · ${s.days} ${t('bk_days')}</div>
+      </div>`;
+    inner=`<div style="margin-top:13px">${statBlock}</div>
+    <div style="border-top:0.5px solid var(--sh-dark);margin-top:13px;padding-top:11px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:700;color:var(--dark)">${t('bk_content')}</span>
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:8px">
+        <button class="bk-chip${sel.size===allP.length?' on':''}" onclick="bkSelAll(true)">${t('bk_sel_all')}</button>
+        <button class="bk-chip${sel.size===0?' on':''}" onclick="bkSelAll(false)">${t('bk_sel_none')}</button>
+      </div>
+      <div class="bk-tray"><div style="max-height:118px;overflow-y:auto">${activeP.map(row).join('')}</div></div>
+      ${archP.length?(bkArchOpen
+        ?`<div class="bk-tray" id="bk-arch-tray" style="margin-top:7px">
+            <button class="bk-tray-hdr" onclick="bkToggleArch()">
+              <span class="bk-caret">▲</span>
+              <span style="flex:1;text-align:left">${archP.length} ${t('bk_arch_n')}</span>
+              <span style="font-size:10px;font-weight:400;color:var(--mid)">${archCnt}</span>
+            </button>
+            ${archP.map(row).join('')}
+          </div>`
+        :`<button class="bk-tog sec" onclick="bkToggleArch()">
+            <span class="bk-caret">▼</span>
+            <span style="flex:1;text-align:left">${archP.length} ${t('bk_arch_n')}</span>
+            <span style="font-size:10px;font-weight:400;color:var(--mid)">${archCnt}</span>
+          </button>`):''}
+    </div>
+    <div style="border-top:0.5px solid var(--sh-dark);margin-top:11px;padding-top:11px">
+      ${bkJsonOpen&&!none
+        ?`<div class="bk-tray" style="margin-bottom:9px">
+            <button class="bk-tray-hdr pri" onclick="bkToggleJson()">
+              <span class="bk-caret">▲</span>
+              <span style="flex:1;text-align:left">${t('bk_data')}</span>
+              <span style="font-size:10px;color:var(--mid)">${kb}</span>
+            </button>
+            <textarea id="bk-out" readonly onclick="this.select()" style="width:100%;height:88px;font-size:10px;font-family:monospace;resize:none;border:none;border-radius:0;padding:2px 6px;background:transparent;color:var(--mid);line-height:1.45;box-shadow:none;outline:none">${json.replace(/</g,'&lt;')}</textarea>
+          </div>`
+        :`<button class="bk-tog" style="margin-bottom:9px" onclick="bkToggleJson()">
+            <span class="bk-caret">▼</span>
+            <span style="flex:1;text-align:left">${t('bk_data')}</span>
+            <span style="font-size:10px;font-weight:400;color:var(--mid)">${none?'—':kb}</span>
+          </button>`}
+      ${none?'':`<div style="display:flex;gap:6px">
+        <button id="bk-copy-btn" ${pasteFirst?primary:secondary} onclick="bkCopy()">${t('bk_copy_this')}</button>
+        <button ${pasteFirst?secondary:primary} onclick="bkDownload()">${t('bk_download')}</button>
+      </div>
+      <div style="font-size:11px;color:${recCol};line-height:1.5;margin-top:7px">${rec}</div>`}
     </div>`;
   } else {
     let prev='';
@@ -3790,7 +3938,18 @@ function renderBackupModal(){
       <button class="m-save" style="width:100%;padding:8px 0;font-size:12px" onclick="bkRun()">${t('bk_do')}</button>`;
     }
     inner=`<div style="font-size:11px;color:var(--mid);line-height:1.6;margin:12px 0 8px">${t('bk_in_hint')}</div>
-    <textarea id="bk-in" placeholder="{ ... }" oninput="bkCheck(this.value)" style="width:100%;height:100px;font-size:10px;font-family:monospace;resize:none;border:none;border-radius:10px;padding:8px 10px;background:var(--lavender);color:var(--dark);line-height:1.4;box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)"></textarea>
+    <div onclick="bkToggleWarn()" style="display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:8px;cursor:pointer;margin-bottom:8px;background:var(--lavender);box-shadow:${bkWarn?'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)':'2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)'}">
+      <span style="font-size:12px">⚠️</span>
+      <span style="font-size:10px;font-weight:700;color:var(--c-past-hint);flex:1">${t('bk_warn_btn')}</span>
+      <span style="font-size:9px;color:var(--mid)">${bkWarn?'▲':'▼'}</span>
+    </div>
+    ${bkWarn?`<div style="font-size:10px;color:var(--mid);line-height:1.65;padding:8px 10px;border-radius:8px;margin-bottom:8px;background:var(--lavender);box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)">
+      <div style="margin-bottom:5px">① ${t('bk_warn_1')}</div>
+      <div style="margin-bottom:5px">② ${t('bk_warn_2')}</div>
+      <div style="margin-bottom:7px">③ ${t('bk_warn_3')}</div>
+      <div style="font-weight:700;color:var(--purple)">${t('bk_warn_tip')}</div>
+    </div>`:''}
+    <textarea id="bk-in" placeholder="{ ... }" oninput="bkCheck(this.value)" style="width:100%;height:90px;font-size:10px;font-family:monospace;resize:none;border:none;border-radius:10px;padding:8px 10px;background:var(--lavender);color:var(--dark);line-height:1.4;box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light)"></textarea>
     <input type="file" id="bk-file" accept=".json,application/json" style="display:none" onchange="bkReadFile(this)">
     <button class="m-cancel" style="width:100%;padding:7px 0;font-size:12px;margin-top:8px;box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)" onclick="document.getElementById('bk-file').click()">${t('bk_pick_file')}</button>
     <div id="bk-msg" style="font-size:11px;color:var(--danger);margin-top:8px;display:none"></div>
@@ -3803,12 +3962,22 @@ function renderBackupModal(){
     ${inner}
     <div class="modal-btns"><button class="m-cancel" onclick="bkClose()">${t('bk_close')}</button></div>
   </div></div>`;
+  // 状态恢复：重渲染后把已贴上的文字放回去（SKILL §28）
+  if(bkTab==='in'&&bkRaw){const ta=document.getElementById('bk-in');if(ta)ta.value=bkRaw;}
 }
-function bkClose(){document.getElementById('modal-container').innerHTML='';modal=null;bkParsed=null;}
+function bkClose(){
+  document.getElementById('modal-container').innerHTML='';modal=null;
+  bkParsed=null;bkRaw='';bkWarn=false;
+  const b=document.getElementById('backup-nav-btn');if(b)b.classList.remove('active');
+}
 function bkCopy(){
-  const ta=document.getElementById('bk-out');ta.select();
+  const txt=bkBuild();
+  let ta=document.getElementById('bk-out'), tmp=null;
+  if(!ta){tmp=document.createElement('textarea');tmp.value=txt;tmp.style.cssText='position:absolute;left:-9999px;top:0';document.body.appendChild(tmp);ta=tmp;}
+  ta.select();ta.setSelectionRange(0,txt.length);
   try{document.execCommand('copy');}catch(e){}
-  if(navigator.clipboard)navigator.clipboard.writeText(ta.value).catch(()=>{});
+  if(navigator.clipboard)navigator.clipboard.writeText(txt).catch(()=>{});
+  if(tmp)tmp.remove();
   const b=document.getElementById('bk-copy-btn');if(b){b.textContent=t('bk_copied');setTimeout(()=>{if(b)b.textContent=t('bk_copy')},1600);}
 }
 function bkDownload(){
@@ -3825,32 +3994,48 @@ function bkReadFile(inp){
   r.readAsText(f);
 }
 function bkCheck(txt){
-  const msg=document.getElementById('bk-msg');
+  bkRaw=txt||'';
   bkParsed=null;
-  if(!txt||!txt.trim()){if(msg)msg.style.display='none';renderBackupModal();return;}
+  if(!bkRaw.trim()){renderBackupModal();return;}
+  let ok=false;
   try{
-    const o=JSON.parse(txt);
+    const o=JSON.parse(bkRaw);
     const d=o&&o.app==='catVweb-journal'?o.data:(o&&o.entries?o:null);
-    if(!d||typeof d.entries!=='object')throw 0;
-    bkParsed={projects:d.projects||[],entries:d.entries||{},totalCoins:d.totalCoins||0,palette:d.palette||[]};
-    const keep=txt;renderBackupModal();
-    const ta=document.getElementById('bk-in');if(ta)ta.value=keep;
-  }catch(e){
-    if(msg){msg.textContent=t('bk_bad');msg.style.display='block';}
-  }
+    if(d&&typeof d.entries==='object'){
+      bkParsed={projects:d.projects||[],entries:d.entries||{},totalCoins:d.totalCoins||0,palette:d.palette||[]};
+      ok=true;
+    }
+  }catch(e){}
+  renderBackupModal();
+  if(!ok){const msg=document.getElementById('bk-msg');if(msg){msg.textContent=t('bk_bad');msg.style.display='block';}}
 }
 function bkRun(){
   if(!bkParsed)return;
-  // 1. 导入前自动备份当前数据
-  try{localStorage.setItem('cj_backup_'+Date.now(),bkBuild());}catch(e){}
+  // 1. 导入前自动备份当前数据（全量，不受项目勾选影响）
+  try{localStorage.setItem('cj_backup_'+Date.now(),JSON.stringify({
+    app:'catVweb-journal',version:1,exportedAt:new Date().toISOString(),
+    data:{projects:bkAllProjects(),entries:JSON.parse(localStorage.getItem('cj_entries')||'{}'),
+      totalCoins:parseInt(localStorage.getItem('catTokens')||'0',10),
+      palette:JSON.parse(localStorage.getItem('cj_mypalette')||'[]')}
+  }));}catch(e){}
   const inc=bkParsed;
   if(bkMode==='replace'){
     projects=inc.projects;entries=inc.entries;totalCoins=inc.totalCoins;
     cpMyPalette=inc.palette;
   } else {
-    // 合并：项目按 id 去重，记录按 id 去重
+    // 合并：项目按 id 去重；同名不同 id 的自动重命名（方案 A）
     const have=new Set(projects.map(p=>p.id));
-    inc.projects.forEach(p=>{if(!have.has(p.id))projects.push(p)});
+    bkRenamed=0;
+    inc.projects.forEach(p=>{
+      if(have.has(p.id))return;
+      const cp={...p};
+      if(projects.some(x=>x.name===cp.name)){
+        let base=cp.name+' ('+t('bk_imported')+')', name=base, n=2;
+        while(projects.some(x=>x.name===name)){name=base+' '+n;n++;}
+        cp.name=name;bkRenamed++;
+      }
+      projects.push(cp);have.add(cp.id);
+    });
     Object.entries(inc.entries).forEach(([dkey,arr])=>{
       if(!Array.isArray(arr))return;
       if(!entries[dkey])entries[dkey]=[];
@@ -3870,6 +4055,7 @@ function bkRun(){
   <div class="modal" style="width:280px">
     <div class="modal-title" style="color:var(--purple)">${t('bk_ok')}</div>
     <div style="font-size:12px;color:var(--mid);line-height:1.6;margin:6px 0 4px">${s.projs} ${t('bk_projs')} · ${s.entries} ${t('bk_entries')} · ${s.days} ${t('bk_days')}</div>
+    ${bkRenamed?`<div style="font-size:11px;color:var(--c-past-hint);line-height:1.5;margin-bottom:4px">${bkRenamed} ${t('bk_renamed')}</div>`:''}
     <div class="modal-btns"><button class="m-save" onclick="bkClose()">${t('bk_close')}</button></div>
   </div></div>`;
 }
