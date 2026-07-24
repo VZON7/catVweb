@@ -634,3 +634,51 @@ sed -n "${START},\$p" journal.html | grep -nP "[\x{4e00}-\x{9fff}]" | grep -v "/
 1. 值是否在 renderAll 末尾恢复 ✓
 2. autoGrow 是否在值恢复后调用 ✓
 3. overflow 是否正确（≤maxRows 时 hidden，超出时 auto）✓
+
+## 二十九、交互反馈强制清单
+
+⚠️ **inline style 无法定义伪类** —— 用 `style="..."` 写的按钮永远不会有 hover / active 效果。
+
+**强制规则：**
+- 任何可点元素必须同时具备 `:hover` 与 `:active` 态
+- 可点元素一律用 CSS 类定义，**禁止用 inline style 写按钮**
+- 新增可点元素后自查：鼠标移上去有变化吗？按下去有变化吗？
+
+**新拟态标准三态：**
+```css
+.x        { box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s; }
+.x:hover  { box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); }
+.x:active { box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+```
+
+**另注：** `.active` 类若由 `view` 变量驱动（如 syncNav），弹窗类入口不在其中，必须在 open/close 函数里手动加减。
+
+## 三十、折叠展开的可见性规则
+
+⚠️ 展开后若可视区域没有变化，用户会认为按钮坏了。
+
+**强制规则：**
+- 展开的内容**不得落入已有滚动容器内部**（否则它只是让滚动条变长，屏幕上什么都没发生）
+- 展开必须在**点击位置正下方**产生可见位移
+- 配 `scrollIntoView({behavior:'smooth',block:'nearest'})` 兜底
+- 折叠按钮自身要有开合状态区分（凸起 ↔ 凹陷 / 箭头翻转）
+
+**自查：** 展开后截图对比，可视区若无变化即为功能失效。
+
+**同一容器内多个折叠区** → 考虑互斥展开，避免弹窗超过 `max-height` 后需要长距离滚动。
+
+## 三十一、按钮与操作对象相邻规则
+
+⚠️ 按钮离谁近，用户就认为它作用于谁。
+
+**强制规则：**
+- 主动作按钮与其作用对象之间**不得插入无关内容**
+- 按钮附近若有可能被误认为对象的内容（如相邻的统计文字），该内容须设 `user-select:none`
+- 按钮文案指明对象：`复制` → `复制这段数据`
+
+**三个检查点：**
+1. 按钮和对象之间有没有插入别的东西？
+2. 按钮附近有没有别的东西会被误认成对象？
+3. 文案有没有说清楚作用于什么？
+
+**适用范围：** 复制、删除、保存、导出、发送 —— 任何「对某个东西做某件事」的按钮。
