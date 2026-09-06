@@ -794,10 +794,13 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 
 ```json
 { "app":"catVweb-journal", "version":1, "exportedAt":"ISO",
-  "data":{ "projects":[], "entries":{}, "totalCoins":0, "palette":[] } }
+  "data":{ "projects":[], "entries":{}, "totalCoins":0, "palette":[],
+           "tombs":{ "e":{}, "p":{} } } }
 ```
 
-四样缺一不可 —— 少了 `projects` 记录会变成「未知项目」孤儿，字段和颜色全丢。
+前四样缺一不可 —— 少了 `projects` 记录会变成「未知项目」孤儿，字段和颜色全丢。
+
+`tombs` 是第223次加的**删除名单 (tombstone)**，少了它导入会让删掉的记录复活。老备份没有这个字段，导入时按空名单处理，不会报错。
 
 ---
 
@@ -868,6 +871,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 移除冗余 10/10 + 归档计数改「已选 3/3」+ 阈值写进建议语 | 第220次 |
 | 离线壳上线（PWA：`sw.js` + `manifest.json` + 猫脸图标，可加到手机主屏幕、断网可用） | 第221次 |
 | 图标换成「猫 + JOURNAL 66♡ 横幅」，底色深蓝 `#1e5a8a`；旧的两套图标清除 | 第222次 |
+| 同步地基：删除名单 (tombstone) + 新旧记号 (timestamp)；合并改为比记号、拒收已删；id 防撞 | 第223次 |
 
 ---
 

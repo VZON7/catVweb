@@ -154,6 +154,7 @@ window.addEventListener('load', function(){
 | `cj_theme` | 主题（'light' / 'dark'，默认 'light'） |
 | `cj_view_${pid}` | 记录列表显示模式 `{mode, sort, year, month, _sortSet}`，每个项目独立 |
 | `cj_keymig` | dateKey 格式迁移版本标记（当前 '2'） |
+| `cj_tombs` | **删除名单 (tombstone)**，`{e:{id:时间戳},p:{id:时间戳}}`，记住「哪些是主动删的」 |
 
 ---
 
@@ -737,3 +738,64 @@ CDN 三个地址（docx@7.1.0、Chart.js 4.4.1、Google Fonts）写死在 `sw.js
 **改完必须验证**——套一个圆形遮罩渲染出来看，别凭感觉。
 
 ⚠️ **换图标后 iPhone 必须删掉桌面图标重新添加**，iOS 会死死缓存旧图标，不重装看不到新的。
+
+## 三十三、删除名单与新旧记号（同步地基·第223次）
+
+### 为什么存在
+
+没有这两样，跨设备同步会出现**记录复活 (zombie records)**：A 设备删掉的记录，被 B 设备的旧副本同步回来，删一次回来一次，永远删不掉。
+
+| 名词 | 英文 | 是什么 |
+|---|---|---|
+| 删除名单 | tombstone | `cj_tombs`，记住「哪些 id 是主动删的」 |
+| 新旧记号 | timestamp | 每条记录/项目的 `updatedAt`，两边打架时新的赢 |
+
+### ⚠️ 删除名单是独立的表，不要改成 `deleted` 字段
+
+名单存在 `cj_tombs`，**没有往记录对象里加 `deleted` 标记**。这是刻意的：渲染层四千行到处读 `entries`，加字段就得审计每一个读取点（第十七节多单位字段就是这么翻车的）。用外挂表，渲染层一行都不用动。
+
+**别把这个设计退回去。**
+
+### 新增删除入口时必须做的事
+
+任何新的删除路径，都要在 `filter` 掉数据的同时把 id 记进名单：
+
+```js
+entries[key]=entries[key].filter(e=>e.id!==id);
+tombEntry(id);        // ← 别忘了这句
+```
+
+项目删除要连带记录一起记：`Object.values(affectedEntries).forEach(arr=>arr.forEach(e=>tombEntry(e.id)))` + `tombProj(id)`。
+
+**有撤销功能的删除，撤销时必须 `untombEntry` / `untombProj`**，否则撤销回来的东西会在下次合并时被 `purgeTombed()` 再清一遍。
+
+### 新增/修改记录时必须更新记号
+
+```js
+e.updatedAt=Date.now();      // saveEdit、saveProject、restoreProject 都要
+```
+
+漏了的后果不是报错，是**这条改动永远同步不出去**——静悄悄地什么都没发生。
+
+### 合并的三条规则（`bkRun`）
+
+1. 对方有、我没有 → 收下
+2. 两边都有 → 比 `updatedAt`，新的赢
+3. **我删过的 → 永远不收**
+
+合并完跑 `purgeTombed()` 清掉对方删过的，再跑 `recalcTotalCoins()`。
+**猫币不参与同步**——它是派生值，合并后重算即可，这样天然没有冲突。
+
+### 记录 id 格式
+
+`newEntryId()` = 毫秒 ×1000 + 随机三位，同毫秒内强制递增。
+
+⚠️ **必须保持数字型**：排序用 `a.id-b.id`（[journal.html:1030](journal.html#L1030)），模板里是裸数字插值 `startEdit(${e.id},...)`。改成字符串会直接 SyntaxError。
+
+### 验收方式
+
+```
+导出备份 → 删掉几条 → 导入刚才那份备份（合并模式）→ 删掉的不能回来
+```
+
+回归测试：`node tests/test-merge.js`。它抽取 journal.html 的原文来跑，不是副本，23 项场景覆盖复活、冲突、级联删除、撤销、老数据回填、id 防撞。

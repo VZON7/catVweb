@@ -961,14 +961,79 @@ function loadData(){
     }
   }catch(e){return{projects:[],entries:{},totalCoins:0}}
 }
+/* ── 删除名单 (tombstone) + 新旧记号 (timestamp) ─────────────
+   为什么需要：没有这两样，跨设备同步会出现「删不掉的记录」——
+   A 设备删掉的，会被 B 设备的旧副本同步回来，删一次回来一次。
+
+   ⚠️ 删除名单是独立的一张表，不往记录里加 deleted 字段，
+      所以渲染层一行都不用改。改法别退回去。
+   ───────────────────────────────────────────────────────── */
+const TOMB_KEEP_DAYS=180;          // 墓碑保留期，过期清掉，避免无限长大
+let tombs=loadTombs();
+
+function loadTombs(){
+  try{
+    const t=JSON.parse(localStorage.getItem('cj_tombs')||'null');
+    if(t&&t.e&&typeof t.e==='object'&&t.p&&typeof t.p==='object')return t;
+  }catch(e){}
+  return{e:{},p:{}};
+}
+function tombEntry(id){tombs.e[String(id)]=Date.now();}
+function tombProj(id){tombs.p[String(id)]=Date.now();}
+function untombEntry(id){delete tombs.e[String(id)];}
+function untombProj(id){delete tombs.p[String(id)];}
+function isTombedEntry(id){return Object.prototype.hasOwnProperty.call(tombs.e,String(id));}
+function isTombedProj(id){return Object.prototype.hasOwnProperty.call(tombs.p,String(id));}
+function gcTombs(){
+  const cut=Date.now()-TOMB_KEEP_DAYS*86400000;
+  ['e','p'].forEach(k=>Object.keys(tombs[k]).forEach(id=>{if(tombs[k][id]<cut)delete tombs[k][id];}));
+}
+// 合并收尾：把名单上的东西从现有数据里清掉
+// （对方删过、我这边还留着的，在这一步清理）
+function purgeTombed(){
+  Object.keys(entries).forEach(k=>{
+    if(Array.isArray(entries[k]))entries[k]=entries[k].filter(e=>!isTombedEntry(e.id));
+  });
+  projects=projects.filter(p=>!isTombedProj(p.id));
+}
+
+// 老数据没有 updatedAt，用它自己的 id 回填。
+// id 本身就是创建时的毫秒数，各设备算出来一致，不会互相打架。
+function stampOf(id){
+  if(typeof id==='number')return id;
+  const m=String(id).match(/(\d{10,})/);
+  return m?parseInt(m[1],10):0;
+}
+function backfillStamps(d){
+  (d.projects||[]).forEach(p=>{if(!p.updatedAt)p.updatedAt=stampOf(p.id);});
+  Object.values(d.entries||{}).forEach(arr=>{
+    if(Array.isArray(arr))arr.forEach(e=>{if(!e.updatedAt)e.updatedAt=stampOf(e.id);});
+  });
+  return d;
+}
+
+// 记录 id：毫秒 ×1000 + 随机三位，同毫秒内连续生成时强制递增。
+// ⚠️ 必须保持数字型 —— 排序处用的是 a.id-b.id，模板里也是裸数字插值
+//    （startEdit(${e.id},...)），改成字符串会直接 SyntaxError。
+// 本机：严格递增，永不重复。跨设备：随机位让同毫秒撞号概率降到千分之一。
+let _idLast=0;
+function newEntryId(){
+  let v=Date.now()*1000+Math.floor(Math.random()*1000);
+  if(v<=_idLast)v=_idLast+1;
+  _idLast=v;
+  return v;
+}
+
 function saveData(){
   localStorage.setItem('cj_projects',JSON.stringify(projects));
   localStorage.setItem('cj_entries',JSON.stringify(entries));
   localStorage.setItem('catTokens',String(totalCoins));
+  localStorage.setItem('cj_tombs',JSON.stringify(tombs));
   syncNav();
 }
 
-let {projects,entries,totalCoins}=loadData();
+let {projects,entries,totalCoins}=backfillStamps(loadData());
+gcTombs();
 
 // Load saved palette from localStorage
 let cpMyPalette=JSON.parse(localStorage.getItem('cj_mypalette')||'[]');
@@ -2595,6 +2660,7 @@ function saveEdit(id,key){
   if(editState.projId&&editState.projId!==e.projId)e.projId=editState.projId;
   e.fields={...editState.fields};e.skipped={...editState.skipped};
   e.note=editState.note||'';e.link=editState.link||'';e.linkLabel=editState.linkLabel||'';
+  e.updatedAt=Date.now();
   editingId=null;editState={};openDropId=null;saveData();renderAll();
 }
 function deleteEntry(key,id,evt){
@@ -2603,6 +2669,7 @@ function deleteEntry(key,id,evt){
 }
 function _doDeleteEntry(key,id){
   entries[key]=(entries[key]||[]).filter(e=>e.id!==id);
+  tombEntry(id);
   if(editingId===id){editingId=null;editState={};}
   saveData();renderAll();
 }
@@ -2837,7 +2904,7 @@ function saveEntry(){
   const linklabel=formExtras.link?((labelEl?labelEl.value:'')||formLinkLabel).trim():'';
   const saveKey=dk(selDate);
   if(!entries[saveKey])entries[saveKey]=[];
-  entries[saveKey].push({id:Date.now(),projId:formProj||'',title:t,fields,skipped,note,link,linkLabel:linklabel});
+  entries[saveKey].push({id:newEntryId(),updatedAt:Date.now(),projId:formProj||'',title:t,fields,skipped,note,link,linkLabel:linklabel});
   formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;
   saveData();renderAll();
 }
@@ -3117,8 +3184,8 @@ function _bgClose(){
 function saveProject(){
   if(!modal||!modal.name.trim())return;
   const status=modal.status||'active';
-  if(modal.mode==='add')projects.push({id:'p'+Date.now(),name:modal.name,color:modal.color,status,fields:modal.fields});
-  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;}}
+  if(modal.mode==='add')projects.push({id:'p'+Date.now(),updatedAt:Date.now(),name:modal.name,color:modal.color,status,fields:modal.fields});
+  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;p.updatedAt=Date.now();}}
   modal=null;renderModal();saveData();renderAll();
 }
 function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',units:[...(f.units||[])],options:[...(f.options||[])]})),nf:'',nft:'select'};renderModal()}
@@ -3177,10 +3244,12 @@ function _doDeleteProject(id,action){
       const hits=arr.filter(e=>e.projId===id);
       if(hits.length)affectedEntries[dk2]=hits.map(e=>({...e}));
     });
+    Object.values(affectedEntries).forEach(arr=>arr.forEach(e=>tombEntry(e.id)));
     Object.keys(entries).forEach(dk2=>{
       entries[dk2]=entries[dk2].filter(e=>e.projId!==id);
     });
     projects=projects.filter(x=>x.id!==id);
+    tombProj(id);
     _deletedProj={p,idx,action,affectedEntries};
     _closeDelConfirm();
     saveData();renderAll();
@@ -3192,6 +3261,7 @@ function _doDeleteProject(id,action){
 function restoreProject(id){
   const p=projects.find(x=>x.id===id);if(!p)return;
   p.status='active';
+  p.updatedAt=Date.now();
   saveData();renderAll();
 }
 
@@ -3218,8 +3288,10 @@ function confirmPermDelete(id,name){
 function _permDeleteProject(id){
   const p=projects.find(x=>x.id===id);if(!p)return;
   const entryCount=Object.values(entries).reduce((s,arr)=>s+arr.filter(e=>e.projId===id).length,0);
+  Object.values(entries).forEach(arr=>{if(Array.isArray(arr))arr.forEach(e=>{if(e.projId===id)tombEntry(e.id);});});
   Object.keys(entries).forEach(dk2=>{entries[dk2]=entries[dk2].filter(e=>e.projId!==id);});
   projects=projects.filter(x=>x.id!==id);
+  tombProj(id);
   _closeDelConfirm();
   saveData();renderAll();
   showUndoToast(t('perm_deleted')+'"'+p.name+'」'+(entryCount?' '+t('records_suffix')+' '+entryCount+' '+t('records_suffix'):''));
@@ -3243,9 +3315,10 @@ function undoDelete(){
     if(found)found.status='active';
   } else {
     projects.splice(idx,0,p);
+    untombProj(p.id);
     Object.entries(affectedEntries||{}).forEach(([dk2,arr])=>{
       if(!entries[dk2])entries[dk2]=[];
-      arr.forEach(e=>{if(!entries[dk2].find(x=>x.id===e.id))entries[dk2].push(e);});
+      arr.forEach(e=>{untombEntry(e.id);if(!entries[dk2].find(x=>x.id===e.id))entries[dk2].push(e);});
     });
   }
   saveData();renderAll();_deletedProj=null;
@@ -3830,7 +3903,8 @@ function bkBuild(){
     data:{
       projects:outP, entries:outE,
       totalCoins:parseInt(localStorage.getItem('catTokens')||'0',10),
-      palette:JSON.parse(localStorage.getItem('cj_mypalette')||'[]')
+      palette:JSON.parse(localStorage.getItem('cj_mypalette')||'[]'),
+      tombs:tombs
     }
   },null,2);
 }
@@ -4009,7 +4083,9 @@ function bkCheck(txt){
     const o=JSON.parse(bkRaw);
     const d=o&&o.app==='catVweb-journal'?o.data:(o&&o.entries?o:null);
     if(d&&typeof d.entries==='object'){
-      bkParsed={projects:d.projects||[],entries:d.entries||{},totalCoins:d.totalCoins||0,palette:d.palette||[]};
+      const it=d.tombs;
+      bkParsed={projects:d.projects||[],entries:d.entries||{},totalCoins:d.totalCoins||0,palette:d.palette||[],
+        tombs:(it&&it.e&&it.p)?it:{e:{},p:{}}};
       ok=true;
     }
   }catch(e){}
@@ -4025,32 +4101,52 @@ function bkRun(){
       totalCoins:parseInt(localStorage.getItem('catTokens')||'0',10),
       palette:JSON.parse(localStorage.getItem('cj_mypalette')||'[]')}
   }));}catch(e){}
-  const inc=bkParsed;
+  const inc=backfillStamps(bkParsed);   // 老备份没有新旧记号，先回填
   if(bkMode==='replace'){
     projects=inc.projects;entries=inc.entries;totalCoins=inc.totalCoins;
     cpMyPalette=inc.palette;
+    tombs=inc.tombs||{e:{},p:{}};
   } else {
-    // 合并：项目按 id 去重；同名不同 id 的自动重命名（方案 A）
-    const have=new Set(projects.map(p=>p.id));
+    /* 合并三条规则：
+       1. 对方有、我没有  → 收下（同名不同 id 的自动重命名，方案 A）
+       2. 两边都有        → 比新旧记号，新的赢
+       3. 我删过的        → 永远不收（删除名单的作用，防止记录复活）  */
+    const incT=inc.tombs||{e:{},p:{}};
+    // 先收下对方的删除名单 —— 对方删过的，我这边也该删
+    Object.keys(incT.p).forEach(id=>{if(!tombs.p[id])tombs.p[id]=incT.p[id];});
+    Object.keys(incT.e).forEach(id=>{if(!tombs.e[id])tombs.e[id]=incT.e[id];});
+
+    const byId=new Map(projects.map(p=>[p.id,p]));
     bkRenamed=0;
     inc.projects.forEach(p=>{
-      if(have.has(p.id))return;
-      const cp={...p};
+      if(isTombedProj(p.id))return;                                   // 规则 3
+      const mine=byId.get(p.id);
+      if(mine){                                                       // 规则 2
+        if((p.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,p);
+        return;
+      }
+      const cp={...p};                                                // 规则 1
       if(projects.some(x=>x.name===cp.name)){
         let base=cp.name+' ('+t('bk_imported')+')', name=base, n=2;
         while(projects.some(x=>x.name===name)){name=base+' '+n;n++;}
         cp.name=name;bkRenamed++;
       }
-      projects.push(cp);have.add(cp.id);
+      projects.push(cp);byId.set(cp.id,cp);
     });
     Object.entries(inc.entries).forEach(([dkey,arr])=>{
       if(!Array.isArray(arr))return;
       if(!entries[dkey])entries[dkey]=[];
-      const ids=new Set(entries[dkey].map(e=>e.id));
-      arr.forEach(e=>{if(!ids.has(e.id))entries[dkey].push(e)});
+      const mineById=new Map(entries[dkey].map(e=>[e.id,e]));
+      arr.forEach(e=>{
+        if(isTombedEntry(e.id))return;                                // 规则 3
+        const mine=mineById.get(e.id);
+        if(mine){if((e.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,e);}   // 规则 2
+        else{entries[dkey].push(e);mineById.set(e.id,e);}                          // 规则 1
+      });
     });
-    totalCoins=Math.max(totalCoins,inc.totalCoins);
+    purgeTombed();          // 对方删过、我这边还留着的，清掉
     inc.palette.forEach(c=>{if(!cpMyPalette.includes(c))cpMyPalette.push(c)});
+    recalcTotalCoins();     // 猫币是派生值，合并完重算，不参与冲突
   }
   localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));
   saveData();
