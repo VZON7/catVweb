@@ -4,7 +4,7 @@
    ⚠️ 改动 journal.html 之后，把下面的 VERSION 加 1，
       否则手机可能继续用旧的缓存。
    ───────────────────────────────────────────────────────── */
-const VERSION = 3;
+const VERSION = 14;
 const CACHE = 'catvweb-v' + VERSION;
 
 // 本站文件 —— 必须缓存成功，否则离线打不开
@@ -22,6 +22,7 @@ const CORE = [
 // 外部资源 —— 版本固定不会变，缓存失败也不影响安装
 const CDN = [
   'https://unpkg.com/docx@7.1.0/build/index.js',
+  'https://unpkg.com/@supabase/supabase-js@2.115.0/dist/umd/supabase.js',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js',
   'https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&family=ZCOOL+XiaoWei&display=swap'
 ];

@@ -9,8 +9,12 @@ function slice(from, to, label) {
   return src.slice(s, e);
 }
 
-const helpers = slice('function loadTombs(){', 'function saveData(){', '墓碑辅助函数');
-const mergeBody = slice('const incT=inc.tombs', 'recalcTotalCoins();', '合并逻辑') + 'recalcTotalCoins();';
+// 这一段涵盖墓碑辅助函数 + 合并引擎 mergeIncoming()
+const helpers = slice('function loadTombs(){', 'function saveData(){', '数据层辅助函数');
+if (!/function mergeIncoming\(/.test(helpers)) throw new Error('抽取失败: 没抓到 mergeIncoming');
+// 上传安全闸（在云端同步模块里）
+const guard = slice('function cntRecords(o){', 'async function cloudSync(', '上传安全闸');
+if (!/function wouldLoseRecords\(/.test(guard)) throw new Error('抽取失败: 没抓到 wouldLoseRecords');
 
 const harness = `
 let _ls={};
@@ -21,7 +25,8 @@ function t(){return 'imported'}
 function calcCoins(e,k){let c=(e.title&&e.title.trim())?1:0;if(e.note)c+=1;return c}
 function recalcTotalCoins(){totalCoins=Object.entries(entries).reduce((s,[k,arr])=>s+arr.reduce((ss,e)=>ss+calcCoins(e,k),0),0)}
 ${helpers}
-function doMerge(inc){ inc=backfillStamps(inc); ${mergeBody} }
+${guard}
+function doMerge(inc){ return mergeIncoming(backfillStamps(inc)); }
 function snapshot(){return JSON.parse(JSON.stringify({projects,entries,totalCoins,palette:cpMyPalette,tombs}))}
 module.exports={
   get projects(){return projects}, set projects(v){projects=v},
@@ -29,7 +34,7 @@ module.exports={
   get tombs(){return tombs},     set tombs(v){tombs=v},
   get totalCoins(){return totalCoins},
   doMerge, snapshot, tombEntry, untombEntry, isTombedEntry, tombProj, isTombedProj,
-  purgeTombed, backfillStamps, newEntryId, gcTombs
+  purgeTombed, backfillStamps, newEntryId, gcTombs, syncMode, wouldLoseRecords, cntRecords
 };`;
 
 const M = new module.constructor();
@@ -126,6 +131,35 @@ for (let i = 0; i < TRIES; i++) {
   if ((ms * 1000 + Math.floor(Math.random() * 1000)) === (ms * 1000 + Math.floor(Math.random() * 1000))) clash++;
 }
 ok('跨设备同毫秒撞号率 < 1%', clash / TRIES < 0.01, (clash / TRIES * 100).toFixed(2) + '%');
+
+// ── 场景七：换账号登录，不能把上一个账号的记录带过去 ────────
+console.log('\n【场景七】换账号保护（防数据串账）');
+ok('从没同步过 → 合并（认领本机已有记录）', A.syncMode('', 'userA') === 'merge');
+ok('同一个账号 → 合并（正常同步）', A.syncMode('userA', 'userA') === 'merge');
+ok('换了账号 → 覆盖，不合并', A.syncMode('userA', 'userB') === 'replace');
+ok('登出后换人登录 → 覆盖', A.syncMode('userA', '') === 'replace');
+
+// ── 场景八：上传安全闸（整包同步最致命的缺陷）─────────────
+console.log('\n【场景八】上传安全闸：空客户端不能清空云端');
+const cloud = { entries: { '2026-09-06': [{ id: 1 }, { id: 2 }, { id: 3 }] } };
+A.tombs = { e: {}, p: {} };
+
+ok('本地空 → 会弄丢 3 条 → 必须拦下',
+  A.wouldLoseRecords(cloud, { entries: {} }) === 3);
+ok('本地有全部 3 条 → 放行',
+  A.wouldLoseRecords(cloud, cloud) === 0);
+ok('本地多一条新的 → 放行',
+  A.wouldLoseRecords(cloud, { entries: { '2026-09-06': [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] } }) === 0);
+
+A.tombEntry(2);
+ok('自己删掉的记录不算弄丢 → 放行',
+  A.wouldLoseRecords(cloud, { entries: { '2026-09-06': [{ id: 1 }, { id: 3 }] } }) === 0);
+ok('删了 1 条但另有 1 条没见过 → 仍要拦',
+  A.wouldLoseRecords(cloud, { entries: { '2026-09-06': [{ id: 1 }] } }) === 1);
+
+A.tombs = { e: {}, p: {} };
+ok('云端是空的 → 无所谓，放行', A.wouldLoseRecords({ entries: {} }, { entries: {} }) === 0);
+ok('云端没数据(null) → 放行', A.wouldLoseRecords(null, { entries: {} }) === 0);
 
 console.log('\n' + '─'.repeat(46));
 console.log(fail === 0 ? `全部通过：${pass} 项 ✅` : `通过 ${pass}，失败 ${fail} ❌`);

@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icons/icon-apple.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="catVweb">
-<script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});</script>
+<script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(r){r.update()}).catch(function(){})});</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
@@ -22,6 +22,8 @@ window.addEventListener('load', function(){
 });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<!-- 云端同步。用 unpkg + 钉死版本，理由同第七节 docx 那条 -->
+<script src="https://unpkg.com/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:ital,wght@0,400;0,600;0,800;0,900;1,400&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -617,6 +619,23 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .cp-closest-name { font-size:10px; color:var(--mid); flex:1; }
 .cp-closest-check { font-size:10px; color:var(--c-active); opacity:0; transition:opacity .12s; }
 .cp-closest-item.cp-sel .cp-closest-check { opacity:1; }
+/* ── CLOUD SYNC ───── */
+.sync-dot { width:9px; height:9px; border-radius:50%; margin-left:auto; flex-shrink:0; background:var(--mid); transition:background .2s; }
+.sync-dot.off     { display:none; }
+.sync-dot.idle    { background:var(--c-active); }
+.sync-dot.syncing { background:var(--purple); animation:syncPulse 1s ease-in-out infinite; }
+.sync-dot.pending { background:var(--c-past-hint); animation:syncPulse 1.4s ease-in-out infinite; }
+.sync-dot.offline { background:var(--c-faint); }
+.sync-dot.error   { background:var(--danger); }
+@keyframes syncPulse { 0%,100%{opacity:1} 50%{opacity:.25} }
+.sync-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:var(--mid); margin:4px 0; }
+.sync-row b { color:var(--dark); font-weight:700; }
+.sync-label { display:block; font-size:10px; font-weight:800; text-transform:uppercase; color:var(--mid); margin:9px 0 4px; letter-spacing:.5px; }
+.sync-msg { font-size:11px; line-height:1.55; margin:8px 0 2px; color:var(--mid); }
+.sync-msg.bad { color:var(--danger); }
+.sync-msg.good { color:var(--c-active); }
+.sync-link { background:none; border:none; padding:6px 0 0; font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; color:var(--purple); cursor:pointer; }
+.sync-link:hover { color:var(--dark); }
 </style>
 </head>
 <body>
@@ -694,6 +713,7 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
       <button class="sb-nav-btn" id="month-nav-btn">📅 <span id="month-nav-label">月报告</span></button>
       <button class="sb-nav-btn" id="tracker-nav-btn">📁 <span id="tracker-nav-label">项目追踪</span></button>
       <button class="sb-nav-btn" id="backup-nav-btn">💾 <span id="backup-nav-label">备份</span></button>
+      <button class="sb-nav-btn" id="sync-nav-btn">☁️ <span id="sync-nav-label">同步</span><span class="sync-dot off" id="sync-dot"></span></button>
     </div>
     <div class="main-area" id="main-area"></div>
   </div>
@@ -735,6 +755,19 @@ const I18N={
     form_start_hint:'点右上角「新记录」开始',
     form_past:'过去日期',form_earn:'预计获得',form_half:'减半',form_discard:'放弃未保存的记录？',form_discard_yes:'放弃',form_discard_no:'继续编辑',form_discard_title:'未保存的记录',form_discard_body_zh:'你正在编辑一条记录，要先保存还是放弃？',form_save_leave:'先保存再离开',
     edit_reselect:'重新选择',edit_no_proj:'未选择',
+    sync_nav:'同步',sync_title:'云端同步',sync_email:'邮箱',sync_pw:'密码',
+    sync_login:'登录',sync_signup:'注册新账号',sync_logout:'登出',sync_now:'立即同步',
+    sync_on:'已同步',sync_ing:'同步中...',sync_off:'未登录',sync_offline:'离线（已存在本机）',sync_err:'同步出错',
+    sync_pending:'有改动还没传上去',sync_leave:'还有改动没传上去，现在离开会丢掉。确定要走吗？',
+    sync_out_q:'登出后，这台设备上的记录怎么处理？',
+    sync_out_keep:'保留在本机',sync_out_keep_d:'不登录也能继续用，数据留在这台设备',
+    sync_out_wipe:'一并清除',sync_out_wipe_d:'云端已保存，下次登录就能拿回来',
+    sync_out_risk:'还有改动没传上去，现在清除会永久丢失。建议先点「立即同步」。',
+    sync_wiped:'本机记录已清除。登录回来即可恢复。',
+    sync_as:'当前账号',sync_last:'上次同步',sync_never:'还没同步过',
+    sync_confirm:'确认信已寄出。去邮箱点一下链接，然后回来登录。',
+    sync_hint:'登录后，你的记录会自动在所有设备之间同步。不登录也照常能用，数据存在本机。',
+    sync_pwshort:'密码至少 6 位',sync_need:'邮箱和密码都要填',sync_switch:'还没有账号？注册一个',sync_back:'已有账号，去登录',
     bk_nav:'备份',bk_title:'备份与恢复',bk_tab_out:'导出',bk_tab_in:'导入',
     bk_out_hint:'复制下面全部文字，或下载文件。转移到新设备后用「导入」还原。',
     bk_copy:'复制',bk_copied:'已复制 ✓',bk_download:'下载文件',
@@ -844,6 +877,19 @@ const I18N={
     form_start_hint:'Click "New Log" to start',
     form_past:'Past date',form_earn:'Will earn',form_half:'Half',form_discard:'Discard unsaved entry?',form_discard_yes:'Discard',form_discard_no:'Keep editing',form_discard_title:'Unsaved entry',form_discard_body_en:'Save your entry first or discard it?',form_save_leave:'Save and leave',
     edit_reselect:'Reselect',edit_no_proj:'No project',
+    sync_nav:'Sync',sync_title:'Cloud Sync',sync_email:'Email',sync_pw:'Password',
+    sync_login:'Sign in',sync_signup:'Create account',sync_logout:'Sign out',sync_now:'Sync now',
+    sync_on:'Synced',sync_ing:'Syncing...',sync_off:'Not signed in',sync_offline:'Offline (saved on this device)',sync_err:'Sync failed',
+    sync_pending:'Changes not uploaded yet',sync_leave:'Some changes have not been uploaded yet and will be lost. Leave anyway?',
+    sync_out_q:'What should happen to the records on this device?',
+    sync_out_keep:'Keep on this device',sync_out_keep_d:'Still usable without signing in; data stays here',
+    sync_out_wipe:'Clear them too',sync_out_wipe_d:'Saved in the cloud - sign back in to get them',
+    sync_out_risk:'Some changes have not been uploaded and will be lost. Run Sync now first.',
+    sync_wiped:'Local records cleared. Sign back in to restore them.',
+    sync_as:'Signed in as',sync_last:'Last synced',sync_never:'Never synced',
+    sync_confirm:'Confirmation email sent. Click the link, then come back and sign in.',
+    sync_hint:'Once signed in, your records sync across all your devices. Works fine without signing in too - data stays on this device.',
+    sync_pwshort:'Password must be at least 6 characters',sync_need:'Email and password are both required',sync_switch:'No account yet? Create one',sync_back:'Have an account? Sign in',
     bk_nav:'Backup',bk_title:'Backup & Restore',bk_tab_out:'Export',bk_tab_in:'Import',
     bk_out_hint:'Copy all the text below, or download the file. Use Import on your new device to restore.',
     bk_copy:'Copy',bk_copied:'Copied ✓',bk_download:'Download file',
@@ -997,6 +1043,65 @@ function purgeTombed(){
   projects=projects.filter(p=>!isTombedProj(p.id));
 }
 
+/* ── 合并引擎（唯一一份）────────────────────────────────────
+   备份导入和云端同步共用这个函数。⚠️ 不要为同步另写一份，
+   两份实现迟早会分岔，然后出现「导入是对的、同步是错的」这种鬼问题。
+
+   三条规则：
+     1. 对方有、我没有  → 收下（同名不同 id 的自动重命名，方案 A）
+     2. 两边都有        → 比新旧记号，新的赢
+     3. 我删过的        → 永远不收（防止记录复活）
+   传入的 inc 必须先过 backfillStamps()。返回被重命名的项目数。
+   ───────────────────────────────────────────────────────── */
+/* 换账号保护：决定本机数据是跟云端「合并」还是被云端「覆盖」。
+   owner = 本机这份数据属于哪个账号（空 = 从没同步过）
+   uid   = 现在登录的是谁
+   空 或 同一人 → merge（把本机已有记录认领上云，或正常双向同步）
+   不同人       → replace（上一个账号的残留绝不能并进这个账号）*/
+function syncMode(owner,uid){return(!owner||owner===uid)?'merge':'replace';}
+
+function mergeIncoming(inc){
+  const incT=inc.tombs||{e:{},p:{}};
+  // 先收下对方的删除名单 —— 对方删过的，我这边也该删
+  Object.keys(incT.p||{}).forEach(id=>{if(!tombs.p[id])tombs.p[id]=incT.p[id];});
+  Object.keys(incT.e||{}).forEach(id=>{if(!tombs.e[id])tombs.e[id]=incT.e[id];});
+
+  let renamed=0;
+  const byId=new Map(projects.map(p=>[p.id,p]));
+  (inc.projects||[]).forEach(p=>{
+    if(isTombedProj(p.id))return;                                     // 规则 3
+    const mine=byId.get(p.id);
+    if(mine){                                                         // 规则 2
+      if((p.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,p);
+      return;
+    }
+    const cp={...p};                                                  // 规则 1
+    if(projects.some(x=>x.name===cp.name)){
+      let base=cp.name+' ('+t('bk_imported')+')', name=base, n=2;
+      while(projects.some(x=>x.name===name)){name=base+' '+n;n++;}
+      cp.name=name;renamed++;
+    }
+    projects.push(cp);byId.set(cp.id,cp);
+  });
+
+  Object.entries(inc.entries||{}).forEach(([dkey,arr])=>{
+    if(!Array.isArray(arr))return;
+    if(!entries[dkey])entries[dkey]=[];
+    const mineById=new Map(entries[dkey].map(e=>[e.id,e]));
+    arr.forEach(e=>{
+      if(isTombedEntry(e.id))return;                                  // 规则 3
+      const mine=mineById.get(e.id);
+      if(mine){if((e.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,e);}  // 规则 2
+      else{entries[dkey].push(e);mineById.set(e.id,e);}                         // 规则 1
+    });
+  });
+
+  purgeTombed();       // 对方删过、我这边还留着的，清掉
+  (inc.palette||[]).forEach(c=>{if(!cpMyPalette.includes(c))cpMyPalette.push(c)});
+  recalcTotalCoins();  // 猫币是派生值，合并完重算，不参与冲突
+  return renamed;
+}
+
 // 老数据没有 updatedAt，用它自己的 id 回填。
 // id 本身就是创建时的毫秒数，各设备算出来一致，不会互相打架。
 function stampOf(id){
@@ -1030,6 +1135,9 @@ function saveData(){
   localStorage.setItem('catTokens',String(totalCoins));
   localStorage.setItem('cj_tombs',JSON.stringify(tombs));
   syncNav();
+  // 登录了就安排上传（防抖 3 秒）。没登录的话这行什么都不做，
+  // 所以本地使用完全不受云端影响。
+  if(typeof schedulePush==='function')schedulePush();
 }
 
 let {projects,entries,totalCoins}=backfillStamps(loadData());
@@ -2370,6 +2478,7 @@ function updateStaticI18N(){
   set('month-nav-label',t('btn_month'));
   set('tracker-nav-label',t('tracker'));
   set('backup-nav-label',t('bk_nav'));
+  set('sync-nav-label',t('sync_nav'));
   if(typeof updateThemeBtn==='function')updateThemeBtn();
   const zh=document.getElementById('lang-zh');
   const en=document.getElementById('lang-en');
@@ -4107,46 +4216,7 @@ function bkRun(){
     cpMyPalette=inc.palette;
     tombs=inc.tombs||{e:{},p:{}};
   } else {
-    /* 合并三条规则：
-       1. 对方有、我没有  → 收下（同名不同 id 的自动重命名，方案 A）
-       2. 两边都有        → 比新旧记号，新的赢
-       3. 我删过的        → 永远不收（删除名单的作用，防止记录复活）  */
-    const incT=inc.tombs||{e:{},p:{}};
-    // 先收下对方的删除名单 —— 对方删过的，我这边也该删
-    Object.keys(incT.p).forEach(id=>{if(!tombs.p[id])tombs.p[id]=incT.p[id];});
-    Object.keys(incT.e).forEach(id=>{if(!tombs.e[id])tombs.e[id]=incT.e[id];});
-
-    const byId=new Map(projects.map(p=>[p.id,p]));
-    bkRenamed=0;
-    inc.projects.forEach(p=>{
-      if(isTombedProj(p.id))return;                                   // 规则 3
-      const mine=byId.get(p.id);
-      if(mine){                                                       // 规则 2
-        if((p.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,p);
-        return;
-      }
-      const cp={...p};                                                // 规则 1
-      if(projects.some(x=>x.name===cp.name)){
-        let base=cp.name+' ('+t('bk_imported')+')', name=base, n=2;
-        while(projects.some(x=>x.name===name)){name=base+' '+n;n++;}
-        cp.name=name;bkRenamed++;
-      }
-      projects.push(cp);byId.set(cp.id,cp);
-    });
-    Object.entries(inc.entries).forEach(([dkey,arr])=>{
-      if(!Array.isArray(arr))return;
-      if(!entries[dkey])entries[dkey]=[];
-      const mineById=new Map(entries[dkey].map(e=>[e.id,e]));
-      arr.forEach(e=>{
-        if(isTombedEntry(e.id))return;                                // 规则 3
-        const mine=mineById.get(e.id);
-        if(mine){if((e.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,e);}   // 规则 2
-        else{entries[dkey].push(e);mineById.set(e.id,e);}                          // 规则 1
-      });
-    });
-    purgeTombed();          // 对方删过、我这边还留着的，清掉
-    inc.palette.forEach(c=>{if(!cpMyPalette.includes(c))cpMyPalette.push(c)});
-    recalcTotalCoins();     // 猫币是派生值，合并完重算，不参与冲突
+    bkRenamed=mergeIncoming(inc);
   }
   localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));
   saveData();
@@ -4162,6 +4232,408 @@ function bkRun(){
     <div class="modal-btns"><button class="m-save" onclick="bkClose()">${t('bk_close')}</button></div>
   </div></div>`;
 }
+
+/* ── 11. 云端同步 (Supabase) ─────────────────────────────────
+   整包同步：projects / entries / palette / tombs 打成一包上传下载，
+   不做逐条同步。数据量小（一条约 200 字节），整包够用到 1MB，
+   而且天然免疫离线队列问题 —— 离线照常写本地，上线时「拉→合→推」。
+
+   ⚠️ 下面这把 anon key 出现在公开源码里是正常设计，它本来就是公开的。
+      安全靠数据库那边的「数据围栏 (RLS)」，不靠藏钥匙。
+      能绕过围栏的 service_role key 绝对不可以写进这个文件。
+   ───────────────────────────────────────────────────────── */
+/* 代码版本号，必须跟 sw.js 的 VERSION 一致。
+   加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
+   而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
+   ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
+const APP_BUILD=14;
+console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
+
+const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1eHFrbmR5ZmpoYWpkandiY3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODYxNDQsImV4cCI6MjEwNDI2MjE0NH0.guu3_spScsRSIuL5X72ACmZKH66I-BYyvMydhXZpqPI';
+
+let _sb=null,cloudUser=null,syncState='off',syncErr='',_pushTimer=null,_pullTimer=null,_inSync=false;
+let _dirty=false;        // 有改动还没传上去
+let _syncStart=0;        // 这次同步是什么时候开始的（卡死自救用）
+let _suppressPush=false; // 同步内部调 saveData 时用，避免把自己的写入当成新改动
+let _lastStamp=null;     // 上次见到的云端 updated_at，用来省掉无谓的整包拉取
+let _lastCount=0;
+ let _dirtySeq=0;         // 本地改动序号，用来判断推上去的内容有没有过时        // 上次成功同步时的记录数，本机缩水时强制回去下载整包
+
+function sbReady(){
+  if(_sb)return _sb;
+  if(typeof supabase==='undefined'||!supabase.createClient)return null;
+  _sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'cj_auth'}});
+  return _sb;
+}
+function setSync(s,msg){syncState=s;syncErr=msg||'';paintSyncBadge();}
+
+// 打包：跟备份用的是同一套字段，所以云端数据和备份文件可以互相导入
+function cloudBundle(){return{projects,entries,palette:cpMyPalette,tombs};}
+// 数一个数据包里有多少条记录（上传核对用）
+function cntRecords(o){
+  if(!o||!o.entries)return 0;
+  return Object.values(o.entries).reduce((s,a)=>s+(Array.isArray(a)?a.length:0),0);
+}
+
+/* ⚠️ 上传前的安全闸 —— 整包同步最致命的缺陷在这里堵住。
+   整包上传是「无条件覆盖」：任何一个本地为空的客户端同步一次，
+   就能把云端清空。不是 bug，是设计使然，代价是真实数据。
+
+   规则：数一数「云端有、我没有、我的删除名单里也没有」的记录。
+   这种记录代表「别的设备写的，我根本没见过」——推上去就是销毁。
+   数量 > 0 就拒绝上传。
+   自己删掉的记录在删除名单里，不会误判。 */
+function wouldLoseRecords(remote,local){
+  if(!remote||!remote.entries)return 0;
+  let lost=0;
+  Object.entries(remote.entries).forEach(([k,arr])=>{
+    if(!Array.isArray(arr))return;
+    const mine=new Set((((local||{}).entries||{})[k]||[]).map(e=>String(e.id)));
+    arr.forEach(e=>{if(!mine.has(String(e.id))&&!isTombedEntry(e.id))lost++;});
+  });
+  return lost;
+}
+
+/* 一次完整同步 = 拉 → 合 → 推。
+   合并走 mergeIncoming()，跟备份导入是同一个引擎，行为保证一致。 */
+async function cloudSync(){
+  const c=sbReady();
+  if(!c||!cloudUser)return;
+  /* ⚠️ 卡死自救：_inSync 是「同步进行中」的锁。它一旦卡在 true，
+     schedulePush 和 cloudSync 都会第一行就 return —— 上传和同步
+     全部静默失效，界面却一切正常（圆点一直绿）。极难发现。
+     所以：超过 30 秒还没释放，一律当成上次崩了，强制解锁。 */
+  if(_inSync){
+    if(Date.now()-_syncStart<30000)return;
+    console.warn('[sync] 上次同步没有正常结束，强制解锁');
+    _inSync=false;
+  }
+  if(typeof navigator!=='undefined'&&navigator.onLine===false){setSync('offline');return;}
+  // 把账号 id 先抓在手里。中途如果用户登出，cloudUser 会变 null，
+  // 后面再读 cloudUser.id 就会崩，这次同步的数据就丢了。
+  const uid=cloudUser.id;
+  const who=(cloudUser.email||uid).split('@')[0];
+  clearTimeout(_pushTimer);_pushTimer=null;
+  _inSync=true;_syncStart=Date.now();
+  let endState='idle',endMsg='';
+  try{
+    setSync('syncing');
+    /* 省流量：先只取 updated_at 问一句「云端变了吗」。
+       云端没变、本机也没改 → 直接收工，不拉整包。
+       整包同步每次要传全部数据，60 秒一次的话流量很快就爆
+       （免费版每月 5GB）。这一步把空转的开销降到几乎为零。 */
+    const{data:head,error:he}=await c.from('vaults').select('updated_at').eq('user_id',uid).maybeSingle();
+    if(he)throw he;
+    const stamp=head?head.updated_at:null;
+    if(!_dirty&&stamp&&stamp===_lastStamp){
+      console.info('[sync] '+who+' · 云端无变化，跳过');
+      return;               // finally 仍会释放锁并把状态设回已同步
+    }
+    /* 省流量第二招：云端没变、而且本机记录数没缩水 → 不用下载整包，
+       直接把自己的推上去。
+       本机一旦缩水就老老实实下载 —— 安全闸需要云端那份才能比对，
+       不能为了省流量把保命的检查跳过去。 */
+    const localN=cntRecords(cloudBundle());
+    const skipPull=!!(stamp&&stamp===_lastStamp&&localN>=_lastCount);
+    let data=null;
+    if(!skipPull){
+      const r=await c.from('vaults').select('data').eq('user_id',uid).maybeSingle();
+      if(r.error)throw r.error;
+      data=r.data;
+    }
+    // 拉下来的东西合并前先记一份，用来判断到底有没有变化
+    const before=JSON.stringify(cloudBundle());
+    const remote=(data&&data.data&&typeof data.data==='object'&&data.data.entries)
+      ? backfillStamps(data.data) : null;
+
+    /* ⚠️ 换账号保护：本机记着这份数据属于哪个账号。
+       如果换了人登录，本机残留的是上一个账号的记录，
+       绝对不能合并 —— 否则会把别人的记录混进这个账号的云端。
+       owner 为空 = 从没同步过，那是「我把本机已有数据认领上云」的
+       正常情况，要合并。 */
+    const owner=localStorage.getItem('cj_owner')||'';
+    const mode=syncMode(owner,uid);
+    if(mode==='merge'){
+      if(remote)mergeIncoming(remote);
+    }else{
+      /* ⚠️ 换账号：本机这份属于上一个账号，要让位给云端那份。
+         但它可能从来没上传过（比如上次同步失败）。
+         所以让位之前必须先在本地存一份 —— 决不允许出现
+         「无备份地丢弃本地数据」。这条踩过一次，代价是真实数据。 */
+      const outgoing=cloudBundle();
+      const outN=Object.values(outgoing.entries||{}).reduce((s,a)=>s+(Array.isArray(a)?a.length:0),0);
+      if(outN>0){
+        try{
+          localStorage.setItem('cj_switch_backup',JSON.stringify({
+            app:'catVweb-journal',version:1,exportedAt:new Date().toISOString(),
+            prevOwner:owner,data:{projects:outgoing.projects,entries:outgoing.entries,
+              totalCoins:totalCoins,palette:outgoing.palette,tombs:outgoing.tombs}
+          }));
+          console.warn('[sync] 换账号 → '+who+'：本机 '+outN+' 条属于上一个账号 '+
+                       owner.slice(0,8)+'…，已存进 cj_switch_backup，没有丢。');
+        }catch(err){
+          // 存不下就别换，宁可不同步也不能销毁数据
+          throw new Error('换账号前备份失败，已中止同步以免丢数据: '+err.message);
+        }
+      }
+      projects   = remote?(remote.projects||[]) : [];
+      entries    = remote?(remote.entries||{})  : {};
+      cpMyPalette= remote?(remote.palette||[])  : [];
+      tombs      = remote?(remote.tombs||{e:{},p:{}}) : {e:{},p:{}};
+      recalcTotalCoins();
+    }
+    localStorage.setItem('cj_owner',uid);
+    const after=JSON.stringify(cloudBundle());
+    const changed=(before!==after);
+    if(changed){
+      localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));
+      _suppressPush=true;      // 这次 saveData 是同步自己触发的，别当成新改动
+      saveData();
+      _suppressPush=false;
+    }
+    /* ⚠️ 不要在这里清 _dirty。
+       以前写成「推之前就 _dirty=false」，造成两种丢数据：
+         1. 推失败了，改动却被标记成已同步，永远不再重试
+         2. 「算好内容」到「真的推上去」之间用户又记了一条，
+            那条被这句抹掉，再也传不出去
+       正确做法：记下当前的改动序号，推成功、且期间没有新改动，才清。 */
+    const seqAtPush=_dirtySeq;
+    const payload=JSON.parse(after);
+    const n=cntRecords(payload);
+
+    // 安全闸：这次上传会不会弄丢云端的东西？会就别推。
+    const lose=wouldLoseRecords(remote,payload);
+    if(lose>0){
+      throw new Error('已中止上传：这一推会让云端少掉 '+lose+
+        ' 条我没见过、也没删过的记录。本机数据未受影响，云端也保持原样。');
+    }
+    const nowStamp=new Date().toISOString();
+    const{data:wrote,error:e2}=await c.from('vaults')
+      .upsert({user_id:uid,data:payload,updated_at:nowStamp},{onConflict:'user_id'})
+      .select('data');
+    if(e2)throw e2;
+
+    /* ⚠️ 存完必须验。
+       踩过的坑：上传返回成功、没有任何报错，但数据根本没进数据库，
+       界面一路显示「已同步」，直到换设备才发现全空了。
+       静默丢数据是最恶劣的故障，所以这里宁可报错也不能假装成功。 */
+    const back=(wrote&&wrote[0]&&wrote[0].data)?wrote[0].data:null;
+    const m=cntRecords(back);
+    if(n>0&&m!==n){
+      throw new Error('上传核对失败：本机 '+n+' 条，服务器只存下 '+m+
+        ' 条。数据没有真正保存，本机记录未受影响。');
+    }
+    // 推成功了。只有期间没有新改动，才能把「有待上传」这个标记清掉。
+    if(_dirtySeq===seqAtPush)_dirty=false;
+    _lastStamp=nowStamp;_lastCount=n;   // 记住这次写入的时间戳，下次好判断云端有没有被别人改过
+    localStorage.setItem('cj_lastsync',String(Date.now()));
+    // 日志必须带账号 —— 多账号测试时，不写账号根本分不清哪行是谁的
+    console.info('[sync] '+who+' · 云端拉到 '+cntRecords(remote)+' 条 → 本机 '+n+
+      ' 条 → 服务器核对 '+m+' 条 · '+mode+(skipPull?' · 省了下载':'')+(changed?' · 有变化':''));
+    // 只有真的变了才重建 DOM。否则每 60 秒一次的后台拉取
+    // 会打断你正在做的滚动、打字、展开。
+    if(changed)renderAll();
+  }catch(e){
+    endState='error';endMsg=(e&&e.message)?e.message:String(e);
+    console.warn('[sync] '+who+' 失败:',endMsg,e);
+  }finally{
+    // ⚠️ 锁必须在 finally 里释放。放在 try 里面的话，
+    //    中间任何一句抛错都会让它永远卡住。
+    _inSync=false;
+    setSync(endState,endMsg);
+    // 同步期间用户又改了东西 → 再推一次，别让那次改动漏掉
+    if(_dirty&&cloudUser&&endState==='idle')schedulePush();
+  }
+}
+// 存完本地 3 秒后再推，避免连续编辑时反复上传。
+// 这 3 秒内状态标成 pending，让用户看得见「还没传上去」。
+function schedulePush(){
+  if(!cloudUser||_suppressPush)return;
+  _dirty=true;_dirtySeq++;   // 序号用来判断「这次推的内容是否已经过时」
+  clearTimeout(_pushTimer);
+  _pushTimer=setTimeout(cloudSync,8000);
+  if(syncState!=='syncing')setSync('pending');
+}
+function startCloudLoop(){
+  clearInterval(_pullTimer);
+  _pullTimer=setInterval(()=>{if(cloudUser&&!_inSync)cloudSync();},60000);
+}
+function stopCloudLoop(){clearInterval(_pullTimer);clearTimeout(_pushTimer);_pushTimer=null;}
+
+async function cloudSignUp(email,pw){
+  const c=sbReady();if(!c)return{err:'lib'};
+  const{data,error}=await c.auth.signUp({email:email,password:pw});
+  if(error)return{err:error.message};
+  if(data&&data.session){cloudUser=data.session.user;afterLogin();return{ok:1};}
+  return{ok:1,confirm:1};      // 需要去邮箱点确认链接
+}
+async function cloudSignIn(email,pw){
+  const c=sbReady();if(!c)return{err:'lib'};
+  const{data,error}=await c.auth.signInWithPassword({email:email,password:pw});
+  if(error)return{err:error.message};
+  cloudUser=data.user;afterLogin();return{ok:1};
+}
+/* 登出时问一句「本机记录怎么办」。
+   共用设备时，前一个人登出后，下一个人不该直接看到他的全部记录。 */
+function askSignOut(){
+  const mc=document.getElementById('modal-container');if(!mc)return;
+  const risky=_dirty||syncState==='error'||syncState==='pending';
+  mc.innerHTML='<div class="modal-bg" onmousedown="if(event.target===this)renderSyncModal(true)">'+
+    '<div class="modal" style="width:320px" id="sync-modal-body">'+
+      '<div class="modal-title">'+t('sync_out_q')+'</div>'+
+      (risky?'<div class="sync-msg bad">'+t('sync_out_risk')+'</div>':'')+
+      '<button class="bk-tog" style="width:100%;flex-direction:column;align-items:flex-start;gap:0;text-align:left;margin-top:8px;padding:10px 12px" onclick="doSignOut(false)">'+
+        '<b style="color:var(--dark)">'+t('sync_out_keep')+'</b>'+
+        '<span style="font-size:11px;color:var(--mid);margin-top:2px">'+t('sync_out_keep_d')+'</span></button>'+
+      '<button class="bk-tog" style="width:100%;flex-direction:column;align-items:flex-start;gap:0;text-align:left;margin-top:8px;padding:10px 12px" onclick="doSignOut(true)">'+
+        '<b style="color:'+(risky?'var(--danger)':'var(--dark)')+'">'+t('sync_out_wipe')+'</b>'+
+        '<span style="font-size:11px;color:var(--mid);margin-top:2px">'+t('sync_out_wipe_d')+'</span></button>'+
+      '<div class="modal-btns"><button class="m-cancel" onclick="renderSyncModal(true)">'+t('modal_cancel')+'</button></div>'+
+    '</div></div>';
+}
+// 清空本机所有日记数据（云端那份不动）
+function wipeLocalData(){
+  projects=[];entries={};totalCoins=0;cpMyPalette=[];tombs={e:{},p:{}};
+  _lastStamp=null;_lastCount=0;_dirty=false;_dirtySeq=0;
+  ['cj_projects','cj_entries','catTokens','cj_mypalette','cj_tombs','cj_owner','cj_lastsync']
+    .forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  try{Object.keys(localStorage).filter(k=>k.indexOf('cj_view_')===0)
+    .forEach(k=>localStorage.removeItem(k));}catch(e){}
+}
+async function doSignOut(wipe){
+  await cloudSignOut();          // 内部会先把没传上去的补推完
+  if(wipe){wipeLocalData();_syncMsg=t('sync_wiped');_syncKind='good';}
+  view='journal';showForm=false;renderAll();
+  renderSyncModal(true);
+}
+
+async function cloudSignOut(){
+  /* ⚠️ 登出前必须先把没传上去的改动传完。
+     以前这里直接 clearTimeout 把待上传的定时器清掉，
+     导致「记完马上登出」的数据静默消失。 */
+  clearTimeout(_pushTimer);_pushTimer=null;
+  /* ⚠️ 必须先等正在跑的那次同步结束。
+     cloudSync 开头有「已经在同步就直接 return」，所以登出那一刻若正好
+     有同步在飞，下面这个「登出前补推」会静默变成空操作，
+     待上传的改动就跟着登出一起没了。踩过一次，代价是一条记录。 */
+  const t0=Date.now();
+  while(_inSync&&Date.now()-t0<15000)await new Promise(r=>setTimeout(r,150));
+  if(cloudUser&&_dirty){try{await cloudSync();}catch(e){}}
+  const c=sbReady();if(c){try{await c.auth.signOut();}catch(e){}}
+  cloudUser=null;_dirty=false;_dirtySeq=0;_lastStamp=null;_lastCount=0;stopCloudLoop();setSync('off');
+  renderSyncModal();
+}
+function afterLogin(){setSync('idle');startCloudLoop();cloudSync();renderSyncModal();}
+
+async function cloudInit(){
+  const c=sbReady();
+  if(!c){setSync('off');return;}
+  try{
+    const{data}=await c.auth.getSession();
+    // Supabase 登录后会往网址尾巴塞 #access_token=...，读完留一个空的 #。
+    // 这里清掉，别让它挂在地址栏上。
+    if(location.hash&&(location.hash==='#'||location.hash.indexOf('access_token')>=0)){
+      try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}
+    }
+    if(data&&data.session&&data.session.user){
+      cloudUser=data.session.user;
+      setSync('idle');startCloudLoop();cloudSync();
+    }else setSync('off');
+  }catch(e){setSync('off');}
+}
+if(typeof window!=='undefined'){
+  window.addEventListener('online',()=>{if(cloudUser)cloudSync();});
+  window.addEventListener('offline',()=>{if(cloudUser)setSync('offline');});
+  // 还有东西没传上去就关页面 → 浏览器弹原生提示拦一下。
+  // 数据在本机不会丢，但换设备就看不到，所以值得拦。
+  window.addEventListener('beforeunload',e=>{
+    if(cloudUser&&_dirty){e.preventDefault();e.returnValue=t('sync_leave');return t('sync_leave');}
+  });
+}
+
+/* ── 云端同步 · 界面 ── */
+let _syncMode='in',_syncMsg='',_syncKind='',_syncEmail='',_syncPw='';
+
+function paintSyncBadge(){
+  const d=document.getElementById('sync-dot');
+  if(d)d.className='sync-dot '+syncState;
+  renderSyncModal();          // 弹窗没开的话这句什么都不做
+}
+function syncStateText(){
+  const m={off:'sync_off',idle:'sync_on',syncing:'sync_ing',pending:'sync_pending',offline:'sync_offline',error:'sync_err'};
+  return m[syncState]?t(m[syncState]):'';
+}
+function lastSyncText(){
+  const v=parseInt(localStorage.getItem('cj_lastsync')||'0',10);
+  if(!v)return t('sync_never');
+  const d=new Date(v),p=n=>(n<10?'0':'')+n;
+  return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function openSyncModal(){
+  _syncMsg='';_syncKind='';
+  const b=document.getElementById('sync-nav-btn');if(b)b.classList.add('active');
+  renderSyncModal(true);
+}
+function syncClose(){
+  const mc=document.getElementById('modal-container');if(mc)mc.innerHTML='';
+  const b=document.getElementById('sync-nav-btn');if(b)b.classList.remove('active');
+}
+function syncSwitchMode(){_syncMode=_syncMode==='in'?'up':'in';_syncMsg='';_syncKind='';renderSyncModal();}
+
+async function syncDoAuth(){
+  const em=_syncEmail.trim(),pw=_syncPw;
+  if(!em||!pw){_syncMsg=t('sync_need');_syncKind='bad';renderSyncModal();return;}
+  if(pw.length<6){_syncMsg=t('sync_pwshort');_syncKind='bad';renderSyncModal();return;}
+  _syncMsg=t('sync_ing');_syncKind='';renderSyncModal();
+  const r=_syncMode==='up'?await cloudSignUp(em,pw):await cloudSignIn(em,pw);
+  if(r.err){_syncMsg=r.err;_syncKind='bad';}
+  else if(r.confirm){_syncMsg=t('sync_confirm');_syncKind='good';_syncMode='in';}
+  else{_syncMsg='';_syncKind='';_syncPw='';}
+  renderSyncModal();
+}
+
+function renderSyncModal(force){
+  const mc=document.getElementById('modal-container');
+  if(!mc)return;
+  // 后台同步会随时调这里。弹窗没开就直接走人，
+  // 否则会把用户正开着的别的弹窗顶掉。
+  if(!force&&!mc.querySelector('#sync-modal-body'))return;
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const msg=_syncMsg?'<div class="sync-msg '+_syncKind+'">'+esc(_syncMsg)+'</div>':'';
+  let body;
+  if(cloudUser){
+    body=
+      '<div class="sync-row"><span>'+t('sync_as')+'</span><b>'+esc(cloudUser.email||'')+'</b></div>'+
+      '<div class="sync-row"><span>'+t('sync_last')+'</span><b>'+esc(lastSyncText())+'</b></div>'+
+      '<div class="sync-msg'+(syncState==='error'?' bad':(syncState==='idle'?' good':''))+'">'+
+        esc(syncStateText())+(syncState==='error'&&syncErr?' — '+esc(syncErr):'')+'</div>'+
+      '<div class="modal-btns">'+
+        '<button class="m-cancel" onclick="askSignOut()">'+t('sync_logout')+'</button>'+
+        '<button class="m-save" onclick="cloudSync()">'+t('sync_now')+'</button>'+
+      '</div>';
+  }else{
+    body=
+      '<div class="sync-msg">'+t('sync_hint')+'</div>'+
+      '<label class="sync-label">'+t('sync_email')+'</label>'+
+      '<input id="sync-email" type="email" autocomplete="off" spellcheck="false" value="'+esc(_syncEmail)+'" oninput="_syncEmail=this.value">'+
+      '<label class="sync-label">'+t('sync_pw')+'</label>'+
+      '<input id="sync-pw" type="password" autocomplete="off" value="'+esc(_syncPw)+'" oninput="_syncPw=this.value" onkeydown="if(event.key===\'Enter\')syncDoAuth()">'+
+      msg+
+      '<button class="sync-link" onclick="syncSwitchMode()">'+(_syncMode==='in'?t('sync_switch'):t('sync_back'))+'</button>'+
+      '<div class="modal-btns">'+
+        '<button class="m-cancel" onclick="syncClose()">'+t('modal_cancel')+'</button>'+
+        '<button class="m-save" onclick="syncDoAuth()">'+(_syncMode==='in'?t('sync_login'):t('sync_signup'))+'</button>'+
+      '</div>';
+  }
+  mc.innerHTML='<div class="modal-bg" onmousedown="if(event.target===this)syncClose()">'+
+    '<div class="modal" style="width:300px" id="sync-modal-body">'+
+      '<div class="modal-title">'+t('sync_title')+'</div>'+body+
+    '</div></div>';
+}
+
+document.getElementById('sync-nav-btn').onclick=()=>openSyncModal();
+cloudInit();
 
 document.getElementById('stats-nav-btn').onclick=()=>tryNavAway('stats');
 document.getElementById('month-nav-btn').onclick=()=>tryNavAway('month');
