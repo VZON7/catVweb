@@ -717,13 +717,23 @@ grep -cP "^<script>\r?$" journal.html   # 必须是 2
 CDN 三个地址（docx@7.1.0、Chart.js 4.4.1、Google Fonts）写死在 `sw.js` 的 `CDN` 数组里。
 **换 CDN 版本时，`sw.js` 里的地址要同步改**，否则离线时新版本抓不到。
 
-### 图标
+### 图标（第222次定案）
 
-源图 `Pictures/66 journal app icon.png`。两套各 4 个尺寸：
-- `c-*`（裁切版，猫脸特写）—— **当前使用**
-- `a-*`（完整版，含日记本和 JOURNAL 字样）—— 备用
+**底色 `#1e5a8a`（深蓝）**，四个文件在 `icons/`：
 
-换套只需改 `manifest.json` 的 3 处 `icons/c-` 和 `journal.html` 的 `apple-touch-icon`，共 4 处。
+| 文件 | 尺寸 | 内容占比 | 用途 |
+|---|---|---|---|
+| `icon-192.png` | 192 | 92% | 安卓桌面 |
+| `icon-512.png` | 512 | 92% | 高清屏 / 启动画面 |
+| `icon-maskable.png` | 512 | **74%** | 安卓专用，留安全区 |
+| `icon-apple.png` | 180 | 90% | iPhone（`journal.html` 里引用） |
 
-`*-maskable.png` 是安卓专用：安卓会把图标裁成圆形，所以内容压到 72% 留安全区。
-**改 maskable 图后必须验证圆形裁切不会切到耳朵和爪子。**
+**源图：`Pictures/journal66-clean.png`** —— 已抠好的透明 PNG，重做图标直接用这份。
+（`Pictures/journal 66 -half book.png` 是原始素材，带水印和假透明格子，不要直接用。）
+
+**改图标要同步 4 个地方：** `manifest.json`（3 处）+ `journal.html` 的 `apple-touch-icon`（1 处）+ `sw.js` 的 `CORE` 数组（4 处）+ `VERSION` 加 1。
+
+⚠️ **maskable 内容占比不能超过 74%**：安卓会把图标裁成圆形，超了会切到耳朵或横幅上的字。
+**改完必须验证**——套一个圆形遮罩渲染出来看，别凭感觉。
+
+⚠️ **换图标后 iPhone 必须删掉桌面图标重新添加**，iOS 会死死缓存旧图标，不重装看不到新的。

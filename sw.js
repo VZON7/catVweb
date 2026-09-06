@@ -4,7 +4,7 @@
    ⚠️ 改动 journal.html 之后，把下面的 VERSION 加 1，
       否则手机可能继续用旧的缓存。
    ───────────────────────────────────────────────────────── */
-const VERSION = 1;
+const VERSION = 2;
 const CACHE = 'catvweb-v' + VERSION;
 
 // 本站文件 —— 必须缓存成功，否则离线打不开
@@ -13,10 +13,10 @@ const CORE = [
   './journal.html',
   './index.html',
   './manifest.json',
-  './icons/c-192.png',
-  './icons/c-512.png',
-  './icons/c-maskable.png',
-  './icons/c-apple.png'
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable.png',
+  './icons/icon-apple.png'
 ];
 
 // 外部资源 —— 版本固定不会变，缓存失败也不影响安装
