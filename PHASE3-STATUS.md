@@ -16,7 +16,68 @@
 那个标签页跑的是没有安全闸的旧代码。新代码的 `wouldLoseRecords()`
 会拒绝这种回退，所以**一旦全部客户端都是新版，这条路径就不存在了**。
 
-**下次要做的第一件事就是证实或推翻这个判断。**
+---
+
+### ⚠️ 更强的线索（最后一次测试才发现，优先查这个）
+
+版本 14 的日志里同时出现：
+
+```
+Failed to load resource: .../token?grant_type=password      400   ← 登录被拒绝
+Failed to load resource: .../token?grant_type=refresh_token 400   ← 会话续期失败
+[sync] vzonexcel · 云端拉到 4 条 → 本机 8 条 → 服务器核对 8 条 · merge
+                                  ↑ 这 8 条里混着 theprov7 的记录
+```
+
+**数据串账了，而且换账号保护没拦住** —— 它判定成 `merge` 而不是 `replace`，
+说明那一刻 `cj_owner` 跟真实登录账号对不上。
+
+**推测的因果链：**
+
+```
+登录请求 400 失败，但界面没有明显提示
+   ↓
+cloudUser 仍是上一个账号，cj_owner 也没更新
+   ↓
+syncMode() 拿到错误的输入 → 判成 merge
+   ↓
+上一个账号的记录被合并进这个账号 → 污染 / 看起来像"记录不见了"
+```
+
+**所以根因很可能在登录状态管理，不在同步逻辑。**
+之前一直在查同步，方向可能是偏的。
+
+**下次开工先查这三点：**
+
+1. `cloudSignIn` / `cloudSignUp` 失败时，`cloudUser` 有没有被正确清空？
+   现在失败只 `return{err}`，**没有把 `cloudUser` 设回 null**
+2. 登录失败时界面提示够不够明显？用户会不会以为切换成功了？
+3. `refresh_token` 400 是什么触发的？会不会让会话处于「半登录」状态？
+4. `cloudInit()` 里 `getSession()` 拿到过期会话时的处理路径
+
+**复现方向：** 故意用错误密码登录，看 `cloudUser`、`cj_owner`、后续同步的行为。
+
+### 已确认的代码缺陷（还没修）
+
+`cloudSignIn` / `cloudSignUp` 失败时**没有把 `cloudUser` 清空**：
+
+```js
+async function cloudSignIn(email,pw){
+  const{data,error}=await c.auth.signInWithPassword(...);
+  if(error)return{err:error.message};   // ← cloudUser 保持原样
+  cloudUser=data.user;afterLogin();return{ok:1};
+}
+```
+
+后果：之前是账号 A、登录 B 失败 → 程序继续以 A 的身份同步，
+用户却以为已经切到 B。`cj_owner` 和真实账号从此对不上，
+换账号保护随之判断错误。
+
+**修法方向（下次做）：**
+- 登录/注册失败时显式 `cloudUser=null` 并 `setSync('off')`
+- `cj_owner` 改成登录成功那一刻就写，而不是等第一次同步成功
+- 登录失败的提示要更醒目，不能让用户误以为切换成功
+- 考虑：同步开始前校验 `cloudUser.id` 跟当前 session 是否一致
 
 ---
 
