@@ -4,7 +4,7 @@
    ⚠️ 改动 journal.html 之后，把下面的 VERSION 加 1，
       否则手机可能继续用旧的缓存。
    ───────────────────────────────────────────────────────── */
-const VERSION = 2;
+const VERSION = 3;
 const CACHE = 'catvweb-v' + VERSION;
 
 // 本站文件 —— 必须缓存成功，否则离线打不开
