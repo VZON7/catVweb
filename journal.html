@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Journal — catVweb</title>
+<!-- ── 离线壳 (PWA)：可加到手机主屏幕，断网也能用 ── -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8EBF1">
+<link rel="apple-touch-icon" href="icons/c-apple.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="catVweb">
+<script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>

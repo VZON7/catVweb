@@ -682,3 +682,48 @@ sed -n "${START},\$p" journal.html | grep -nP "[\x{4e00}-\x{9fff}]" | grep -v "/
 3. 文案有没有说清楚作用于什么？
 
 **适用范围：** 复制、删除、保存、导出、发送 —— 任何「对某个东西做某件事」的按钮。
+
+## 三十二、离线壳（PWA）规则
+
+第 221 次上线。三个新文件：`manifest.json`（名片）、`sw.js`（影印员）、`icons/`（8 个图标）。
+
+### ⚠️ 改完 journal.html 必须做的事
+
+**把 `sw.js` 顶部的 `VERSION` 数字加 1**，否则已安装的手机会继续用旧缓存，看不到你的改动。
+
+```js
+const VERSION = 1;   // ← 每次改 journal.html 就 +1
+```
+
+### 注册代码必须写成一行
+
+`<head>` 里的 Service Worker 注册代码是**单行** `<script>...</script>`，不可拆成多行。
+
+原因：第十九节的语法检查靠 `grep -nP "^<script>\r?$"` 数到**第 2 个**独占一行的 `<script>` 来定位主逻辑块。多一个独占行的 `<script>` 会让定位全部错位。
+
+改动 `<head>` 后必须复查：
+
+```bash
+grep -cP "^<script>\r?$" journal.html   # 必须是 2
+```
+
+### 缓存策略（不要随意改）
+
+| 资源 | 策略 | 原因 |
+|---|---|---|
+| `.html` | 网络优先，3 秒超时回退缓存 | 保证改完代码刷新就看到新版，不会卡在旧版本 |
+| 图标 / 字体 / CDN 脚本 | 缓存优先 | 版本固定不会变，直接用缓存最快 |
+
+CDN 三个地址（docx@7.1.0、Chart.js 4.4.1、Google Fonts）写死在 `sw.js` 的 `CDN` 数组里。
+**换 CDN 版本时，`sw.js` 里的地址要同步改**，否则离线时新版本抓不到。
+
+### 图标
+
+源图 `Pictures/66 journal app icon.png`。两套各 4 个尺寸：
+- `c-*`（裁切版，猫脸特写）—— **当前使用**
+- `a-*`（完整版，含日记本和 JOURNAL 字样）—— 备用
+
+换套只需改 `manifest.json` 的 3 处 `icons/c-` 和 `journal.html` 的 `apple-touch-icon`，共 4 处。
+
+`*-maskable.png` 是安卓专用：安卓会把图标裁成圆形，所以内容压到 72% 留安全区。
+**改 maskable 图后必须验证圆形裁切不会切到耳朵和爪子。**
