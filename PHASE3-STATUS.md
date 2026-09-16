@@ -435,6 +435,72 @@ Pages 会自动重新部署回第 223 次。**但云端已经产生的数据不�
 
 ---
 
+## 二之十、第 231 次 update：注册邮箱验证码（2026-09-16）
+
+### 查到的现状
+
+读 `/auth/v1/settings`（公开只读）：`mailer_autoconfirm: true`、`disable_signup: false` ——
+**注册不发确认信，而且谁都能注册。** 网站公开上线后，这意味着任何人能拿别人的邮箱注册、
+邮箱打错也能注册成功。用户决定：**保持开放注册，但注册必须输邮箱验证码。**
+
+另外查实：`vaults` 外键 `confdeltype = c`（on delete cascade）—— 删账号时云端日记自动跟着删。
+不登录读 `vaults` 返回 `[]`，数据围栏 (RLS) 开着。
+
+### 代码做了什么
+
+- `_syncMode` 多一个 `'code'`：注册拿不到 session 时停在「输验证码」
+- `verifyOtp({email, token, type:'signup'})` 验证；`resend({type:'signup'})` 重发
+- 「重新发送」按 Supabase 的规定锁 60 秒，服务器说要等 N 秒就按 N 秒锁；
+  倒计时只改按钮文字，不重绘弹窗（否则正在输的验证码框会一直丢焦点）
+- 注册完没输验证码就关窗的人，回来登录会撞到 `email_not_confirmed` → 自动带回验证码步
+- **识破已注册邮箱**：开了验证后，Supabase 对已注册邮箱不报错，而是回一个
+  `identities` 为空的假用户（防探测）。不识破的话界面会说「验证码已寄到」但其实没寄
+- Supabase 英文报错翻中文（频率限制、验证码错/过期、已注册、账号密码错）
+
+**后台开关没开时，注册照旧直接登录，根本走不到验证码那一步** —— 所以这版可以先上线。
+
+已验证：用假 Supabase 跑 9 个场景 30 项断言全过（从 journal.html 原样抽函数测）；
+34 项回归测试全过；16 个新文案键中英各一。
+
+### ⚠️ 顺序不能反：先上代码，再开后台开关
+
+**反过来会把人卡住** —— 旧版（21）不认识验证码，开了开关后注册的人只会看到
+「确认信已寄出，去邮箱点链接」，而邮件里是数字，没地方输。
+
+1. 推版本 22 上线，确认线上 `APP_BUILD=22`
+2. **接自己的发信服务**（强烈建议，见下）
+3. 改邮件模板：https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/auth/templates
+   「Confirm sign up」那一个，正文换成下面这段（**不要留 `{{ .ConfirmationURL }}` 链接**，
+   那个链接会跳到后台设的 Site URL，多半是打不开的 localhost）
+4. 打开 Confirm email：https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/auth/providers
+   里的 Email 那一项
+5. 用一个**没注册过的邮箱**在线上实测一遍
+
+**出问题的回退：把 Confirm email 关掉就行**，立刻恢复成注册直接登录，不用动代码。
+
+邮件模板正文：
+
+```html
+<h2>你的 catVweb 验证码</h2>
+<p>在注册窗口里输入这串数字：</p>
+<p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
+<p>不是你本人在注册的话，忽略这封信就好。</p>
+```
+
+### ⚠️ 发信额度：内置服务每小时只有 2 封（整个项目合计）
+
+Supabase 官方文档原文：内置发信服务 **2 emails per hour**，同一人两次发送至少隔 60 秒。
+**这是全项目合计，不是每人 2 封** —— 叫 10 个朋友同一天注册，第 3 个起就收不到验证码了。
+
+接自己的发信服务（SMTP）后，初始额度是每小时 30 封，还能在
+https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/auth/rate-limits 里调高。
+SMTP 设置页：https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/auth/smtp
+
+没有自己域名的话，**Gmail + 应用专用密码**是最省事的选择（Resend 之类的服务
+不验证域名只能发给自己，发不了给朋友）。
+
+---
+
 ## 三、下次开工第一步
 
 把验证序列**用版本 21 再跑一遍**，确认这三处改动没碰坏同步：

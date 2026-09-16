@@ -782,7 +782,18 @@ const I18N={
     sync_pw_mismatch:'两次输入的新密码不一样',sync_pw_wrong:'当前密码不对',
     sync_pw_needall:'三栏都要填',sync_pw_nologin:'请先登录',
     sync_as:'当前账号',sync_last:'上次同步',sync_never:'还没同步过',
-    sync_confirm:'确认信已寄出。去邮箱点一下链接，然后回来登录。',
+    sync_code_sent:'验证码已经寄到',
+    sync_code_hint:'输入邮件里的数字验证码。几分钟没收到的话，看看垃圾邮件箱。',
+    sync_code_label:'验证码',sync_code_verify:'验证并登录',sync_code_back:'换个邮箱',
+    sync_code_need:'验证码至少 6 位数字',
+    sync_resend:'重新发送',sync_resend_wait:'{n} 秒后可重新发送',sync_code_resent:'新的验证码已寄出。',
+    sync_code_unconfirmed:'这个邮箱还没验证。输入之前收到的验证码，或者点「重新发送」。',
+    sync_code_nosession:'验证通过了，但没能自动登录。请回到「登录」那一栏用邮箱和密码登录。',
+    sync_err_rate:'发信太频繁了，邮件服务暂时发不出去。过一会儿再试，或者找 VZON。',
+    sync_err_wait:'请 {n} 秒后再试。',
+    sync_err_code:'验证码不对，或者已经过期了。可以点「重新发送」拿个新的。',
+    sync_err_exists:'这个邮箱已经注册过了，直接去「登录」那一栏登录就行。',
+    sync_err_login:'邮箱或密码不对。',
     sync_hint:'登录后，你的记录会自动在所有设备之间同步。不登录也照常能用，数据存在本机。',
     sync_pwshort:'密码至少 6 位',sync_need:'邮箱和密码都要填',
     sync_hint_up:'填个邮箱和密码就行。注册后，记录会自动在所有设备之间同步。密码至少 6 位。',
@@ -914,7 +925,18 @@ const I18N={
     sync_pw_mismatch:'The two new passwords do not match',sync_pw_wrong:'Current password is not right',
     sync_pw_needall:'All three fields are required',sync_pw_nologin:'Please sign in first',
     sync_as:'Signed in as',sync_last:'Last synced',sync_never:'Never synced',
-    sync_confirm:'Confirmation email sent. Click the link, then come back and sign in.',
+    sync_code_sent:'We sent a code to',
+    sync_code_hint:'Enter the number code from the email. Not there after a few minutes? Check your spam folder.',
+    sync_code_label:'Code',sync_code_verify:'Verify & sign in',sync_code_back:'Use a different email',
+    sync_code_need:'The code is at least 6 digits',
+    sync_resend:'Resend',sync_resend_wait:'Resend in {n}s',sync_code_resent:'A new code is on its way.',
+    sync_code_unconfirmed:'This email is not verified yet. Enter the code you received, or tap Resend.',
+    sync_code_nosession:'Verified, but could not sign you in automatically. Please sign in with your email and password.',
+    sync_err_rate:'Too many emails sent recently. Please try again later, or ask VZON.',
+    sync_err_wait:'Please try again in {n} seconds.',
+    sync_err_code:'That code is wrong or has expired. Tap Resend to get a new one.',
+    sync_err_exists:'This email is already registered - just sign in.',
+    sync_err_login:'Wrong email or password.',
     sync_hint:'Once signed in, your records sync across all your devices. Works fine without signing in too - data stays on this device.',
     sync_pwshort:'Password must be at least 6 characters',sync_need:'Email and password are both required',
     sync_hint_up:'Just pick an email and a password. Once registered, your records sync across all your devices. Password must be at least 6 characters.',
@@ -4275,7 +4297,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=21;
+const APP_BUILD=22;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4503,6 +4525,12 @@ async function cloudSignUp(email,pw){
   const c=sbReady();if(!c)return{err:'lib'};
   const{data,error}=await c.auth.signUp({email:email,password:pw});
   if(error){cloudUser=null;setSync('off');return{err:error.message};}   // 同 cloudSignIn：失败不能留着旧身份
+  /* ⚠️ 开了邮箱验证之后，拿「已经注册过的邮箱」再注册，Supabase 不报错，
+     而是回一个 identities 为空的假用户（防止别人借此探测谁注册过）。
+     不识破的话，界面会显示「验证码已寄到」，但其实什么都没寄，用户会一直干等。 */
+  if(data&&data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){
+    cloudUser=null;setSync('off');return{err:'User already registered'};
+  }
   if(data&&data.session){cloudUser=data.session.user;afterLogin();return{ok:1};}
   // 要去邮箱点确认链接 = 还没真登上，身份同样不能留着上一个人
   cloudUser=null;setSync('off');
@@ -4514,7 +4542,12 @@ async function cloudSignIn(email,pw){
   /* ⚠️ 登录失败必须把身份清干净。
      以前这里直接 return，cloudUser 还留着上一个账号 —— 界面提示「登录失败」，
      程序却继续拿上一个人的身份同步，cj_owner 从此跟真实账号对不上。 */
-  if(error){cloudUser=null;setSync('off');return{err:error.message};}
+  if(error){
+    cloudUser=null;setSync('off');
+    // 注册完没输验证码就关了窗口的人，下次来登录会撞到这个 —— 带他回验证码那一步
+    const nc=error.code==='email_not_confirmed'||/not confirmed/i.test(error.message||'');
+    return{err:error.message,notConfirmed:nc};
+  }
   cloudUser=data.user;afterLogin();return{ok:1};
 }
 /* 登出时问一句「本机记录怎么办」。
@@ -4620,6 +4653,69 @@ if(typeof window!=='undefined'){
 
 /* ── 云端同步 · 界面 ── */
 let _syncMode='in',_syncMsg='',_syncKind='',_syncEmail='',_syncPw='';
+/* ── 注册验证码 ─────────────────────────────────────────
+   _syncMode 多了一个 'code'：注册后停在「输验证码」这一步。
+   需要 Supabase 后台打开 Confirm email，并把 Confirm signup 邮件模板改成带 {{ .Token }}。
+   后台没开的时候，注册直接拿到 session、直接登录，根本不会走到这一步 ——
+   所以「先上代码、再开后台开关」是安全的顺序，反过来会把人卡住。 */
+let _syncCode='',_codeEmail='',_resendAt=0,_resendTimer=null;
+
+// Supabase 的英文报错翻成人话。认不出的原样显示，不瞎猜。
+function authErrZh(m){
+  m=String(m||'');let x;
+  if(/rate limit/i.test(m))return t('sync_err_rate');
+  if((x=/after ([0-9]+) seconds?/i.exec(m)))return t('sync_err_wait').replace('{n}',x[1]);
+  if(/expired|invalid.*(otp|token)|(otp|token).*invalid/i.test(m))return t('sync_err_code');
+  if(/already.*registered/i.test(m))return t('sync_err_exists');
+  if(/invalid login credentials/i.test(m))return t('sync_err_login');
+  return m;
+}
+function syncGoCode(email,justSent){
+  _syncMode='code';_codeEmail=email;_syncCode='';
+  // Supabase 规定同一个人两次发信至少隔 60 秒，刚发过就先锁住「重新发送」
+  _resendAt=justSent?Date.now()+60000:0;
+}
+async function cloudVerifySignup(email,token){
+  const c=sbReady();if(!c)return{err:'lib'};
+  const{data,error}=await c.auth.verifyOtp({email:email,token:token,type:'signup'});
+  if(error){cloudUser=null;setSync('off');return{err:error.message};}
+  if(!data||!data.session){cloudUser=null;setSync('off');return{err:t('sync_code_nosession')};}
+  cloudUser=data.session.user;afterLogin();return{ok:1};
+}
+async function cloudResendSignup(email){
+  const c=sbReady();if(!c)return{err:'lib'};
+  const{error}=await c.auth.resend({type:'signup',email:email});
+  return error?{err:error.message}:{ok:1};
+}
+async function syncDoVerify(){
+  const code=String(_syncCode||'').replace(/[^0-9]/g,'');
+  if(code.length<6){_syncMsg=t('sync_code_need');_syncKind='bad';renderSyncModal();return;}
+  _syncMsg=t('sync_ing');_syncKind='';renderSyncModal();
+  const r=await cloudVerifySignup(_codeEmail,code);
+  if(r.err){_syncMsg=authErrZh(r.err);_syncKind='bad';}
+  else{_syncMsg='';_syncKind='';_syncPw='';_syncCode='';_syncMode='in';syncSaveEmail(_codeEmail);}
+  renderSyncModal();
+}
+async function syncDoResend(){
+  if(Date.now()<_resendAt)return;
+  _syncMsg=t('sync_ing');_syncKind='';renderSyncModal();
+  const r=await cloudResendSignup(_codeEmail);
+  if(r.err){
+    _syncMsg=authErrZh(r.err);_syncKind='bad';
+    const x=/after ([0-9]+) seconds?/i.exec(r.err);
+    if(x)_resendAt=Date.now()+Number(x[1])*1000;
+  }else{_syncMsg=t('sync_code_resent');_syncKind='good';_resendAt=Date.now()+60000;}
+  renderSyncModal();
+}
+/* 倒计时只改按钮上的字，不重绘整个弹窗 ——
+   每秒重绘一次的话，用户正在输的验证码框会一直丢焦点。 */
+function syncTickResend(){
+  const b=document.getElementById('sync-resend');
+  if(!b){clearInterval(_resendTimer);_resendTimer=null;return;}
+  const left=Math.ceil((_resendAt-Date.now())/1000);
+  if(left>0){b.disabled=true;b.textContent=t('sync_resend_wait').replace('{n}',left);}
+  else{b.disabled=false;b.textContent=t('sync_resend');clearInterval(_resendTimer);_resendTimer=null;}
+}
 /* 「记住我」只记邮箱，密码一个字都不存。
    密码交给浏览器自带的密码管理器 —— 它有系统级加密。自己往 localStorage
    塞明文密码的话，同一台电脑上任何人按 F12 就能看到，
@@ -4719,8 +4815,9 @@ async function syncDoAuth(){
   if(pw.length<6){_syncMsg=t('sync_pwshort');_syncKind='bad';renderSyncModal();return;}
   _syncMsg=t('sync_ing');_syncKind='';renderSyncModal();
   const r=_syncMode==='up'?await cloudSignUp(em,pw):await cloudSignIn(em,pw);
-  if(r.err){_syncMsg=r.err;_syncKind='bad';}
-  else if(r.confirm){_syncMsg=t('sync_confirm');_syncKind='good';_syncMode='in';syncSaveEmail(em);}
+  if(r.err&&r.notConfirmed){syncGoCode(em,false);_syncMsg=t('sync_code_unconfirmed');_syncKind='bad';}
+  else if(r.err){_syncMsg=authErrZh(r.err);_syncKind='bad';}
+  else if(r.confirm){syncGoCode(em,true);_syncMsg='';_syncKind='';syncSaveEmail(em);}
   else{_syncMsg='';_syncKind='';_syncPw='';syncSaveEmail(em);}
   renderSyncModal();
 }
@@ -4764,6 +4861,28 @@ function renderSyncModal(force){
         '<button class="m-danger" style="margin-right:auto" onclick="askSignOut()">'+t('sync_logout')+'</button>'+
         '<button class="m-save" onclick="syncNowAndClose()">'+t('sync_now')+'</button>'+
       '</div>';
+  }else if(_syncMode==='code'){
+    /* 输验证码这一步不放分段切换 —— 这时候已经不是在选「登录还是注册」了。
+       想换邮箱就点下面那行，回到注册栏。 */
+    const left=Math.ceil((_resendAt-Date.now())/1000);
+    body=
+      '<div class="sync-msg">'+t('sync_code_sent')+'</div>'+
+      '<div style="font-size:13px;font-weight:800;color:var(--dark);margin:2px 0 6px;word-break:break-all">'+esc(_codeEmail)+'</div>'+
+      '<div class="sync-msg">'+t('sync_code_hint')+'</div>'+
+      '<label class="sync-label">'+t('sync_code_label')+'</label>'+
+      '<input id="sync-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10"'+
+        ' style="text-align:center;font-size:20px;font-weight:800;letter-spacing:6px"'+
+        ' value="'+esc(_syncCode)+'" oninput="_syncCode=this.value" onkeydown="if(event.key===&quot;Enter&quot;)syncDoVerify()">'+
+      msg+
+      '<div style="display:flex;gap:12px;align-items:center">'+
+        '<button id="sync-resend" class="sync-link" onclick="syncDoResend()"'+(left>0?' disabled':'')+'>'+
+          (left>0?t('sync_resend_wait').replace('{n}',left):t('sync_resend'))+'</button>'+
+        '<button class="sync-link" onclick="syncSetMode(&quot;up&quot;)">'+t('sync_code_back')+'</button>'+
+      '</div>'+
+      '<div class="modal-btns">'+
+        '<button class="m-cancel" onclick="syncClose()">'+t('modal_cancel')+'</button>'+
+        '<button class="m-save" onclick="syncDoVerify()">'+t('sync_code_verify')+'</button>'+
+      '</div>';
   }else{
     body=
       /* 分段切换放最顶上：用户点之前就看得见有「注册」这回事，
@@ -4792,6 +4911,7 @@ function renderSyncModal(force){
     '<div class="modal" style="width:300px" id="sync-modal-body">'+
       '<div class="modal-title">'+t('sync_title')+'</div>'+body+
     '</div></div>';
+  if(!cloudUser&&_syncMode==='code'&&_resendAt>Date.now()&&!_resendTimer)_resendTimer=setInterval(syncTickResend,1000);
 }
 
 document.getElementById('sync-nav-btn').onclick=()=>openSyncModal();
