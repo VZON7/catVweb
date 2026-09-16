@@ -249,20 +249,60 @@
    （localhost:8080 和正式网址都要）。
 3. 免费版内置 SMTP 官方明说不适合正式使用，每小时只有几封，容易进垃圾箱。
 
-**当前的替代做法 —— 用管理员接口直接给他设一个新密码：**
+### 用户忘记密码时，管理员怎么帮他改（一步一步）
+
+**准备（只做一次）：拿密钥**
+
+开 https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/settings/api-keys 
+复制 `service_role`（旧式）或 `sb_secret_...`（新式），两者都行。
+
+**第 1 步 — 找到那个人的 UUID**
+
+开 https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/auth/users 
+找到他的邮箱，点开，复制 UID（36 位带横杠那串）。
+
+**第 2 步 — 想一个临时密码**
+
+至少 6 位（我们的表单和 Supabase 都要求 6 位）。
+
+**第 3 步 — 跑命令**
+
+Git Bash：
 
 ```bash
-curl -X PUT "https://buxqkndyfjhajdjwbcrp.supabase.co/auth/v1/admin/users/<用户UUID>" \n  -H "apikey: <service_role 密钥>" \n  -H "Authorization: Bearer <service_role 密钥>" \n  -H "Content-Type: application/json" \n  -d '{"password":"临时新密码"}'
+curl -X PUT "https://buxqkndyfjhajdjwbcrp.supabase.co/auth/v1/admin/users/贴UUID" \n  -H "apikey: 贴密钥" \n  -H "Authorization: Bearer 贴密钥" \n  -H "Content-Type: application/json" \n  -d '{"password":"临时密码"}'
 ```
 
-- 用户 UUID：Supabase 后台 Authentication → Users，点开那个人就能看到
-- service_role 密钥：菜单不好找，直接开这个网址 —— 
-  https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/settings/api-keys 
-  legacy 的 `service_role` 和新式的 `sb_secret_...` 都在那一页，两者都能用在这个接口上
-- 设好之后把临时密码私下告诉他，让他自己进「改密码」换成自己的
+PowerShell：
 
-⚠️ **service_role 密钥能绕过数据围栏 (RLS)，拿到它等于拿到全部数据。**
-绝对不能写进 `journal.html`，不能提交进仓库，只在自己电脑的终端里临时用。
+```powershell
+$key = "贴密钥"
+$uid = "贴UUID"
+$body = '{"password":"临时密码"}'
+Invoke-RestMethod -Method Put -Uri "https://buxqkndyfjhajdjwbcrp.supabase.co/auth/v1/admin/users/$uid" -Headers @{ apikey = $key; Authorization = "Bearer $key" } -ContentType "application/json" -Body $body
+```
+
+方法必须是 **PUT** —— auth-js 的 `updateUserById` 就是 `PUT /admin/users/{uid}`。
+
+**第 4 步 — 看返回**
+
+成功会吐回那个用户的 JSON（有 `id`、`email`、`updated_at`）。常见失败：
+
+| 返回 | 原因 |
+|---|---|
+| 401 Invalid API key | 密钥贴错，或者贴成 `anon` 了 |
+| 403 User not allowed | 用的不是 service_role / secret 密钥 |
+| 404 | UUID 错 |
+| 422 Password should be at least 6 characters | 临时密码太短 |
+
+**第 5 步 — 私下把临时密码给他**
+
+别发公开群。让他登录后自己进「改密码」换成他要的。
+改密码不影响他的日记数据。
+
+⚠️ **service_role / secret 密钥能绕过数据围栏 (RLS)，等于所有人的全部数据。**
+绝对不能写进 `journal.html`、不能提交进仓库。命令里带着密钥会留在 shell 历史里，
+介意的话用完清一下。
 
 后台那个「Send password recovery」按钮现在**帮不上忙** —— 用户点了邮件链接会被
 静默登录进来，但「改密码」要求先输当前密码，他正是忘了才来的。
