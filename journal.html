@@ -635,6 +635,8 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .sync-msg { font-size:11px; line-height:1.55; margin:8px 0 2px; color:var(--mid); }
 .sync-msg.bad { color:var(--danger); }
 .sync-msg.good { color:var(--c-active); }
+.sync-remember { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--mid); margin:10px 0 2px; cursor:pointer; user-select:none; }
+.sync-remember input { width:13px; height:13px; margin:0; cursor:pointer; accent-color:var(--c-active); }
 .sync-link { background:none; border:none; padding:6px 0 0; font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; color:var(--purple); cursor:pointer; }
 .sync-link:hover { color:var(--dark); }
 </style>
@@ -765,6 +767,8 @@ const I18N={
     sync_out_wipe:'一并清除',sync_out_wipe_d:'云端已保存，下次登录就能拿回来',
     sync_out_risk:'还有改动没传上去，现在清除会永久丢失。建议先点「立即同步」。',
     sync_wiped:'本机记录已清除。登录回来即可恢复。',
+    sync_wipe_blocked:'有改动没能传上云端，所以本机记录一条都没清。已经登出，数据还在这台设备上。请重新登录、同步成功之后再试。',
+    sync_remember:'记住我，下次不用再打邮箱',
     sync_as:'当前账号',sync_last:'上次同步',sync_never:'还没同步过',
     sync_confirm:'确认信已寄出。去邮箱点一下链接，然后回来登录。',
     sync_hint:'登录后，你的记录会自动在所有设备之间同步。不登录也照常能用，数据存在本机。',
@@ -887,6 +891,8 @@ const I18N={
     sync_out_wipe:'Clear them too',sync_out_wipe_d:'Saved in the cloud - sign back in to get them',
     sync_out_risk:'Some changes have not been uploaded and will be lost. Run Sync now first.',
     sync_wiped:'Local records cleared. Sign back in to restore them.',
+    sync_wipe_blocked:'Some changes could not be uploaded, so nothing was cleared. You are signed out but the data is still on this device. Sign back in, sync successfully, then try again.',
+    sync_remember:'Remember my email',
     sync_as:'Signed in as',sync_last:'Last synced',sync_never:'Never synced',
     sync_confirm:'Confirmation email sent. Click the link, then come back and sign in.',
     sync_hint:'Once signed in, your records sync across all your devices. Works fine without signing in too - data stays on this device.',
@@ -4247,7 +4253,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=15;
+const APP_BUILD=16;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4511,13 +4517,26 @@ function askSignOut(){
 function wipeLocalData(){
   projects=[];entries={};totalCoins=0;cpMyPalette=[];tombs={e:{},p:{}};
   _lastStamp=null;_lastCount=0;_dirty=false;_dirtySeq=0;
-  ['cj_projects','cj_entries','catTokens','cj_mypalette','cj_tombs','cj_owner','cj_lastsync']
+  /* 「一并清除」是为共用设备准备的，记住的邮箱也是痕迹，一并抹掉。 */
+  _syncRemember=false;_syncEmail='';
+  ['cj_projects','cj_entries','catTokens','cj_mypalette','cj_tombs','cj_owner','cj_lastsync',
+   'cj_sync_remember','cj_sync_email']
     .forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
   try{Object.keys(localStorage).filter(k=>k.indexOf('cj_view_')===0)
     .forEach(k=>localStorage.removeItem(k));}catch(e){}
 }
 async function doSignOut(wipe){
-  await cloudSignOut();          // 内部会先把没传上去的补推完
+  const pushedOk=await cloudSignOut();   // 内部会先把没传上去的补推完
+  /* ⚠️ 补推没成功就绝对不能清本机。
+     以前这里是无条件清的：云端一挂（比如项目被自动暂停、502），
+     补推静默失败 → 本机照删 → 没传上去的记录真没了，
+     界面还写着「登录回来即可恢复」。这是最恶劣的那种静默丢数据。 */
+  if(wipe&&!pushedOk){
+    _syncMsg=t('sync_wipe_blocked');_syncKind='bad';
+    view='journal';showForm=false;renderAll();
+    renderSyncModal(true);
+    return;
+  }
   if(wipe){wipeLocalData();_syncMsg=t('sync_wiped');_syncKind='good';}
   view='journal';showForm=false;renderAll();
   renderSyncModal(true);
@@ -4534,10 +4553,19 @@ async function cloudSignOut(){
      待上传的改动就跟着登出一起没了。踩过一次，代价是一条记录。 */
   const t0=Date.now();
   while(_inSync&&Date.now()-t0<15000)await new Promise(r=>setTimeout(r,150));
-  if(cloudUser&&_dirty){try{await cloudSync();}catch(e){}}
+  /* 返回值 = 「本机的东西是不是都安全躺在云端了」。
+     ⚠️ cloudSync 自己把错误 catch 掉了、不往外抛，所以这里的 try/catch
+     永远捕不到东西 —— 只能看它跑完之后的状态来判断成没成功。
+     调用方（doSignOut）拿这个值决定敢不敢清本机数据。 */
+  let pushedOk=true;
+  if(cloudUser&&_dirty){
+    try{await cloudSync();}catch(e){}
+    pushedOk=(!_dirty&&syncState!=='error');
+  }
   const c=sbReady();if(c){try{await c.auth.signOut();}catch(e){}}
   cloudUser=null;_dirty=false;_dirtySeq=0;_lastStamp=null;_lastCount=0;stopCloudLoop();setSync('off');
   renderSyncModal();
+  return pushedOk;
 }
 function afterLogin(){setSync('idle');startCloudLoop();cloudSync();renderSyncModal();}
 
@@ -4569,6 +4597,26 @@ if(typeof window!=='undefined'){
 
 /* ── 云端同步 · 界面 ── */
 let _syncMode='in',_syncMsg='',_syncKind='',_syncEmail='',_syncPw='';
+/* 「记住我」只记邮箱，密码一个字都不存。
+   密码交给浏览器自带的密码管理器 —— 它有系统级加密。自己往 localStorage
+   塞明文密码的话，同一台电脑上任何人按 F12 就能看到，
+   跟「一并清除」保护共用设备的初衷直接打架。 */
+let _syncRemember=false;
+try{
+  _syncRemember=localStorage.getItem('cj_sync_remember')==='1';
+  if(_syncRemember)_syncEmail=localStorage.getItem('cj_sync_email')||'';
+}catch(e){}
+function syncSetRemember(on){
+  _syncRemember=!!on;
+  try{
+    if(_syncRemember)localStorage.setItem('cj_sync_remember','1');
+    else{localStorage.removeItem('cj_sync_remember');localStorage.removeItem('cj_sync_email');}
+  }catch(e){}
+}
+function syncSaveEmail(em){
+  if(!_syncRemember)return;
+  try{localStorage.setItem('cj_sync_email',em);}catch(e){}
+}
 
 function paintSyncBadge(){
   const d=document.getElementById('sync-dot');
@@ -4594,6 +4642,13 @@ function syncClose(){
   const mc=document.getElementById('modal-container');if(mc)mc.innerHTML='';
   const b=document.getElementById('sync-nav-btn');if(b)b.classList.remove('active');
 }
+/* 「立即同步」点完就该关窗。它用的是主按钮样式，长得像「确定」，
+   点了窗口不动会让人以为没生效 —— 这是实际用下来被指出来的。
+   只有出错才留着窗口，因为错误信息就显示在里面。 */
+async function syncNowAndClose(){
+  await cloudSync();
+  if(syncState!=='error')syncClose();
+}
 function syncSwitchMode(){_syncMode=_syncMode==='in'?'up':'in';_syncMsg='';_syncKind='';renderSyncModal();}
 
 async function syncDoAuth(){
@@ -4603,8 +4658,8 @@ async function syncDoAuth(){
   _syncMsg=t('sync_ing');_syncKind='';renderSyncModal();
   const r=_syncMode==='up'?await cloudSignUp(em,pw):await cloudSignIn(em,pw);
   if(r.err){_syncMsg=r.err;_syncKind='bad';}
-  else if(r.confirm){_syncMsg=t('sync_confirm');_syncKind='good';_syncMode='in';}
-  else{_syncMsg='';_syncKind='';_syncPw='';}
+  else if(r.confirm){_syncMsg=t('sync_confirm');_syncKind='good';_syncMode='in';syncSaveEmail(em);}
+  else{_syncMsg='';_syncKind='';_syncPw='';syncSaveEmail(em);}
   renderSyncModal();
 }
 
@@ -4625,15 +4680,18 @@ function renderSyncModal(force){
         esc(syncStateText())+(syncState==='error'&&syncErr?' — '+esc(syncErr):'')+'</div>'+
       '<div class="modal-btns">'+
         '<button class="m-cancel" onclick="askSignOut()">'+t('sync_logout')+'</button>'+
-        '<button class="m-save" onclick="cloudSync()">'+t('sync_now')+'</button>'+
+        '<button class="m-save" onclick="syncNowAndClose()">'+t('sync_now')+'</button>'+
       '</div>';
   }else{
     body=
       '<div class="sync-msg">'+t('sync_hint')+'</div>'+
       '<label class="sync-label">'+t('sync_email')+'</label>'+
-      '<input id="sync-email" type="email" autocomplete="off" spellcheck="false" value="'+esc(_syncEmail)+'" oninput="_syncEmail=this.value">'+
+      '<input id="sync-email" type="email" name="email" autocomplete="username" spellcheck="false" value="'+esc(_syncEmail)+'" oninput="_syncEmail=this.value"'+
+        ' onkeydown="if(event.key===&quot;Enter&quot;){event.preventDefault();var p=document.getElementById(&quot;sync-pw&quot;);if(p)p.focus();}">'+
       '<label class="sync-label">'+t('sync_pw')+'</label>'+
-      '<input id="sync-pw" type="password" autocomplete="off" value="'+esc(_syncPw)+'" oninput="_syncPw=this.value" onkeydown="if(event.key===\'Enter\')syncDoAuth()">'+
+      '<input id="sync-pw" type="password" name="password" autocomplete="'+(_syncMode==='up'?'new-password':'current-password')+'" value="'+esc(_syncPw)+'" oninput="_syncPw=this.value" onkeydown="if(event.key===\'Enter\')syncDoAuth()">'+
+      '<label class="sync-remember"><input type="checkbox"'+(_syncRemember?' checked':'')+
+        ' onchange="syncSetRemember(this.checked)"><span>'+t('sync_remember')+'</span></label>'+
       msg+
       '<button class="sync-link" onclick="syncSwitchMode()">'+(_syncMode==='in'?t('sync_switch'):t('sync_back'))+'</button>'+
       '<div class="modal-btns">'+
