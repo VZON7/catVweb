@@ -559,9 +559,21 @@ SMTP 设置页：https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/aut
       安全闸 / 身份复核 / 清除保险 / 记住我 / 改密码 / 分段切换 / 忘记密码 全部在位
 - [ ] **导出一份备份**存到电脑外面（数据只有 7.5 KB，十秒钟）
 - [ ] 删掉 Supabase 里的测试账号（Authentication → Users，`probe*` `e2e*` `sec*` `rpa*` `rpb*`）
-- [ ] 决定账号策略：手动建号（推荐，10 个朋友点 10 次）还是开放注册
+- [x] ~~决定账号策略~~ —— 2026-09-16 定了：**保持开放注册，但注册要输邮箱验证码**（见第 231 次 update）
+- [ ] 接发信服务（Gmail 应用专用密码 → SMTP → 改模板 → 最后开 Confirm email → 测一次）
+      ⏸️ 等新 Gmail 解除限制
+- [ ] 给 `vaults` 加大小上限，防止有人塞垃圾数据把 500 MB 塞满（SQL 见下）
+- [ ] 给 `tools/reset-password.js` 加 `--delete 邮箱`（已查实外键是 cascade，删号会连带删云端日记）
 - [ ] 先自己单独用 2–3 天，再叫朋友
 - [ ] 稳定之后再单独理分支：`main` 重置成部署分支的内容、Pages 改指 `main`
+
+`vaults` 大小上限（在 Supabase SQL Editor 跑；每人 1 MB，是现在数据量的 130 倍）：
+
+```sql
+alter table vaults
+  add constraint vault_size_limit
+  check (pg_column_size(data) < 1000000);
+```
 
 ---
 
