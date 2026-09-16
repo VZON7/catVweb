@@ -166,6 +166,13 @@ async function main(){
 
   if(args[0]==='--who'){
     if(!args[1])die('要给个邮箱：node tools/reset-password.js --who 某人@邮箱');
+    /* ⚠️ 实测踩到的：照着 --who 的例子改，把密码接在后面，
+       结果 --who 只查不改，密码被默默忽略，用户以为改了其实没改。 */
+    if(args[2])
+      die('--who 是「只查不改」，后面多给的「'+args[2]+'」被忽略了，密码没有改。'+
+          '\n'+
+          '\n  要真的改密码，把 --who 去掉：'+
+          '\n  node tools/reset-password.js '+args[1]+' '+args[2]);
     const u=await findUser(key,args[1]);
     ok('');
     ok('邮箱：'+u.email);
