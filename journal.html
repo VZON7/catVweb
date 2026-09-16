@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#E8EBF1">
 <link rel="apple-touch-icon" href="icons/icon-apple.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="catVweb">
 <script>if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(r){r.update()}).catch(function(){})});</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4246,7 +4247,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=14;
+const APP_BUILD=15;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4319,6 +4320,15 @@ async function cloudSync(){
   let endState='idle',endMsg='';
   try{
     setSync('syncing');
+    /* ⚠️ 身份复核：cloudUser 是本机变量，可能跟真实登录状态脱节
+       （登录失败、token 过期、别的标签页登出）。带着错的身份同步会把
+       数据写进别人的格子，所以对不上就立刻停手，宁可报错也不能写错人。 */
+    const{data:sess}=await c.auth.getSession();
+    const realId=sess&&sess.session&&sess.session.user?sess.session.user.id:null;
+    if(realId!==uid){
+      cloudUser=null;
+      throw new Error('登录状态对不上（程序以为是 '+who+'，实际'+(realId?'是另一个账号':'未登录')+'），已停止这次同步。请重新登录。');
+    }
     /* 省流量：先只取 updated_at 问一句「云端变了吗」。
        云端没变、本机也没改 → 直接收工，不拉整包。
        整包同步每次要传全部数据，60 秒一次的话流量很快就爆
@@ -4464,14 +4474,19 @@ function stopCloudLoop(){clearInterval(_pullTimer);clearTimeout(_pushTimer);_pus
 async function cloudSignUp(email,pw){
   const c=sbReady();if(!c)return{err:'lib'};
   const{data,error}=await c.auth.signUp({email:email,password:pw});
-  if(error)return{err:error.message};
+  if(error){cloudUser=null;setSync('off');return{err:error.message};}   // 同 cloudSignIn：失败不能留着旧身份
   if(data&&data.session){cloudUser=data.session.user;afterLogin();return{ok:1};}
+  // 要去邮箱点确认链接 = 还没真登上，身份同样不能留着上一个人
+  cloudUser=null;setSync('off');
   return{ok:1,confirm:1};      // 需要去邮箱点确认链接
 }
 async function cloudSignIn(email,pw){
   const c=sbReady();if(!c)return{err:'lib'};
   const{data,error}=await c.auth.signInWithPassword({email:email,password:pw});
-  if(error)return{err:error.message};
+  /* ⚠️ 登录失败必须把身份清干净。
+     以前这里直接 return，cloudUser 还留着上一个账号 —— 界面提示「登录失败」，
+     程序却继续拿上一个人的身份同步，cj_owner 从此跟真实账号对不上。 */
+  if(error){cloudUser=null;setSync('off');return{err:error.message};}
   cloudUser=data.user;afterLogin();return{ok:1};
 }
 /* 登出时问一句「本机记录怎么办」。

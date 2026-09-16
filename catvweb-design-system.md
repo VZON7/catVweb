@@ -872,6 +872,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 离线壳上线（PWA：`sw.js` + `manifest.json` + 猫脸图标，可加到手机主屏幕、断网可用） | 第221次 |
 | 图标换成「猫 + JOURNAL 66♡ 横幅」，底色深蓝 `#1e5a8a`；旧的两套图标清除 | 第222次 |
 | 同步地基：删除名单 (tombstone) + 新旧记号 (timestamp)；合并改为比记号、拒收已删；id 防撞 | 第223次 |
+| 登录/注册失败清空身份 + 同步前身份复核；补 `mobile-web-app-capable` | 第224次 |
 
 ---
 
