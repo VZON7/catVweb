@@ -378,6 +378,62 @@ Invoke-RestMethod -Method Put -Uri "https://buxqkndyfjhajdjwbcrp.supabase.co/aut
 
 ---
 
+## 二之九、❗️部署真相（2026-09-16 查实）
+
+### 线上跑的是 `claude/amazing-bohr-zIAEL`，不是 `main`
+
+网址：https://vzon7.github.io/catVweb/journal.html 
+GitHub Pages 设置是「Deploy from a branch」，指的是那条分支。
+
+**怎么查实的：** 把线上的 `journal.html` 抓下来算 SHA1，跟各分支逐一比对，
+只有 `claude/amazing-bohr-zIAEL` 对得上；线上 `sw.js` 的 `VERSION = 3`、
+有删除名单和新旧记号、没有 supabase —— 确实是第 223 次。
+
+### ⚠️ `main` 是废的
+
+`main` 停在 2026-06-17 的「update eng ver 1 (45)」，没有 `sw.js`、
+没有 `manifest.json`、没有图标、没有删除名单。第 221 / 222 / 223 次
+**一次都没合进去过**。
+
+**所以：把 `phase3-sync` 合进 `main` 的话，线上一点变化都不会有。**
+你会以为上线了，朋友那边还是第 223 次。
+
+### 怎么会变成这样
+
+```
+2026-06-17  main 在「update eng ver 1 (45)」
+            ├─ claude/vigilant-wozniak-mnsutx  做 UI/UX 优化
+            │    → PR #10 合进 main → PR #11 又 revert 掉  ← 主干这条路走死
+            └─ claude/amazing-bohr-zIAEL      ← 从此所有工作都在这条
+                 2026-06-18 至今，64 个提交
+```
+
+那两个 `claude/xxx-yyy-zzz` 是 Claude 在 GitHub 上干活时自动开的
+**一次性工作分支**，名字是随机生成的。main 那条路被 revert 之后，
+真实工作就一直留在这条临时分支上，三个月后它事实上成了主干 —— 只是名字没改。
+
+（本地用 Claude Code 跟这条分支无关，任何分支都能干活。）
+
+### 迟早要理，但别跟上线一起做
+
+这条分支本来是设计成用完即弃的，**任何人看到这名字都会想删它，删掉网站就下线**。
+
+建议顺序：先在这条分支上上线 → 稳定几天 → 再单独把 `main` 重置成它的内容、
+Pages 改指 `main`。两件事分开，出问题时每一步都只有一个变量。
+
+### 回退怎么做
+
+上线前的线上版本是 `f030c05`。真出事就把部署分支推回去：
+
+```bash
+git push origin f030c05:claude/amazing-bohr-zIAEL --force
+```
+
+Pages 会自动重新部署回第 223 次。**但云端已经产生的数据不会跟着回退** ——
+所以上线前的备份才是真正的保险。
+
+---
+
 ## 三、下次开工第一步
 
 把验证序列**用版本 21 再跑一遍**，确认这三处改动没碰坏同步：
@@ -420,7 +476,8 @@ Invoke-RestMethod -Method Put -Uri "https://buxqkndyfjhajdjwbcrp.supabase.co/aut
 - [ ] **导出一份备份**存到电脑外面（数据只有 7.5 KB，十秒钟）
 - [ ] 删掉 Supabase 里的测试账号（Authentication → Users，`probe*` `e2e*` `sec*` `rpa*` `rpb*`）
 - [ ] 决定账号策略：手动建号（推荐，10 个朋友点 10 次）还是开放注册
-- [ ] 合并 `phase3-sync` 到 `main`
+- [ ] 合并 `phase3-sync` 到 **`claude/amazing-bohr-zIAEL`**（不是 main！见下面「部署真相」）
+- [ ] `git push` —— 推上去就等于上线，Pages 会自动重新部署，没有预览也没有确认
 - [ ] 上线后先自己单独用 2–3 天，再叫朋友
 
 ---

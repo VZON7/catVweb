@@ -49,6 +49,20 @@ node tests/test-merge.js
 
 ---
 
+## ❗️ 部署在哪（别搞错）
+
+线上网址：https://vzon7.github.io/catVweb/journal.html 
+GitHub Pages 服务的分支是 **`claude/amazing-bohr-zIAEL`**。
+
+**`main` 不是主干，它停在 2026-06-17，没有 PWA、没有同步地基，是废的。**
+往 `main` 上合代码，线上不会有任何变化。
+
+那个分支名是 Claude 在 GitHub 上干活时自动生成的一次性工作分支，
+历史原因变成了事实主干。**看到这名字别删它 —— 删掉网站就下线。**
+来龙去脉见 `PHASE3-STATUS.md` 的「部署真相」一节。
+
+---
+
 ## 密钥安全
 
 `tools/.admin-key` 存的是管理员密钥，**能绕过数据围栏 (RLS)，等于所有人的全部数据**。
