@@ -382,6 +382,9 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .m-save { padding:6px 16px; border-radius:999px; background:var(--purple); border:none; color:#fff; font-size:12px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:5px 5px 10px var(--sh-btn-dark), -5px -5px 10px var(--sh-light); transition:box-shadow .15s; }
 .m-save:hover { box-shadow:8px 8px 14px var(--sh-btn-hover), -8px -8px 14px var(--sh-light); }
 .m-save:active { box-shadow:inset 4px 4px 9px var(--sh-blue-inset); }
+.m-danger { padding:6px 12px; border-radius:999px; border:none; background:var(--lavender); color:var(--danger); font-weight:700; font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:none; transition:box-shadow .15s; }
+.m-danger:hover { box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
+.m-danger:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
 .bk-chip { font-size:10px; font-weight:700; color:var(--mid); background:var(--lavender); border:none; border-radius:999px; padding:3px 12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s, color .15s; }
 .bk-chip:hover { box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); color:var(--dark); }
 .bk-chip:active { box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
@@ -764,8 +767,8 @@ const I18N={
     sync_pending:'有改动还没传上去',sync_leave:'还有改动没传上去，现在离开会丢掉。确定要走吗？',
     sync_out_q:'登出后，这台设备上的记录怎么处理？',
     sync_out_sub:'登出前会先把没传上去的改动同步到云端。',
-    sync_out_keep:'这是我自己的设备',sync_out_keep_d:'记录留在本机',
-    sync_out_wipe:'这台设备不是我的',sync_out_wipe_d:'记录一并清除',
+    sync_out_keep:'这是我自己的设备',sync_out_keep_d:'记录留在本机，离线也能记录',
+    sync_out_wipe:'这台设备不是我的',sync_out_wipe_d:'只清这台设备，云端那份还在',
     sync_out_risk:'还有改动没传上去。没成功传上云端就不会清除。',
     sync_pw_change_d:'需要先输一次当前密码',
     sync_wiped:'本机记录已清除。登录回来即可恢复。',
@@ -894,8 +897,8 @@ const I18N={
     sync_pending:'Changes not uploaded yet',sync_leave:'Some changes have not been uploaded yet and will be lost. Leave anyway?',
     sync_out_q:'What should happen to the records on this device?',
     sync_out_sub:'Anything not uploaded yet is synced to the cloud before signing out.',
-    sync_out_keep:'This is my own device',sync_out_keep_d:'Keep records here',
-    sync_out_wipe:'This device is not mine',sync_out_wipe_d:'Clear records too',
+    sync_out_keep:'This is my own device',sync_out_keep_d:'Records stay here, and work offline',
+    sync_out_wipe:'This device is not mine',sync_out_wipe_d:'Clears this device only - the cloud copy stays',
     sync_out_risk:'Some changes are not uploaded yet. Nothing will be cleared unless they upload successfully.',
     sync_pw_change_d:'You will need your current password',
     sync_wiped:'Local records cleared. Sign back in to restore them.',
@@ -4265,7 +4268,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=19;
+const APP_BUILD=20;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4745,11 +4748,11 @@ function renderSyncModal(force){
       /* 「改密码」「登出」都是次要操作，并排做成两个小按钮。
          底部只留「立即同步」一个主按钮 —— 以前「同步并登出」和「立即同步」
          并排，两个都带「同步」又都像主按钮，主次分不清。 */
-      '<div style="display:flex;gap:8px;margin-top:10px">'+
-        '<button class="bk-tog" style="width:auto" onclick="syncOpenPwForm()">'+t('sync_pw_change')+'</button>'+
-        '<button class="bk-tog" style="width:auto" onclick="askSignOut()">'+t('sync_logout')+'</button>'+
-      '</div>'+
+      '<button class="bk-tog" style="width:auto;margin-top:10px;padding:5px 9px;font-size:10px" onclick="syncOpenPwForm()">'+t('sync_pw_change')+'</button>'+
+      /* 登出靠左、主按钮靠右（margin-right:auto 把两者推开）。
+         登出用红字而不是红块 —— 它默认并不删数据，红块过重。 */
       '<div class="modal-btns">'+
+        '<button class="m-danger" style="margin-right:auto" onclick="askSignOut()">'+t('sync_logout')+'</button>'+
         '<button class="m-save" onclick="syncNowAndClose()">'+t('sync_now')+'</button>'+
       '</div>';
   }else{

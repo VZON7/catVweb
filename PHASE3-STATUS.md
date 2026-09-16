@@ -203,7 +203,42 @@
 
 ---
 
-## 二之六、还没做的（认证相关）
+## 二之六、第 229 次 update 修了什么（2026-09-16）
+
+**1. 按钮**
+
+- 「改密码」再缩小一档（`padding:5px 9px; font-size:10px`）
+- 「登出」搬回主按钮同一排，**靠左**（`margin-right:auto` 把它和主按钮推开），
+  用新的 `.m-danger` 样式：**红字，不是红块**。登出默认并不删数据，
+  红块过重会吓人；红字足够让人停一秒。
+
+**2. 「一并清除」的话术**
+
+原来第二行写「记录一并清除」，用户反馈**像是要删掉所有记录（包括云端）**。
+改成「**只清这台设备，云端那份还在**」—— 前半句限定范围，后半句消除恐惧。
+
+**3. 「这是我自己的设备」补上离线能力**
+
+第二行改成「记录留在本机，**离线也能记录**」。
+
+### ✅ 离线这条已核实（2026-09-16 读码确认）
+
+- 离线时 `cloudSync()` 第一行就 `navigator.onLine===false` → 标成 offline 退出，
+  但记录照常写进本机，`schedulePush()` 把 `_dirty` 置为 true
+- 恢复联网时 `window.addEventListener('online')` 会自动调一次 `cloudSync()`，
+  把攒下的改动推上去；也可以手动点「立即同步」
+- **离线期间刷新或关掉浏览器也不会丢**：`_dirty` 和 `_lastStamp` 只在内存里，
+  重开后都归零，于是 `stamp===_lastStamp` 必然不成立 → 不会走「云端无变化，跳过」
+  那条捷径 → 强制走完整同步（拉 → 合 → 推），本机那些离线记录会被合并上传
+
+前提是这台设备**登录过**（`cloudInit()` 从本机 session 恢复）。
+从没登录过就一直是纯本机，等哪天登录时按「换账号保护」合并或覆盖。
+
+`APP_BUILD` 和 `sw.js` 的 `VERSION` 提到 **20**。34 项回归测试全过。
+
+---
+
+## 二之七、还没做的（认证相关）
 
 **忘记密码** —— 没做。Supabase 的 `resetPasswordForEmail` 流程有三个坑要先处理：
 
@@ -221,7 +256,8 @@ curl -X PUT "https://buxqkndyfjhajdjwbcrp.supabase.co/auth/v1/admin/users/<用�
 ```
 
 - 用户 UUID：Supabase 后台 Authentication → Users，点开那个人就能看到
-- service_role 密钥：后台 **Settings → API Keys**（已经没有单独的 Settings → API 页了）。
+- service_role 密钥：菜单不好找，直接开这个网址 —— 
+  https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/settings/api-keys 
   legacy 的 `service_role` 和新式的 `sb_secret_...` 都在那一页，两者都能用在这个接口上
 - 设好之后把临时密码私下告诉他，让他自己进「改密码」换成自己的
 
@@ -240,16 +276,16 @@ curl -X PUT "https://buxqkndyfjhajdjwbcrp.supabase.co/auth/v1/admin/users/<用�
 
 ## 三、下次开工第一步
 
-把验证序列**用版本 19 再跑一遍**，确认这三处改动没碰坏同步：
+把验证序列**用版本 20 再跑一遍**，确认这三处改动没碰坏同步：
 
 ```
 1. 关掉所有 localhost:8080 的标签页和无痕窗口，一个不留
-2. 开一个新的，Console 确认第一行是 [catVweb] 代码版本 19
+2. 开一个新的，Console 确认第一行是 [catVweb] 代码版本 20
 3. 跑：登录 A → 记 1 条 → 登出 → 登录 B → 登出 → 登录回 A
 4. 看最后一行日志的「云端拉到 N 条」—— 数字只升不降就对了
 ```
 
-⚠️ **每一步之前都确认版本号是 19。** 改完代码浏览器多半还捧着旧的，
+⚠️ **每一步之前都确认版本号是 20。** 改完代码浏览器多半还捧着旧的，
 硬刷新（Ctrl+Shift+R），不行就 Application → Service Workers → Unregister。
 
 ### 排查工具
@@ -276,7 +312,7 @@ curl -X PUT "https://buxqkndyfjhajdjwbcrp.supabase.co/auth/v1/admin/users/<用�
 
 - [x] ~~验证「旧标签页」假设~~ —— 2026-09-16 通过
 - [x] ~~修登录失败不清身份的漏洞~~ —— 第 224 次 update
-- [ ] 用版本 19 重跑一遍验证序列（见第三节）
+- [ ] 用版本 20 重跑一遍验证序列（见第三节）
 - [ ] **导出一份备份**存到电脑外面（数据只有 7.5 KB，十秒钟）
 - [ ] 删掉 Supabase 里的测试账号（Authentication → Users，`probe*` `e2e*` `sec*` `rpa*` `rpb*`）
 - [ ] 决定账号策略：手动建号（推荐，10 个朋友点 10 次）还是开放注册
