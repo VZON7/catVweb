@@ -759,16 +759,14 @@ const I18N={
     form_past:'过去日期',form_earn:'预计获得',form_half:'减半',form_discard:'放弃未保存的记录？',form_discard_yes:'放弃',form_discard_no:'继续编辑',form_discard_title:'未保存的记录',form_discard_body_zh:'你正在编辑一条记录，要先保存还是放弃？',form_save_leave:'先保存再离开',
     edit_reselect:'重新选择',edit_no_proj:'未选择',
     sync_nav:'同步',sync_title:'云端同步',sync_email:'邮箱',sync_pw:'密码',
-    sync_login:'登录',sync_signup:'注册新账号',sync_logout:'同步并登出',sync_now:'立即同步',
+    sync_login:'登录',sync_signup:'注册新账号',sync_logout:'登出',sync_now:'立即同步',
     sync_on:'已同步',sync_ing:'同步中...',sync_off:'未登录',sync_offline:'离线（已存在本机）',sync_err:'同步出错',
     sync_pending:'有改动还没传上去',sync_leave:'还有改动没传上去，现在离开会丢掉。确定要走吗？',
     sync_out_q:'登出后，这台设备上的记录怎么处理？',
-    sync_out_tip:'判断标准很简单：这台设备是不是你自己的。',
-    sync_out_keep:'保留在本机（自己的设备选这个）',
-    sync_out_keep_d:'自己的电脑或手机。记录留着，不登录也能继续写，下次登录会自动合并回去。',
-    sync_out_wipe:'一并清除（借来的、公用的选这个）',
-    sync_out_wipe_d:'本机记录清空，下一个人看不到；云端已经存好，登录回来就有。',
-    sync_out_risk:'还有改动没传上去。放心，没成功传上云端就不会清除 —— 但建议先关掉这里，点一下「立即同步」。',
+    sync_out_sub:'登出前会先把没传上去的改动同步到云端。',
+    sync_out_keep:'这是我自己的设备',sync_out_keep_d:'记录留在本机',
+    sync_out_wipe:'这台设备不是我的',sync_out_wipe_d:'记录一并清除',
+    sync_out_risk:'还有改动没传上去。没成功传上云端就不会清除。',
     sync_pw_change_d:'需要先输一次当前密码',
     sync_wiped:'本机记录已清除。登录回来即可恢复。',
     sync_wipe_blocked:'有改动没能传上云端，所以本机记录一条都没清。已经登出，数据还在这台设备上。请重新登录、同步成功之后再试。',
@@ -891,16 +889,14 @@ const I18N={
     form_past:'Past date',form_earn:'Will earn',form_half:'Half',form_discard:'Discard unsaved entry?',form_discard_yes:'Discard',form_discard_no:'Keep editing',form_discard_title:'Unsaved entry',form_discard_body_en:'Save your entry first or discard it?',form_save_leave:'Save and leave',
     edit_reselect:'Reselect',edit_no_proj:'No project',
     sync_nav:'Sync',sync_title:'Cloud Sync',sync_email:'Email',sync_pw:'Password',
-    sync_login:'Sign in',sync_signup:'Create account',sync_logout:'Sync & sign out',sync_now:'Sync now',
+    sync_login:'Sign in',sync_signup:'Create account',sync_logout:'Sign out',sync_now:'Sync now',
     sync_on:'Synced',sync_ing:'Syncing...',sync_off:'Not signed in',sync_offline:'Offline (saved on this device)',sync_err:'Sync failed',
     sync_pending:'Changes not uploaded yet',sync_leave:'Some changes have not been uploaded yet and will be lost. Leave anyway?',
     sync_out_q:'What should happen to the records on this device?',
-    sync_out_tip:'Simple rule: is this device your own?',
-    sync_out_keep:'Keep on this device (your own device)',
-    sync_out_keep_d:'Your own computer or phone. Records stay, still usable signed out, and merge back when you sign in.',
-    sync_out_wipe:'Clear them too (borrowed or shared)',
-    sync_out_wipe_d:'Local records are cleared so the next person cannot see them; the cloud copy is safe.',
-    sync_out_risk:'Some changes have not been uploaded. Nothing will be cleared unless they upload successfully - but running Sync now first is safer.',
+    sync_out_sub:'Anything not uploaded yet is synced to the cloud before signing out.',
+    sync_out_keep:'This is my own device',sync_out_keep_d:'Keep records here',
+    sync_out_wipe:'This device is not mine',sync_out_wipe_d:'Clear records too',
+    sync_out_risk:'Some changes are not uploaded yet. Nothing will be cleared unless they upload successfully.',
     sync_pw_change_d:'You will need your current password',
     sync_wiped:'Local records cleared. Sign back in to restore them.',
     sync_wipe_blocked:'Some changes could not be uploaded, so nothing was cleared. You are signed out but the data is still on this device. Sign back in, sync successfully, then try again.',
@@ -4269,7 +4265,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=18;
+const APP_BUILD=19;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4519,7 +4515,7 @@ function askSignOut(){
   mc.innerHTML='<div class="modal-bg" onmousedown="if(event.target===this)renderSyncModal(true)">'+
     '<div class="modal" style="width:320px" id="sync-modal-body">'+
       '<div class="modal-title">'+t('sync_out_q')+'</div>'+
-      '<div class="sync-msg">'+t('sync_out_tip')+'</div>'+
+      '<div class="sync-msg">'+t('sync_out_sub')+'</div>'+
       (risky?'<div class="sync-msg bad">'+t('sync_out_risk')+'</div>':'')+
       '<button class="bk-tog" style="width:100%;flex-direction:column;align-items:flex-start;gap:0;text-align:left;margin-top:8px;padding:10px 12px" onclick="doSignOut(false)">'+
         '<b style="color:var(--dark)">'+t('sync_out_keep')+'</b>'+
@@ -4746,11 +4742,14 @@ function renderSyncModal(force){
       '<div class="sync-row"><span>'+t('sync_last')+'</span><b>'+esc(lastSyncText())+'</b></div>'+
       '<div class="sync-msg'+(syncState==='error'?' bad':(syncState==='idle'?' good':''))+'">'+
         esc(syncStateText())+(syncState==='error'&&syncErr?' — '+esc(syncErr):'')+'</div>'+
-      '<button class="bk-tog" style="width:100%;flex-direction:column;align-items:flex-start;gap:0;text-align:left;margin-top:10px;padding:10px 12px" onclick="syncOpenPwForm()">'+
-        '<b style="color:var(--dark)">'+t('sync_pw_change')+'</b>'+
-        '<span style="font-size:11px;color:var(--mid);margin-top:2px">'+t('sync_pw_change_d')+'</span></button>'+
+      /* 「改密码」「登出」都是次要操作，并排做成两个小按钮。
+         底部只留「立即同步」一个主按钮 —— 以前「同步并登出」和「立即同步」
+         并排，两个都带「同步」又都像主按钮，主次分不清。 */
+      '<div style="display:flex;gap:8px;margin-top:10px">'+
+        '<button class="bk-tog" style="width:auto" onclick="syncOpenPwForm()">'+t('sync_pw_change')+'</button>'+
+        '<button class="bk-tog" style="width:auto" onclick="askSignOut()">'+t('sync_logout')+'</button>'+
+      '</div>'+
       '<div class="modal-btns">'+
-        '<button class="m-cancel" onclick="askSignOut()">'+t('sync_logout')+'</button>'+
         '<button class="m-save" onclick="syncNowAndClose()">'+t('sync_now')+'</button>'+
       '</div>';
   }else{
