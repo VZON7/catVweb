@@ -15,18 +15,33 @@ const readline=require('readline');
 const SB='https://buxqkndyfjhajdjwbcrp.supabase.co';
 const KEYFILE=path.join(__dirname,'.admin-key');
 
-function die(msg){console.error('\n✗ '+msg+'\n');process.exit(1);}
+/* ⚠️ 不能用 process.exit()。fetch 还开着连接时硬退出，\n
+   Windows 上的 Node 会吐一行 Assertion failed 的噪音，很吓人。\n
+   改成抛一个自己人认得的错，让 main 的 catch 安静收尾。 */
+class Bail extends Error{}
+function die(msg){console.error('\n✗ '+msg+'\n');process.exitCode=1;throw new Bail();}
 function ok(msg){console.log(msg);}
 
 /* 密钥长什么样：
    - 旧式 service_role 是个 JWT，能解出 role 字段，可以提前拦住贴错的 anon
    - 新式 sb_secret_... 不是 JWT，解不开，只能等服务器回话 */
 function checkKeyShape(k){
+  /* ⚠️ 第一道：密钥是一长串不带空格的字符。
+     踩过的坑：贴的时候把整条命令或说明文字一起贴进来了，
+     当时这里放行了，结果把一句命令行当密钥存了进去。 */
+  if(/\s/.test(k))
+    die('这不是密钥 —— 中间有空格或换行，八成是把命令或者说明文字一起贴进来了。'+
+        '\n  密钥是一长串不带空格的字符，sb_secret_ 或 eyJ 开头，只贴那一串。');
   if(k.startsWith('sb_publishable_'))
     die('这是 publishable（公开）密钥，权限不够。要用 Secret keys 里的 sb_secret_... 或 legacy 的 service_role。');
   if(k.startsWith('sb_secret_'))return;
   const parts=k.split('.');
-  if(parts.length!==3)return;         // 认不出的形状就放行，让服务器去判
+  /* 认不出形状就拦下。以前是放行让服务器判，但那样错东西会先被存进文件，
+     下次再跑还是错的 —— 不如当场说清楚。 */
+  if(parts.length!==3||!k.startsWith('eyJ'))
+    die('认不出这是哪种密钥。'+
+        '\n  正确的长这样：sb_secret_xxxxx…（新式）或 eyJhbGciOi…（旧式 service_role）'+
+        '\n  去这里复制：https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/settings/api-keys');
   try{
     const p=JSON.parse(Buffer.from(parts[1].replace(/-/g,'+').replace(/_/g,'/'),'base64').toString());
     if(p.role==='anon')
@@ -126,7 +141,8 @@ async function findUser(key,email){
     ok('  确认一下拼写，或者去后台核对：');
     ok('  https://supabase.com/dashboard/project/buxqkndyfjhajdjwbcrp/auth/users');
     ok('');
-    process.exit(1);
+    process.exitCode=1;
+    throw new Bail();
   }
   return hit;
 }
@@ -180,4 +196,8 @@ async function main(){
   ok('');
 }
 
-main().catch(e=>die(e&&e.message?e.message:String(e)));
+main().catch(e=>{
+  if(e instanceof Bail)return;          // die() 已经把话说完了
+  console.error('\n✗ '+(e&&e.message?e.message:String(e))+'\n');
+  process.exitCode=1;
+});
