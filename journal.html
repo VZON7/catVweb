@@ -625,7 +625,20 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .cp-closest-item.cp-sel .cp-closest-check { opacity:1; }
 /* ── CLOUD SYNC ───── */
 .sync-dot { width:9px; height:9px; border-radius:50%; margin-left:auto; flex-shrink:0; background:var(--mid); transition:background .2s; }
-.sync-dot.off     { display:none; }
+/* ⚠️ 未登录时不能把圆点藏起来。
+   以前是 display:none —— 圆点整个消失，界面上没有任何线索说
+   「你现在记的东西只存在这台设备，不会被备份」。
+   真实后果：换设备 / 凭证过期 / 在第二台机器上从没登录过的人，
+   会一直正常地写下去，直到某天登录才发现只有几个月前的内容。
+   灰点 + 下面那条提示条，就是为了让这件事当场就看得见。 */
+.sync-dot.off     { background:var(--c-faint); opacity:.55; }
+.offline-note {
+  display:none; margin:0 0 10px; padding:7px 12px; border-radius:10px;
+  background:rgba(123,104,238,0.07); color:var(--mid);
+  font-size:11px; line-height:1.5; font-family:'Nunito',sans-serif;
+}
+.offline-note.show { display:block; }
+.offline-note b { color:var(--dark); font-weight:800; }
 .sync-dot.idle    { background:var(--c-active); }
 .sync-dot.syncing { background:var(--purple); animation:syncPulse 1s ease-in-out infinite; }
 .sync-dot.pending { background:var(--c-past-hint); animation:syncPulse 1.4s ease-in-out infinite; }
@@ -724,6 +737,7 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
       <button class="sb-nav-btn" id="backup-nav-btn">💾 <span id="backup-nav-label">备份</span></button>
       <button class="sb-nav-btn" id="sync-nav-btn">☁️ <span id="sync-nav-label">同步</span><span class="sync-dot off" id="sync-dot"></span></button>
     </div>
+    <div class="offline-note" id="offline-note"></div>
     <div class="main-area" id="main-area"></div>
   </div>
 </div>
@@ -782,6 +796,8 @@ const I18N={
     sync_pw_mismatch:'两次输入的新密码不一样',sync_pw_wrong:'当前密码不对',
     sync_pw_needall:'三栏都要填',sync_pw_nologin:'请先登录',
     sync_as:'当前账号',sync_last:'上次同步',sync_never:'还没同步过',sync_ver:'版本 {n}',
+    off_note_t:'未登录 —— 这些记录只存在这台设备。',
+    off_note_d:'换一台设备就看不到，浏览器数据一清也找不回。点这里登录，现有记录会一起带上云端。',
     sync_code_sent:'验证码已经寄到',
     sync_code_hint:'输入邮件里的数字验证码。几分钟没收到的话，看看垃圾邮件箱。',
     sync_code_label:'验证码',sync_code_verify:'验证并登录',sync_code_back:'换个邮箱',
@@ -925,6 +941,8 @@ const I18N={
     sync_pw_mismatch:'The two new passwords do not match',sync_pw_wrong:'Current password is not right',
     sync_pw_needall:'All three fields are required',sync_pw_nologin:'Please sign in first',
     sync_as:'Signed in as',sync_last:'Last synced',sync_never:'Never synced',sync_ver:'Build {n}',
+    off_note_t:'Not signed in - these records only exist on this device.',
+    off_note_d:'They will not appear on your other devices, and clearing this browser would lose them. Tap here to sign in; whatever is already here comes along.',
     sync_code_sent:'We sent a code to',
     sync_code_hint:'Enter the number code from the email. Not there after a few minutes? Check your spam folder.',
     sync_code_label:'Code',sync_code_verify:'Verify & sign in',sync_code_back:'Use a different email',
@@ -1202,6 +1220,9 @@ function syncNav(){
   document.getElementById('st-total-coins').textContent=totalCoins;
   // sync parent page badge if open
   try{window.opener&&window.opener.postMessage({catTokens:totalCoins},'*')}catch(e){}
+  /* 记下第一条之后就该看见「未登录」那条提示，不用等下一次同步状态变化。
+     跟下面 schedulePush 一样用 typeof 守一下 —— 这个函数在云端同步那一节才定义。 */
+  if(typeof paintOfflineNote==='function')paintOfflineNote();
 }
 
 function proj(id){return projects.find(p=>p.id===id)||{name:'?',color:'#888',fields:[]}}
@@ -4297,7 +4318,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=25;
+const APP_BUILD=26;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4329,6 +4350,9 @@ function cntRecords(o){
   if(!o||!o.entries)return 0;
   return Object.values(o.entries).reduce((s,a)=>s+(Array.isArray(a)?a.length:0),0);
 }
+// 项目数。跟 cntRecords 分开 —— cntRecords 还被「本机缩水就强制下载整包」
+// 那个判断用着，改它的含义会连累那一处。
+function cntProjects(o){return(o&&Array.isArray(o.projects))?o.projects.length:0;}
 
 /* ⚠️ 上传前的安全闸 —— 整包同步最致命的缺陷在这里堵住。
    整包上传是「无条件覆盖」：任何一个本地为空的客户端同步一次，
@@ -4338,15 +4362,29 @@ function cntRecords(o){
    这种记录代表「别的设备写的，我根本没见过」——推上去就是销毁。
    数量 > 0 就拒绝上传。
    自己删掉的记录在删除名单里，不会误判。 */
-function wouldLoseRecords(remote,local){
-  if(!remote||!remote.entries)return 0;
-  let lost=0;
-  Object.entries(remote.entries).forEach(([k,arr])=>{
+/* 分开数记录和项目，报错时才讲得清丢的是什么。
+   ⚠️ 项目这一半是 2026-09-19 补的。以前安全闸只数 entries，
+      于是「只动了项目、没动记录」的改动完全不受保护 ——
+      新建一个还没记东西的空项目、改名、改颜色或字段，
+      手里没有这个项目的设备同步一次就能把它从云端抹掉，
+      而安全闸数出来是 0，一路放行，界面全程绿灯。 */
+function wouldLoseDetail(remote,local){
+  const out={e:0,p:0};
+  if(!remote)return out;
+  Object.entries(remote.entries||{}).forEach(([k,arr])=>{
     if(!Array.isArray(arr))return;
     const mine=new Set((((local||{}).entries||{})[k]||[]).map(e=>String(e.id)));
-    arr.forEach(e=>{if(!mine.has(String(e.id))&&!isTombedEntry(e.id))lost++;});
+    arr.forEach(e=>{if(!mine.has(String(e.id))&&!isTombedEntry(e.id))out.e++;});
   });
-  return lost;
+  const mineP=new Set((((local||{}).projects)||[]).map(p=>String(p.id)));
+  (remote.projects||[]).forEach(p=>{
+    if(!mineP.has(String(p.id))&&!isTombedProj(p.id))out.p++;
+  });
+  return out;
+}
+function wouldLoseRecords(remote,local){
+  const d=wouldLoseDetail(remote,local);
+  return d.e+d.p;
 }
 
 /* 一次完整同步 = 拉 → 合 → 推。
@@ -4466,10 +4504,10 @@ async function cloudSync(){
     const n=cntRecords(payload);
 
     // 安全闸：这次上传会不会弄丢云端的东西？会就别推。
-    const lose=wouldLoseRecords(remote,payload);
-    if(lose>0){
-      throw new Error('已中止上传：这一推会让云端少掉 '+lose+
-        ' 条我没见过、也没删过的记录。本机数据未受影响，云端也保持原样。');
+    const loseD=wouldLoseDetail(remote,payload);
+    if(loseD.e+loseD.p>0){
+      throw new Error('已中止上传：这一推会让云端少掉 '+loseD.e+' 条记录、'+loseD.p+
+        ' 个项目 —— 都是我没见过、也没删过的。本机数据未受影响，云端也保持原样。');
     }
     const nowStamp=new Date().toISOString();
     const{data:wrote,error:e2}=await c.from('vaults')
@@ -4482,10 +4520,12 @@ async function cloudSync(){
        界面一路显示「已同步」，直到换设备才发现全空了。
        静默丢数据是最恶劣的故障，所以这里宁可报错也不能假装成功。 */
     const back=(wrote&&wrote[0]&&wrote[0].data)?wrote[0].data:null;
-    const m=cntRecords(back);
-    if(n>0&&m!==n){
-      throw new Error('上传核对失败：本机 '+n+' 条，服务器只存下 '+m+
-        ' 条。数据没有真正保存，本机记录未受影响。');
+    const m=cntRecords(back), np=cntProjects(payload), mp=cntProjects(back);
+    /* ⚠️ 项目数也要核对，而且前提不能再写成 n>0 ——
+       一条记录都没有、只有项目的情况下，整句核对会被整个跳过。 */
+    if((n>0||np>0)&&(m!==n||mp!==np)){
+      throw new Error('上传核对失败：本机 '+n+' 条 / '+np+' 个项目，服务器只存下 '+
+        m+' 条 / '+mp+' 个项目。数据没有真正保存，本机记录未受影响。');
     }
     // 推成功了。只有期间没有新改动，才能把「有待上传」这个标记清掉。
     if(_dirtySeq===seqAtPush)setDirty(false);
@@ -4814,7 +4854,21 @@ async function syncDoChangePw(){
 function paintSyncBadge(){
   const d=document.getElementById('sync-dot');
   if(d)d.className='sync-dot '+syncState;
+  paintOfflineNote();
   renderSyncModal();          // 弹窗没开的话这句什么都不做
+}
+/* 没登录时在正文上方挂一条提示。
+   只在「有数据、却没登录」时出现 —— 全新的空白页面不打扰人。
+   点一下直接开同步面板，省掉「那我该去哪登录」这一步。 */
+function paintOfflineNote(){
+  const el=document.getElementById('offline-note');
+  if(!el)return;
+  const hasData=projects.length>0||Object.values(entries).some(a=>Array.isArray(a)&&a.length);
+  if(cloudUser||!hasData){el.className='offline-note';el.innerHTML='';el.onclick=null;return;}
+  el.className='offline-note show';
+  el.innerHTML='<b>'+t('off_note_t')+'</b> '+t('off_note_d');
+  el.style.cursor='pointer';
+  el.onclick=()=>openSyncModal();
 }
 function syncStateText(){
   const m={off:'sync_off',idle:'sync_on',syncing:'sync_ing',pending:'sync_pending',offline:'sync_offline',error:'sync_err'};

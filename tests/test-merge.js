@@ -48,6 +48,7 @@ module.exports={
   get totalCoins(){return totalCoins},
   doMerge, snapshot, tombEntry, untombEntry, isTombedEntry, tombProj, isTombedProj,
   purgeTombed, backfillStamps, newEntryId, gcTombs, syncMode, wouldLoseRecords, cntRecords,
+  wouldLoseDetail, cntProjects,
   setDirty, _lsPeek, _lsBreak, _getDirty
 };`;
 
@@ -174,6 +175,39 @@ ok('删了 1 条但另有 1 条没见过 → 仍要拦',
 A.tombs = { e: {}, p: {} };
 ok('云端是空的 → 无所谓，放行', A.wouldLoseRecords({ entries: {} }, { entries: {} }) === 0);
 ok('云端没数据(null) → 放行', A.wouldLoseRecords(null, { entries: {} }) === 0);
+
+// ── 场景十：安全闸也要守住「项目」────────────────────────
+// 以前只数 entries，于是「只动了项目、没动记录」的改动完全不受保护：
+// 新建一个还没记东西的空项目、改名、改颜色，都能被另一台设备无声抹掉。
+console.log('\n【场景十】安全闸：项目也不能被悄悄抹掉');
+A.tombs = { e: {}, p: {} };
+A.projects = [];
+const cloudP = {
+  entries: { '2026-09-06': [{ id: 1 }] },
+  projects: [{ id: 'p1', name: '读书' }, { id: 'p2', name: '健身' }]
+};
+
+ok('云端有 2 个项目、本地一个都没有 → 拦下',
+  A.wouldLoseDetail(cloudP, { entries: { '2026-09-06': [{ id: 1 }] }, projects: [] }).p === 2);
+ok('两个项目都在 → 放行',
+  A.wouldLoseDetail(cloudP, cloudP).p === 0);
+ok('本地多一个新项目 → 放行',
+  A.wouldLoseDetail(cloudP, { entries: cloudP.entries, projects: cloudP.projects.concat([{ id: 'p3', name: '新的' }]) }).p === 0);
+
+A.tombProj('p2');
+ok('自己删掉的项目不算弄丢 → 放行',
+  A.wouldLoseDetail(cloudP, { entries: cloudP.entries, projects: [{ id: 'p1', name: '读书' }] }).p === 0);
+ok('删了 p2 但 p1 也没见过 → 仍要拦',
+  A.wouldLoseDetail(cloudP, { entries: cloudP.entries, projects: [] }).p === 1);
+A.tombs = { e: {}, p: {} };
+
+// 这是最要命的一种：一条记录都没少，只有项目没了 —— 旧版会完全看不见
+ok('⚠️ 记录一条没少、只丢项目 → 旧版数出来是 0，新版必须拦下',
+  A.wouldLoseRecords(cloudP, { entries: { '2026-09-06': [{ id: 1 }] }, projects: [] }) === 2);
+ok('项目字段（名字/颜色）不参与判断，只看 id 在不在',
+  A.wouldLoseDetail(cloudP, { entries: cloudP.entries, projects: [{ id: 'p1', name: '改过名' }, { id: 'p2', name: 'x' }] }).p === 0);
+ok('云端没有 projects 字段 → 不误报', A.wouldLoseDetail({ entries: {} }, { entries: {} }).p === 0);
+ok('cntProjects 数得对', A.cntProjects(cloudP) === 2 && A.cntProjects(null) === 0 && A.cntProjects({}) === 0);
 
 // ── 场景九：「有改动没传上去」这个标记必须落盘 ─────────────
 // 手机 App 被系统回收后重新打开，程序要知道自己还欠着东西 ——
