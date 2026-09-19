@@ -103,23 +103,52 @@ journal.html
 
 ---
 
-## 六、文件版本管理
+## 六、版本号与上线流程
 
-⚠️ **新对话开始时，必须先检查 `/mnt/user-data/outputs/journal.html` 是否存在且比上传文件更新。**
-上传文件 = 用户手动上传的版本，不一定是最新。
-outputs/ = Claude 输出的最新工作版本，优先使用。
+> 这一节原本写的是网页版 Claude 的 `/mnt/user-data/` 上传下载流程。
+> 现在开发在 Claude Code 里直接对着 git 仓库做，那套已经不适用，2026-09-19 整节重写。
+
+### 版本号
+
+**改了 `journal.html`，必须同时给两个地方加 1：**
+
+- `journal.html` 顶部的 `const APP_BUILD=N`
+- `sw.js` 顶部的 `const VERSION = N`
+
+**漏掉任何一个，手机就继续用旧缓存** —— 你会拿旧代码测新修复，白折腾好几轮。
+这是这个项目排查问题最大的时间黑洞。版本号也显示在同步面板底部（第233次加的），
+手机上不用开控制台就能确认跑的是哪一版。
+
+每次改动标注「第 N 次 update」，只在真正改了文件时才分配编号，计划阶段用 ①②③。
+
+### 上线流程
 
 ```bash
-# 新对话开始时先做这个检查
-wc -c /mnt/user-data/uploads/journal.html /mnt/user-data/outputs/journal.html 2>/dev/null
-# outputs/ 文件更大 → 用 outputs/；一样大或不存在 → 用 uploads/
-cp /mnt/user-data/outputs/journal.html /home/claude/journal.html
+# 1. 语法检查（见第十九节）＋ 回归测试
+node tests/test-merge.js
+
+# 2. 界面 / CSS / 版面的改动 → 先让用户看渲染效果，他点头才推
+node tools/serve.js          # http://localhost:8080/journal.html
+#    起了服务器就把完整网址贴给用户，别让他往上翻聊天记录
+
+# 3. 提交后合进部署分支（⚠️ 不是 main）
+git checkout claude/amazing-bohr-zIAEL
+git merge --ff-only <你的分支>
+git push origin claude/amazing-bohr-zIAEL
+git checkout <你的分支>
+
+# 4. 轮询线上直到版本号变了，再抓线上文件核对关键字符串
+curl -s "https://vzon7.github.io/catVweb/journal.html?cb=$RANDOM" | grep -o "APP_BUILD=[0-9]*"
 ```
 
-- **同一对话继续开发**：直接在 `/home/claude/journal.html` 叠加改动，不需要用户重新上传
-- **每次输出标注「第 N 次 update」**，让用户确认版本
-- **用户上传文件时**：先 grep 检查关键函数（如 `renameField` / `stripEmoji` / `setLang`）确认是否为最新版本
-- **开新对话时**：需要用户同时上传 `journal.html` 和 `catvweb-journal-SKILL.md`
+⚠️ **部署分支是 `claude/amazing-bohr-zIAEL`，不是 `main`。** `main` 停在 2026-06 是废的，
+往 main 合代码线上不会有任何变化。**别删那个分支，删掉网站就下线。**
+
+⚠️ **光读代码看不出版面效果。** 2026-09-19 连翻两次车：一次把提示条插进了
+`main-layout`（grid 横向容器）导致版面变三栏，一次位置用户看了直接要求撤回。
+两次都是推上线之后才发现。**动界面就先预览。**
+
+回退：`git revert <提交>` 再 push，线上一分钟左右恢复。
 
 ---
 
@@ -183,70 +212,54 @@ window.addEventListener('load', function(){
 - 语言切换只改显示，不动数据
 - `status_archived` 英文显示为 `ARCHIVED`（全大写，印章样式）
 - `Cat Token` 中英文都不翻译
+- **`en` 的 key 里绝不能出现中文** —— 写之前扫一眼新增的 en 块，
+  一个中文字符都不该有（`cp_my:'我的颜色包'` 这种写进 en 就是事故）
 
 **遇到不确定的翻译：** 列出 2-3 个选项即时问用户，不自行决定。
 
+**改完自查：** 新增了几个 key，`I18N.zh` 和 `I18N.en` 就该各多几个。
+`grep -c "keyname:" journal.html` 应该返回 2，返回 1 就是漏了一边。
+
 ---
 
-## 十一、Python 操作安全规则（全部中文写入场景）
+## 十一、批量改动安全规则
 
-⚠️ 以下规则涵盖所有 Python 写入操作，违反任何一条都可能导致乱码或文件损坏。
+> 这一节原本叫「Python 操作安全规则」，教的是怎么用 Python 拼字节写中文。
+> 现在开发在 Claude Code 里做，**这台机器没装 Python**，而且有 Edit / Write 工具，
+> 中文直接写就行，不存在编码问题。2026-09-19 删掉 Python 机制，只留下面这些
+> 跟工具无关、依然要命的规则。
 
-### 中文内容写入规则
-
-**根本原则：** 凡是包含中文的内容，不用 Python bytes 模式拼接，改用临时文件写入。
-
-```python
-# ❌ 错误：Python bytes 模式拼接中文 — 写入的是原始字节序列，不是字符串
-new_js = b"  const label='\xe6\x9c\xac\xe5\x91\xa8';"  # 浏览器读到乱码
-
-# ✅ 正确：写临时 .js 文件，用 str 模式写中文，再 bytes 读取插入
-with open('/tmp/snippet.js', 'w', encoding='utf-8') as f:
-    f.write("  const label='本周';")
-with open('/tmp/snippet.js', 'rb') as f:
-    new_js = f.read()
-```
-
-**str_replace 写中文时可直接写：** str_replace 工具内部处理 UTF-8，不需要额外转换。
-
-### en key 不得写入中文
-
-```python
-# ❌ 错误：en key 写入中文字节
-new_en = "cp_my:'我的颜色包',".encode()  # 中文写进 en → 乱码
-
-# ✅ 正确：en key 只用英文 ASCII
-new_en = b"cp_my:'My Color Bag',"
-```
+**改文件一律用 Edit / Write 工具，或者 `sed`。不要写 Python 脚本。**
 
 ### 边界查找规则
 
-禁止用 `find('}};')` 找代码块结束点（会意外包含后续代码）。
-正确做法：用函数名或注释作为边界：
+**禁止用 `}};` 这类符号找代码块的结束点** —— 会意外吞掉后面的代码。
+正确做法：拿**函数名或注释**当边界。
 
-```python
-# ✅ 正确
-s = c.find(b'function renderStats()')
-e = c.find(b'\nfunction renderMonth()')
 ```
+✅  从 'function renderStats()' 找到 '\nfunction renderMonth()'
+❌  从 'function renderStats()' 找到下一个 '}};'
+```
+
+⚠️ 用 Edit 工具替换一大段时，`old_string` 必须完整覆盖到那段的真正结尾。
+2026-09-19 踩过：替换时少抓了几行，剩下的尾巴留在原地，直接 JS 语法错误
+（好在编辑器的语法诊断当场就报了）。**改完一定跑第十九节的语法检查。**
 
 ### 禁止使用的字符
 
-Python 写入 JS 字符串时，禁止使用 Unicode 弯引号（`\u2018` `\u2019`）和 Unicode 省略号（`\u2026`）。
-正确做法：省略号用 `'...'`，引号用直引号 `'` 或 `"`。
+往 JS 字符串里写内容时，**禁止用 Unicode 弯引号**（`‘` `’`）**和 Unicode 省略号**（`…`）。
+省略号写 `...`，引号写直引号 `'` 或 `"`。
 
 ### CSS class 改动前置检查
-改任何 CSS class 的样式之前，先 grep 该 class 在 JS/HTML 里的使用处——断言只证明字符串改了，不证明有人在用（`.cb-exp-*` 死规则事故教训）。
+
+**改任何 CSS class 的样式之前，先 grep 这个 class 在 JS / HTML 里的使用处。**
+测试断言只证明字符串改了，不证明有人在用它（`.cb-exp-*` 死规则事故的教训）。
+新增 class 之前同样先 grep，确认没有同名的。
 
 ### I18N 块保护
 
-Python 做字符串全局替换时，先定位 I18N 块边界再操作：
-```python
-i18n_start = content.find('const I18N={')
-i18n_end = content.find('\nlet lang=', i18n_start)
-# 只在 content[:i18n_start] + content[i18n_end:] 范围内替换
-```
-不排除会把 I18N 内部的字符串值替换成 `t('key')` 调用，造成循环依赖崩溃。
+做全局字符串替换时，**先定位 `const I18N={` 到 `\nlet lang=` 这段边界，避开它**。
+不然会把 I18N 内部的字符串值也替换成 `t('key')` 调用，造成循环依赖直接崩溃。
 
 ---
 
@@ -392,13 +405,17 @@ grep -nE "\\\\u[0-9a-fA-F]{4}" journal.html  # 搜转义形式
 
 **注意：文件是 CRLF 换行**（`\r\n`），必须用 `-P` 模式 + `\r?$`。
 
+⚠️ **别用「第 2 个 script 标签」或写死的行号来定位。** 改了 CSS、加了几行 HTML，
+位置就变了 —— 2026-09-19 用写死的行号抽取，抽出来的是 HTML，`node --check` 直接报
+`Unexpected token '<'`。**主逻辑块是文件里最后一个顶格的 `<script>`，用 `tail -1` 取它。**
+
 ```bash
-START=$(grep -nP "^<script>\r?$" journal.html | sed -n '2p' | cut -d: -f1)
-END=$(grep -nP "^</script>\r?$" journal.html | sed -n '2p' | cut -d: -f1)
-sed -n "$((START+1)),$((END-1))p" journal.html | tr -d '\r' > /tmp/check.js && node --check /tmp/check.js
+ST=$(grep -nP "^<script>\r?$" journal.html | tail -1 | cut -d: -f1)
+END=$(grep -nP "^</script>\r?$" journal.html | awk -F: -v s="$ST" '$1>s{print $1;exit}')
+sed -n "$((ST+1)),$((END-1))p" journal.html | tr -d '\r' > /tmp/check.js && node --check /tmp/check.js
 ```
 
-每次大改后用此固定流程跑一次。
+每次大改后用此固定流程跑一次，再跑 `node tests/test-merge.js`。
 
 ---
 
@@ -798,7 +815,7 @@ e.updatedAt=Date.now();      // saveEdit、saveProject、restoreProject 都要
 导出备份 → 删掉几条 → 导入刚才那份备份（合并模式）→ 删掉的不能回来
 ```
 
-回归测试：`node tests/test-merge.js`。它抽取 journal.html 的原文来跑，不是副本，34 项场景覆盖复活、冲突、级联删除、撤销、老数据回填、id 防撞、换账号保护、上传安全闸。
+回归测试：`node tests/test-merge.js`。它抽取 journal.html 的原文来跑，不是副本，49 项场景覆盖复活、冲突、级联删除、撤销、老数据回填、id 防撞、换账号保护、上传安全闸（记录 + 项目两半）、待上传标记落盘。
 
 ## 三十四、云端同步的三道保险（血泪换来的）
 
