@@ -796,6 +796,12 @@ const I18N={
     sync_pw_mismatch:'两次输入的新密码不一样',sync_pw_wrong:'当前密码不对',
     sync_pw_needall:'三栏都要填',sync_pw_nologin:'请先登录',
     sync_as:'当前账号',sync_last:'上次同步',sync_never:'还没同步过',sync_ver:'版本 {n}',
+    ask_si_t:'还没登录',
+    ask_si_d:'现在记的东西只会存在这台设备 —— 换一台看不到，浏览器数据一清也找不回。',
+    ask_si_in:'登录 / 注册（推荐）',
+    ask_si_in_d:'注册十几秒。以后换设备、换手机都还在，这台设备上已有的记录也会一起带上云端',
+    ask_si_go:'先这样记',
+    ask_si_go_d:'只存这台设备，不再问你。想通了随时去「同步」登录，已经记的不会白写',
     sync_code_sent:'验证码已经寄到',
     sync_code_hint:'输入邮件里的数字验证码。几分钟没收到的话，看看垃圾邮件箱。',
     sync_code_label:'验证码',sync_code_verify:'验证并登录',sync_code_back:'换个邮箱',
@@ -939,6 +945,12 @@ const I18N={
     sync_pw_mismatch:'The two new passwords do not match',sync_pw_wrong:'Current password is not right',
     sync_pw_needall:'All three fields are required',sync_pw_nologin:'Please sign in first',
     sync_as:'Signed in as',sync_last:'Last synced',sync_never:'Never synced',sync_ver:'Build {n}',
+    ask_si_t:'Not signed in yet',
+    ask_si_d:'What you write will only live on this device - it will not show up anywhere else, and clearing this browser would lose it.',
+    ask_si_in:'Sign in / sign up (recommended)',
+    ask_si_in_d:'Signing up takes seconds. It follows you to any device, and whatever is already here comes along',
+    ask_si_go:'Just write for now',
+    ask_si_go_d:'Stays on this device, and I will stop asking. Sign in any time from Sync - nothing already written is wasted',
     sync_code_sent:'We sent a code to',
     sync_code_hint:'Enter the number code from the email. Not there after a few minutes? Check your spam folder.',
     sync_code_label:'Code',sync_code_verify:'Verify & sign in',sync_code_back:'Use a different email',
@@ -2978,9 +2990,59 @@ function autoGrow(el,maxRows){
   if(el.scrollHeight>max){el.style.height=max+'px';el.style.overflowY='auto';}
   else{el.style.height=el.scrollHeight+'px';el.style.overflowY='hidden';}
 }
+/* 点「新记录」时，没登录就先问一句。
+   拦在这里是因为：这一刻才是风险真正产生的时刻 —— 用户正要写一条
+   不会被备份的记录。放在别处（正文顶栏、导航栏）都试过，占版面又容易被忽略。
+
+   ⚠️ 一次打开只问一次（记在 sessionStorage）。每次点都弹会把人烦走，
+      而且不想注册的人有权继续用 —— 所以三个出口里必须有「先这样记」。 */
 function openForm(){
+  if(!cloudUser&&!_skipSignin()){askSigninFirst();return;}
+  _openFormNow();
+}
+/* 用户明确选过「先这样记」→ 从此不再问。
+   ⚠️ 登录成功时会清掉（见 afterLogin），这样以后登出了还会再问一次。 */
+function _skipSignin(){
+  try{return localStorage.getItem('cj_skip_signin')==='1';}catch(e){return false;}
+}
+function _openFormNow(){
   formTitle='';formNote='';formLink='';formLinkLabel='';formProj=null;showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
+}
+function askSigninFirst(){
+  const mc=document.getElementById('modal-container');
+  if(!mc){_openFormNow();return;}                    // 拿不到弹窗容器就别挡路
+  // 推荐的那个用紫色标题，跟「先这样记」拉开主次
+  const row=(fn,label,desc,pri)=>
+    '<button class="bk-tog" style="width:100%;flex-direction:column;align-items:flex-start;gap:0;text-align:left;margin-top:8px;padding:10px 12px" onclick="'+fn+'">'+
+      '<b style="color:'+(pri?'var(--purple)':'var(--dark)')+'">'+label+'</b>'+
+      '<span style="font-size:11px;color:var(--mid);margin-top:2px">'+desc+'</span></button>';
+  /* ⚠️ 这个弹窗故意不给「点外面关掉」。
+     关掉 = 什么都没决定，但程序还得往下走，只能替用户瞎猜 ——
+     之前就是把「点外面」当成了一次有效回答，于是用户点一下背景，
+     从此再也看不到这个提醒。
+     两个选项本身都是一步到位的安全出口，而且一辈子只问这一次，
+     所以不需要第三条退路。 */
+  mc.innerHTML='<div class="modal-bg">'+
+    '<div class="modal" style="width:310px">'+
+      '<div class="modal-title">'+t('ask_si_t')+'</div>'+
+      '<div class="sync-msg">'+t('ask_si_d')+'</div>'+
+      row('askSigninLogin()',t('ask_si_in'),t('ask_si_in_d'),true)+
+      row('askSigninGo()',t('ask_si_go'),t('ask_si_go_d'))+
+    '</div></div>';
+}
+/* 「先这样记」—— 这是一个明确的选择，从此不再问。
+   不想注册的人有权继续用，反复弹会把人烦走。 */
+function askSigninGo(){
+  try{localStorage.setItem('cj_skip_signin','1');}catch(e){}
+  const mc=document.getElementById('modal-container');if(mc)mc.innerHTML='';
+  _openFormNow();
+}
+function askSigninLogin(){_syncMode='in';_openSyncFromAsk();}
+function _openSyncFromAsk(){
+  _syncMsg='';_syncKind='';_pwMode=false;
+  const b=document.getElementById('sync-nav-btn');if(b)b.classList.add('active');
+  renderSyncModal(true);
 }
 function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
 function safeCancelForm(){
@@ -4311,7 +4373,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=29;
+const APP_BUILD=30;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4668,7 +4730,12 @@ async function cloudSignOut(){
   renderSyncModal();
   return pushedOk;
 }
-function afterLogin(){setSync('idle');startCloudLoop();cloudSync();renderSyncModal();}
+function afterLogin(){
+  /* 登录成功 → 把「先这样记，别再问」那个标记清掉。
+     这样万一以后登出了（或者换个人用这台设备），还会再问一次。 */
+  try{localStorage.removeItem('cj_skip_signin');}catch(e){}
+  setSync('idle');startCloudLoop();cloudSync();renderSyncModal();
+}
 
 async function cloudInit(){
   const c=sbReady();
