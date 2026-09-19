@@ -4,7 +4,7 @@
    ⚠️ 改动 journal.html 之后，把下面的 VERSION 加 1，
       否则手机可能继续用旧的缓存。
    ───────────────────────────────────────────────────────── */
-const VERSION = 23;
+const VERSION = 24;
 const CACHE = 'catvweb-v' + VERSION;
 
 // 本站文件 —— 必须缓存成功，否则离线打不开
@@ -56,7 +56,8 @@ async function networkFirst(req, timeoutMs) {
       fetch(req),
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))
     ]);
-    if (net && net.ok) cache.put(req, net.clone());
+    // ⚠️ 必须是 200，不能用 net.ok —— 见 cacheFirst 里的说明
+    if (net && net.status === 200) cache.put(req, net.clone());
     return net;
   } catch (err) {
     const hit = await cache.match(req, { ignoreSearch: true });
@@ -74,7 +75,13 @@ async function cacheFirst(req) {
   if (hit) return hit;
   try {
     const net = await fetch(req);
-    if (net && (net.ok || net.type === 'opaque')) cache.put(req, net.clone());
+    /* ⚠️ 判断条件必须是 status===200，不能用 net.ok。
+       net.ok 的定义是 200–299，206（部分响应）也满足 ——
+       而 Cache API 明确不收 206，于是抛出
+       「Failed to execute 'put' on 'Cache': Partial response ... is unsupported」，
+       一条永远挂在控制台的假警报，还会让这个资源始终进不了缓存。
+       opaque（跨域、读不到状态码）的 status 是 0，所以要单独放行。 */
+    if (net && (net.status === 200 || net.type === 'opaque')) cache.put(req, net.clone());
     return net;
   } catch (err) {
     return new Response('', { status: 504 });
