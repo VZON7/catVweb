@@ -4,7 +4,7 @@
    ⚠️ 改动 journal.html 之后，把下面的 VERSION 加 1，
       否则手机可能继续用旧的缓存。
    ───────────────────────────────────────────────────────── */
-const VERSION = 24;
+const VERSION = 25;
 const CACHE = 'catvweb-v' + VERSION;
 
 // 本站文件 —— 必须缓存成功，否则离线打不开
@@ -91,6 +91,20 @@ async function cacheFirst(req) {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+
+  /* ⚠️ 只有「资源」才可以碰缓存，接口请求一律放行、绝不插手。
+     fetch()/XHR 发出的请求 destination 是空字符串；<script>/<link>/<img>
+     这些拿到的是 'script' / 'style' / 'font' / 'image'，导航是 'document'。
+
+     踩过的坑（2026-09-19，查了一整天）：以前这里没有这一句，于是
+       GET /rest/v1/vaults?select=data&user_id=eq.XXX
+     这种读云端的请求也走了 cacheFirst —— 第一次读完就被冻进缓存，
+     之后每次同步读到的都是同一份旧快照，云端怎么变都不知道。
+     而上传是 POST、不被拦截，照样推得出去，于是这台设备会不停地
+     把旧数据推回云端，把别的设备刚存的东西盖掉。
+     表现：手机显示「已同步」、上次同步时间也在更新，数据却纹丝不动，
+     另一台设备上的删除和新增全都传不过来。 */
+  if (req.destination === '') return;
 
   let url;
   try { url = new URL(req.url); } catch (err) { return; }
