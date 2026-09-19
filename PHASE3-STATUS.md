@@ -612,6 +612,78 @@ owner 对不上时不再默默 replace，而是弹窗给三个选项
 
 ---
 
+## 二之十二、❗️真凶：Service Worker 把云端读取也缓存了（2026-09-19）
+
+### 症状
+
+手机（加到桌面的 PWA）上：另一台设备的新增和删除**永远传不过来**。
+而所有表面指标全是正常的 —— 账号对、版本对、圆点绿、状态写着「已同步」、
+「上次同步」时间每次都在更新。**同步确实在跑，只是被喂了一份假的云端。**
+
+反过来，手机自己的改动倒是推得上去，于是云端条数在两个值之间来回跳
+（78 → 77 → 76 → 77），一方的工作总被另一方盖掉。
+
+### 根因
+
+`sw.js` 的 fetch 拦截器只判断了「是不是 HTML」，不是 HTML 就一律走 `cacheFirst`：
+
+```js
+const isHTML = req.mode === 'navigate' || (url.origin === location.origin && url.pathname.endsWith('.html'));
+e.respondWith(isHTML ? networkFirst(req, 3000) : cacheFirst(req));
+```
+
+而同步时读云端用的正是 GET：
+
+```
+GET /rest/v1/vaults?select=updated_at&user_id=eq.XXX   问「云端变了吗」
+GET /rest/v1/vaults?select=data&user_id=eq.XXX         拉整包
+```
+
+`cacheFirst` 的规则是「缓存里有就直接用，永远不再问网络」。
+所以**第一次读完，这两个网址就被冻进缓存了**，之后每次同步读到的都是同一份旧快照。
+上传是 POST、不被拦截，照样推得出去 —— 于是这台设备不断把旧数据推回云端。
+
+### 修法（第234次 update，VERSION 25）
+
+在所有缓存逻辑之前加一句：
+
+```js
+if (req.destination === '') return;   // fetch/XHR 发出的接口请求，一律放行
+```
+
+`destination` 是浏览器标注的用途：`<script>` → `script`，`<link>` → `style`，
+字体 → `font`，图片 → `image`，导航 → `document`，**而 fetch()/XHR → 空字符串**。
+资源缓存和离线能力完全不受影响。
+
+### 教训
+
+**「界面显示已同步」和「真的同步了」是两回事。**
+这个 bug 所有可见指标都正常，唯独数据是假的 —— 最难查的就是这种。
+下次再遇到「一台设备死活不更新」，**先怀疑 Service Worker**，
+排查办法：DevTools → Application → Cache Storage，看看里面有没有 API 网址。
+
+顺带：版本号显示（第233次 update）在这次排查里省了好几轮来回 ——
+在那之前根本没法确认手机跑的是哪一版。
+
+### 还剩一个没修的并发漏洞（⑤）
+
+上传是无条件覆盖，没有并发保护（journal.html 第 4475 行）：
+
+```js
+.upsert({user_id:uid,data:payload,updated_at:nowStamp},{onConflict:'user_id'})
+```
+
+一次同步是「拉 → 合 → 推」，安全闸对比的是**开头拉下来的那份快照**，
+而 upsert 发生在之后。两者之间别的设备写了东西，这一推会无声盖掉它。
+教科书上的 lost update。
+
+SW 那个 bug 修掉之后，两台设备能正常收敛了，所以这个漏洞的触发窗口很窄
+（必须两台几乎同时同步）。但它是真的，迟早要修。
+**修法**：upsert 改成带条件的写入 —— 只有云端 `updated_at` 还等于我拉的时候那个值才写得进去，
+被动过了就重新走一遍拉→合→推。
+
+---
+
 ## 三、下次开工第一步
 
 把验证序列**用版本 21 再跑一遍**，确认这三处改动没碰坏同步：
