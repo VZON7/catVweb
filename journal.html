@@ -692,6 +692,10 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
     <div class="stat-card"><div class="stat-n" id="st-total-coins">0</div><div class="stat-l" id="stat-l-balance">Cat Token 余额</div></div>
   </div>
 
+  <!-- ⚠️ 这条必须留在 main-layout 外面。
+       放进去会变成侧栏和正文之外的第三列，把版面挤成三栏。 -->
+  <div class="offline-note" id="offline-note"></div>
+
   <div class="main-layout">
     <div class="sidebar">
       <div class="week-header-row">
@@ -737,7 +741,6 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
       <button class="sb-nav-btn" id="backup-nav-btn">💾 <span id="backup-nav-label">备份</span></button>
       <button class="sb-nav-btn" id="sync-nav-btn">☁️ <span id="sync-nav-label">同步</span><span class="sync-dot off" id="sync-dot"></span></button>
     </div>
-    <div class="offline-note" id="offline-note"></div>
     <div class="main-area" id="main-area"></div>
   </div>
 </div>
@@ -4318,7 +4321,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=26;
+const APP_BUILD=27;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
