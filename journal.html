@@ -632,13 +632,21 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
    会一直正常地写下去，直到某天登录才发现只有几个月前的内容。
    灰点 + 下面那条提示条，就是为了让这件事当场就看得见。 */
 .sync-dot.off     { background:var(--c-faint); opacity:.55; }
-.offline-note {
-  display:none; margin:0 0 10px; padding:7px 12px; border-radius:10px;
-  background:rgba(123,104,238,0.07); color:var(--mid);
-  font-size:11px; line-height:1.5; font-family:'Nunito',sans-serif;
+/* 未登录提醒挂在顶部固定栏里 —— 不占正文任何高度。
+   ⚠️ 别挪回正文上方：手机上 main-layout 变单栏，侧栏（本周 + 日期 + 项目 +
+      各种按钮）整个堆在正文前面，本来就要滚很久才到记录区，
+      再往上加一条就更远了。第235次犯过这个错。 */
+.off-pill {
+  display:none; align-items:center; gap:5px;
+  background:var(--c-token-bg); border:none; border-radius:999px;
+  padding:5px 12px; font-size:12px; font-weight:700; color:var(--danger);
+  box-shadow:var(--neu-raised); cursor:pointer; font-family:'Nunito',sans-serif;
+  transition:box-shadow .15s; white-space:nowrap;
 }
-.offline-note.show { display:block; }
-.offline-note b { color:var(--dark); font-weight:800; }
+.off-pill.show { display:flex; }
+.off-pill:active { box-shadow:var(--neu-inset); }
+/* 手机上地方紧张：只留图标，文字收起来 */
+@media(max-width:600px){ .off-pill .off-txt { display:none; } .off-pill { padding:5px 9px; } }
 .sync-dot.idle    { background:var(--c-active); }
 .sync-dot.syncing { background:var(--purple); animation:syncPulse 1s ease-in-out infinite; }
 .sync-dot.pending { background:var(--c-past-hint); animation:syncPulse 1.4s ease-in-out infinite; }
@@ -666,6 +674,9 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
   <a href="index.html" class="nav-logo"><div class="nav-pip"></div>catVweb</a>
   <div class="nav-right">
     <a href="index.html" class="nav-back">← 回到66的故事</a>
+    <!-- 未登录提醒。放这条固定栏里是为了不占正文一丝一毫的高度 ——
+         手机上 main-layout 变单栏，侧栏整个堆在正文上面，版面本来就很挤。 -->
+    <button class="off-pill" id="off-pill" onclick="openSyncModal()" title=""></button>
     <div class="coin-pill">🐾 <span id="nav-coins">0</span> Cat Token</div>
   </div>
 </nav>
@@ -692,9 +703,6 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
     <div class="stat-card"><div class="stat-n" id="st-total-coins">0</div><div class="stat-l" id="stat-l-balance">Cat Token 余额</div></div>
   </div>
 
-  <!-- ⚠️ 这条必须留在 main-layout 外面。
-       放进去会变成侧栏和正文之外的第三列，把版面挤成三栏。 -->
-  <div class="offline-note" id="offline-note"></div>
 
   <div class="main-layout">
     <div class="sidebar">
@@ -799,6 +807,7 @@ const I18N={
     sync_pw_mismatch:'两次输入的新密码不一样',sync_pw_wrong:'当前密码不对',
     sync_pw_needall:'三栏都要填',sync_pw_nologin:'请先登录',
     sync_as:'当前账号',sync_last:'上次同步',sync_never:'还没同步过',sync_ver:'版本 {n}',
+    off_pill:'未登录',
     off_note_t:'未登录 —— 这些记录只存在这台设备。',
     off_note_d:'换一台设备就看不到，浏览器数据一清也找不回。点这里登录，现有记录会一起带上云端。',
     sync_code_sent:'验证码已经寄到',
@@ -944,6 +953,7 @@ const I18N={
     sync_pw_mismatch:'The two new passwords do not match',sync_pw_wrong:'Current password is not right',
     sync_pw_needall:'All three fields are required',sync_pw_nologin:'Please sign in first',
     sync_as:'Signed in as',sync_last:'Last synced',sync_never:'Never synced',sync_ver:'Build {n}',
+    off_pill:'Not signed in',
     off_note_t:'Not signed in - these records only exist on this device.',
     off_note_d:'They will not appear on your other devices, and clearing this browser would lose them. Tap here to sign in; whatever is already here comes along.',
     sync_code_sent:'We sent a code to',
@@ -4321,7 +4331,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=27;
+const APP_BUILD=28;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -4860,18 +4870,18 @@ function paintSyncBadge(){
   paintOfflineNote();
   renderSyncModal();          // 弹窗没开的话这句什么都不做
 }
-/* 没登录时在正文上方挂一条提示。
+/* 没登录时在顶部固定栏挂一个提醒小标。
    只在「有数据、却没登录」时出现 —— 全新的空白页面不打扰人。
-   点一下直接开同步面板，省掉「那我该去哪登录」这一步。 */
+   点一下直接开同步面板，省掉「那我该去哪登录」这一步。
+   鼠标悬停（或长按）能看到完整说明，手机上则只显示图标。 */
 function paintOfflineNote(){
-  const el=document.getElementById('offline-note');
+  const el=document.getElementById('off-pill');
   if(!el)return;
   const hasData=projects.length>0||Object.values(entries).some(a=>Array.isArray(a)&&a.length);
-  if(cloudUser||!hasData){el.className='offline-note';el.innerHTML='';el.onclick=null;return;}
-  el.className='offline-note show';
-  el.innerHTML='<b>'+t('off_note_t')+'</b> '+t('off_note_d');
-  el.style.cursor='pointer';
-  el.onclick=()=>openSyncModal();
+  if(cloudUser||!hasData){el.className='off-pill';return;}
+  el.className='off-pill show';
+  el.innerHTML='⚠️ <span class="off-txt">'+t('off_pill')+'</span>';
+  el.title=t('off_note_t')+' '+t('off_note_d');
 }
 function syncStateText(){
   const m={off:'sync_off',idle:'sync_on',syncing:'sync_ing',pending:'sync_pending',offline:'sync_offline',error:'sync_err'};
