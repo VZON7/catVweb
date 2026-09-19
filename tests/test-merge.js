@@ -16,9 +16,22 @@ if (!/function mergeIncoming\(/.test(helpers)) throw new Error('抽取失败: �
 const guard = slice('function cntRecords(o){', 'async function cloudSync(', '上传安全闸');
 if (!/function wouldLoseRecords\(/.test(guard)) throw new Error('抽取失败: 没抓到 wouldLoseRecords');
 
+// 「有改动没传上去」这个标记的落盘逻辑
+const dirty = slice('function setDirty(on){', 'function schedulePush(){', 'setDirty');
+if (!/localStorage\.setItem\('cj_dirty'/.test(dirty)) throw new Error('抽取失败: setDirty 没写 cj_dirty');
+
 const harness = `
-let _ls={};
-const localStorage={getItem:k=>(k in _ls?_ls[k]:null),setItem:(k,v)=>{_ls[k]=String(v)}};
+let _ls={},_lsFail=false;
+const localStorage={
+  getItem:k=>(k in _ls?_ls[k]:null),
+  setItem:(k,v)=>{if(_lsFail)throw new Error('quota');_ls[k]=String(v)},
+  removeItem:k=>{if(_lsFail)throw new Error('quota');delete _ls[k]}
+};
+let _dirty=false;
+${dirty}
+function _lsPeek(k){return (k in _ls?_ls[k]:null)}
+function _lsBreak(on){_lsFail=on}
+function _getDirty(){return _dirty}
 const TOMB_KEEP_DAYS=180;
 let projects=[],entries={},tombs={e:{},p:{}},cpMyPalette=[],bkRenamed=0,totalCoins=0;
 function t(){return 'imported'}
@@ -34,7 +47,8 @@ module.exports={
   get tombs(){return tombs},     set tombs(v){tombs=v},
   get totalCoins(){return totalCoins},
   doMerge, snapshot, tombEntry, untombEntry, isTombedEntry, tombProj, isTombedProj,
-  purgeTombed, backfillStamps, newEntryId, gcTombs, syncMode, wouldLoseRecords, cntRecords
+  purgeTombed, backfillStamps, newEntryId, gcTombs, syncMode, wouldLoseRecords, cntRecords,
+  setDirty, _lsPeek, _lsBreak, _getDirty
 };`;
 
 const M = new module.constructor();
@@ -160,6 +174,26 @@ ok('删了 1 条但另有 1 条没见过 → 仍要拦',
 A.tombs = { e: {}, p: {} };
 ok('云端是空的 → 无所谓，放行', A.wouldLoseRecords({ entries: {} }, { entries: {} }) === 0);
 ok('云端没数据(null) → 放行', A.wouldLoseRecords(null, { entries: {} }) === 0);
+
+// ── 场景九：「有改动没传上去」这个标记必须落盘 ─────────────
+// 手机 App 被系统回收后重新打开，程序要知道自己还欠着东西 ——
+// 登出时那道「没推成功就不准清本机」的保护正是看这个标记。
+console.log('\n【场景九】待上传标记落盘（手机被回收也不会忘）');
+A.setDirty(true);
+ok('标记打上 → 内存里是 true', A._getDirty() === true);
+ok('标记打上 → 写进了 localStorage', A._lsPeek('cj_dirty') === '1');
+A.setDirty(false);
+ok('推成功 → 内存里是 false', A._getDirty() === false);
+ok('推成功 → localStorage 里清掉了', A._lsPeek('cj_dirty') === null);
+
+// 无痕模式 / 存储被禁用时 localStorage 会抛错，绝不能因此崩掉整个应用
+A._lsBreak(true);
+let threw = false;
+try { A.setDirty(true); } catch (e) { threw = true; }
+A._lsBreak(false);
+ok('localStorage 抛错 → 不往外抛，应用照常跑', threw === false);
+ok('localStorage 抛错 → 内存里的标记仍然正确', A._getDirty() === true);
+A.setDirty(false);
 
 console.log('\n' + '─'.repeat(46));
 console.log(fail === 0 ? `全部通过：${pass} 项 ✅` : `通过 ${pass}，失败 ${fail} ❌`);

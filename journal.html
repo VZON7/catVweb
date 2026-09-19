@@ -4297,14 +4297,17 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=22;
+const APP_BUILD=23;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1eHFrbmR5ZmpoYWpkandiY3JwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2ODYxNDQsImV4cCI6MjEwNDI2MjE0NH0.guu3_spScsRSIuL5X72ACmZKH66I-BYyvMydhXZpqPI';
 
 let _sb=null,cloudUser=null,syncState='off',syncErr='',_pushTimer=null,_pullTimer=null,_inSync=false;
-let _dirty=false;        // 有改动还没传上去
+let _dirty=false;        // 有改动还没传上去（跟 localStorage 的 cj_dirty 同步，见 setDirty）
+let _lastVisSync=0;      // 上次「切回前台就同步」是什么时候，用来节流
+// 上次还欠着东西没传就被关掉了（手机上很常见）→ 这次开机别当作已经同步好
+try{if(localStorage.getItem('cj_dirty')==='1')_dirty=true;}catch(e){}
 let _syncStart=0;        // 这次同步是什么时候开始的（卡死自救用）
 let _suppressPush=false; // 同步内部调 saveData 时用，避免把自己的写入当成新改动
 let _lastStamp=null;     // 上次见到的云端 updated_at，用来省掉无谓的整包拉取
@@ -4485,7 +4488,7 @@ async function cloudSync(){
         ' 条。数据没有真正保存，本机记录未受影响。');
     }
     // 推成功了。只有期间没有新改动，才能把「有待上传」这个标记清掉。
-    if(_dirtySeq===seqAtPush)_dirty=false;
+    if(_dirtySeq===seqAtPush)setDirty(false);
     _lastStamp=nowStamp;_lastCount=n;   // 记住这次写入的时间戳，下次好判断云端有没有被别人改过
     localStorage.setItem('cj_lastsync',String(Date.now()));
     // 日志必须带账号 —— 多账号测试时，不写账号根本分不清哪行是谁的
@@ -4508,9 +4511,18 @@ async function cloudSync(){
 }
 // 存完本地 3 秒后再推，避免连续编辑时反复上传。
 // 这 3 秒内状态标成 pending，让用户看得见「还没传上去」。
+/* 「有改动还没传上去」这件事必须落盘。
+   ⚠️ 以前 _dirty 只活在内存里。手机 App 被系统回收之后重新打开，
+      程序就不知道自己还欠着东西 —— 最要命的是登出时那道
+      「没推成功就不准清本机」的保护（doSignOut）正是看这个标记，
+      标记丢了，保护就直接放行，没传上去的记录会被一并清掉。 */
+function setDirty(on){
+  _dirty=on;
+  try{on?localStorage.setItem('cj_dirty','1'):localStorage.removeItem('cj_dirty');}catch(e){}
+}
 function schedulePush(){
   if(!cloudUser||_suppressPush)return;
-  _dirty=true;_dirtySeq++;   // 序号用来判断「这次推的内容是否已经过时」
+  setDirty(true);_dirtySeq++;   // 序号用来判断「这次推的内容是否已经过时」
   clearTimeout(_pushTimer);
   _pushTimer=setTimeout(cloudSync,8000);
   if(syncState!=='syncing')setSync('pending');
@@ -4572,11 +4584,11 @@ function askSignOut(){
 // 清空本机所有日记数据（云端那份不动）
 function wipeLocalData(){
   projects=[];entries={};totalCoins=0;cpMyPalette=[];tombs={e:{},p:{}};
-  _lastStamp=null;_lastCount=0;_dirty=false;_dirtySeq=0;
+  _lastStamp=null;_lastCount=0;setDirty(false);_dirtySeq=0;
   /* 「一并清除」是为共用设备准备的，记住的邮箱也是痕迹，一并抹掉。 */
   _syncRemember=false;_syncEmail='';
   ['cj_projects','cj_entries','catTokens','cj_mypalette','cj_tombs','cj_owner','cj_lastsync',
-   'cj_sync_remember','cj_sync_email']
+   'cj_dirty','cj_sync_remember','cj_sync_email']
     .forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
   try{Object.keys(localStorage).filter(k=>k.indexOf('cj_view_')===0)
     .forEach(k=>localStorage.removeItem(k));}catch(e){}
@@ -4619,7 +4631,7 @@ async function cloudSignOut(){
     pushedOk=(!_dirty&&syncState!=='error');
   }
   const c=sbReady();if(c){try{await c.auth.signOut();}catch(e){}}
-  cloudUser=null;_dirty=false;_dirtySeq=0;_lastStamp=null;_lastCount=0;stopCloudLoop();setSync('off');
+  cloudUser=null;setDirty(false);_dirtySeq=0;_lastStamp=null;_lastCount=0;stopCloudLoop();setSync('off');
   renderSyncModal();
   return pushedOk;
 }
@@ -4644,8 +4656,33 @@ async function cloudInit(){
 if(typeof window!=='undefined'){
   window.addEventListener('online',()=>{if(cloudUser)cloudSync();});
   window.addEventListener('offline',()=>{if(cloudUser)setSync('offline');});
-  // 还有东西没传上去就关页面 → 浏览器弹原生提示拦一下。
-  // 数据在本机不会丢，但换设备就看不到，所以值得拦。
+  /* ⚠️ 手机上唯一可靠的「我要走了」信号。
+     下面那条 beforeunload 在手机上根本不触发 —— iOS / 安卓上划走 App、
+     切到别的 App、锁屏，统统不走那个事件。而手机恰恰是
+     「记完一条马上切走」最常发生的地方：
+       记一条 → schedulePush 排了 8 秒后再推 → 你两秒后锁屏
+       → 系统把页面冻结，定时器停摆 → 那 8 秒永远走不完 → 这条没传上去。
+     所以切走的瞬间就得把欠的推掉，不能等那 8 秒。
+     推不一定来得及跑完（页面随时可能被冻住），所以还有 cj_dirty 落盘兜底：
+     下次打开时程序知道自己还欠着东西。 */
+  document.addEventListener('visibilitychange',()=>{
+    if(!cloudUser)return;
+    if(document.visibilityState==='hidden'){
+      if(_dirty){clearTimeout(_pushTimer);_pushTimer=null;cloudSync();}
+      return;
+    }
+    /* 切回前台：拉一次，把另一台设备的改动取回来；
+       顺带补推上次没走完的。
+       节流 5 秒 —— 桌面上来回切标签页也会触发这里，不然会反复空转。 */
+    if(Date.now()-_lastVisSync<5000)return;
+    _lastVisSync=Date.now();
+    cloudSync();
+  });
+  /* 从往返缓存(bfcache)里恢复时不一定触发 visibilitychange —— 手机上点「后退」
+     回到页面就是这种情况，补一个。 */
+  window.addEventListener('pageshow',e=>{if(e.persisted&&cloudUser)cloudSync();});
+  /* 还有东西没传上去就关页面 → 浏览器弹原生提示拦一下。
+     ⚠️ 只在桌面浏览器有效，手机上不触发（所以才有上面那段 visibilitychange）。 */
   window.addEventListener('beforeunload',e=>{
     if(cloudUser&&_dirty){e.preventDefault();e.returnValue=t('sync_leave');return t('sync_leave');}
   });
