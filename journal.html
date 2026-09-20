@@ -45,6 +45,10 @@ window.addEventListener('load', function(){
   /* ── 功能色 ── */
   --c-select:#7B68EE; --c-number:#1D9E75; --c-active:#1D9E75;
   --c-done:var(--purple); --c-archived:#A32D2D; --c-past-hint:#B87878;
+  /* 删除键红 —— 只给「确认删除」那颗按钮用。跟 --c-past-hint（柔和提醒色）分开：
+     那个色同时背着「提醒你注意」和「这是下手的键」两个语义，确认行里
+     警示数字 / 警告文字 / 按钮三样全同色，按钮就不像按钮了。*/
+  --c-del-btn:#9A5C5C;
   --c-note:#7FA4BE; --c-note-text:#9EA8B8;
   --c-pill-title:#A07850; --c-pill-body:#4E5568;
   --c-last:#9AA0A8; --c-muted:#666; --c-empty:#bbb; --c-faint:#aaa;
@@ -288,13 +292,81 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .pp-item.sel { background:rgba(38,110,167,0.08); color:var(--purple); font-weight:700; }
 
 /* SELECT DROPDOWN */
-.sel-wrap { position:relative; width:100%; }
-.sel-btn { width:100%; display:flex; align-items:center; justify-content:space-between; padding:0 10px; height:34px; border-radius:8px; border:none; background:var(--lavender); color:var(--dark); font-size:12px; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
-.sel-btn:hover { box-shadow:inset 4px 4px 9px var(--sh-dark), inset -4px -4px 9px var(--sh-light); }
-.sel-dropdown { background:var(--lavender); border:none; border-radius:10px; padding:6px; margin-top:3px; z-index:10; box-shadow:6px 6px 12px var(--sh-dark), -6px -6px 12px var(--sh-light); }
-.sd-opt { display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-radius:7px; cursor:pointer; font-size:12px; color:var(--dark); font-family:'Nunito',sans-serif; }
-.sd-opt:hover { background:rgba(38,110,167,0.03); }
-.sd-opt.sel { background:rgba(38,110,167,0.08); color:var(--purple); font-weight:700; }
+/* 选项胶囊 —— 取代原来的下拉框。
+   下拉框那套（.sel-wrap/.sel-btn/.sel-dropdown/.sd-opt）已整套删除；
+   .sd-add 家族留着，「新增选项」那一行照旧复用它。
+   胶囊自己一套 class（.opt-chip），不蹭 Chart Builder 的 .cb-type-btn ——
+   按设计文档的做法，各模块各有自己的 class，共享的是阴影语言不是 class 名。 */
+.opt-chips { display:flex; flex-wrap:wrap; column-gap:5px; row-gap:11px; align-items:flex-start; padding-top:8px; }
+/* ⚠️ row-gap 在普通态和改选项态必须一样。行距一变，点铅笔时胶囊会重新换行、
+   位置全乱（第一排本来 6 个会变 4 个）。11px 是留给角标和晃动的余量。 */
+.chip-unit { position:relative; display:inline-flex; }
+.opt-chip { padding:5px 12px; max-width:100%; border-radius:999px; border:none; background:var(--lavender); color:var(--c-muted); font-size:11px; font-family:'Nunito',sans-serif; cursor:pointer; white-space:normal; text-align:left; line-height:1.45; transition:all .15s; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
+.opt-chip:hover { color:var(--dark); box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
+.opt-chip:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.opt-chip.on { background:var(--cb-radio); color:var(--white); font-weight:600; box-shadow:inset 3px 3px 7px rgba(0,0,0,.25), inset -2px -2px 5px rgba(255,255,255,.1); }
+.opt-chip.more { color:var(--purple); font-weight:700; position:relative; }
+.opt-chip.more[data-tip]:hover::after { content:attr(data-tip); position:absolute; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); background:var(--purple); color:var(--white); font-size:9px; font-weight:700; padding:2px 7px; border-radius:999px; white-space:nowrap; pointer-events:none; font-family:'Nunito',sans-serif; z-index:6; }
+.chip-add { width:27px; height:27px; border-radius:50%; border:none; background:var(--lavender); color:var(--purple); font-size:15px; font-weight:700; font-family:'Nunito',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); transition:box-shadow .15s; }
+.chip-add:hover { box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
+.chip-add:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.chip-addrow { display:flex; gap:6px; margin-top:6px; }
+/* 铅笔按钮：几何跟 .skip-btn 同构，但 hover 是蓝不是红 —— 红是删除语义，铅笔不该用 */
+.opt-edit-btn { width:28px; height:28px; border-radius:50%; border:none; background:var(--lavender); color:var(--c-icon-idle); cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); transition:box-shadow .15s, color .15s; }
+.opt-edit-btn:hover { color:var(--purple); box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
+.opt-edit-btn:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.opt-edit-btn.on { color:var(--c-icon-edit); box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+/* 持续晃动：分三档角度。旋转看到的位移 = 半宽 x sin(角度)，两个字的胶囊半宽小，
+   同样角度下几乎不动 —— 所以越短转得越多，把看到的幅度拉平。
+   刻意不复用 @keyframes shake：那是一次性横抖（正负5px/0.35s），语义已被
+   「你漏了选项目」占用。 */
+@keyframes wiggleS { 0%,100%{transform:rotate(-3deg)}   50%{transform:rotate(3deg)} }
+@keyframes wiggleM { 0%,100%{transform:rotate(-2deg)}   50%{transform:rotate(2deg)} }
+@keyframes wiggleL { 0%,100%{transform:rotate(-1.2deg)} 50%{transform:rotate(1.2deg)} }
+.opt-chips.wiggling .chip-unit.w-s { animation:wiggleS .5s ease-in-out infinite; }
+.opt-chips.wiggling .chip-unit.w-m { animation:wiggleM .5s ease-in-out infinite; }
+.opt-chips.wiggling .chip-unit.w-l { animation:wiggleL .5s ease-in-out infinite; }
+.opt-chips.wiggling .chip-unit:nth-child(3n+2) { animation-delay:.13s; }
+.opt-chips.wiggling .chip-unit:nth-child(3n+3) { animation-delay:.26s; }
+@media (prefers-reduced-motion:reduce){ .opt-chips.wiggling .chip-unit { animation:none; } }
+/* 删除角标。阴影收到 1.5px 并往外挪（圆心落在胶囊拐角之外），这样暗影朝右下
+   摊出去的那一半基本落在胶囊外面，不糊到文字上。
+   ⚠️ 角标在 DOM 里写在胶囊「前面」—— 它是绝对定位所以看起来位置不变，
+   但只有这样才能用相邻兄弟选择器让按角标时整颗胶囊跟着陷下去，不需要 :has()。 */
+.chip-badge { position:absolute; top:-7px; right:-6px; width:17px; height:17px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; font-size:10px; font-weight:800; line-height:1; font-family:'Nunito',sans-serif; background:var(--lavender); color:var(--c-past-hint); box-shadow:1.5px 1.5px 3px var(--sh-dark), -1.5px -1.5px 3px var(--sh-light); transition:box-shadow .12s, color .12s, transform .12s; }
+.chip-badge:hover { color:var(--danger); transform:scale(1.14); box-shadow:2px 2px 4px var(--sh-dark), -2px -2px 4px var(--sh-light); }
+.chip-badge:active { color:var(--c-del-btn); transform:scale(1); box-shadow:inset 1.5px 1.5px 3px var(--sh-dark), inset -1.5px -1.5px 3px var(--sh-light); }
+/* 按住角标时整颗胶囊也陷下去 + 转浅粉，文字用删除键那个棕红 */
+.chip-badge:active + .opt-chip, .chip-badge:active + .opt-chip.on { background:rgba(229,57,53,0.08); color:var(--c-del-btn); font-weight:700; box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+/* hover 分流：平时 hover 给胶囊（文字加深）；改选项态下 hover 不给胶囊、只给角标。
+   做法是把胶囊的 hover/active 重新声明回默认值，等于关掉它。
+   第二十五节的老规矩：改了默认值就得把 hover/active 一起重声明，
+   不然权重相同、后写的会盖掉先写的。 */
+.opt-chips.wiggling .opt-chip { cursor:default; }
+.opt-chips.wiggling .opt-chip:hover, .opt-chips.wiggling .opt-chip:active { color:var(--c-muted); box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
+.opt-chips.wiggling .opt-chip.on:hover, .opt-chips.wiggling .opt-chip.on:active { color:var(--white); box-shadow:inset 3px 3px 7px rgba(0,0,0,.25), inset -2px -2px 5px rgba(255,255,255,.1); }
+.opt-chips.wiggling .chip-badge:active + .opt-chip, .opt-chips.wiggling .chip-badge:active + .opt-chip.on { background:rgba(229,57,53,0.08); color:var(--c-del-btn); box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+/* 已经点下去、正在等确认的那一颗：保持按压，不弹起来 —— 松手就弹回去的话，
+   确认行说的是哪一颗就没了线索。它同时停止晃动：被挑中的东西不该还在抖。 */
+.opt-chips.wiggling .chip-unit.pending { animation:none; }
+/* 按下去那颗是可以再点一次弹回来的，所以指针要变回手型 */
+.opt-chips.wiggling .chip-unit.pending .opt-chip { cursor:pointer; }
+.opt-chips.wiggling .chip-unit.pending .opt-chip, .opt-chips.wiggling .chip-unit.pending .opt-chip.on, .opt-chips.wiggling .chip-unit.pending .opt-chip:hover, .opt-chips.wiggling .chip-unit.pending .opt-chip.on:hover, .opt-chips.wiggling .chip-unit.pending .opt-chip:active { background:rgba(229,57,53,0.08); color:var(--c-del-btn); font-weight:700; box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.opt-chips.wiggling .chip-unit.pending .chip-badge, .opt-chips.wiggling .chip-unit.pending .chip-badge:hover { color:var(--c-del-btn); transform:scale(1); box-shadow:inset 1.5px 1.5px 3px var(--sh-dark), inset -1.5px -1.5px 3px var(--sh-light); }
+/* 删除确认行。版式沿用项目设置里那条（同一个动作该长得一样），
+   但「删除」按钮用 --c-del-btn，跟头上两行警告字分开。 */
+.opt-confirm { display:flex; align-items:flex-start; gap:8px; background:rgba(229,57,53,0.05); border-radius:8px; padding:6px 10px; margin-top:8px; }
+.opt-confirm .oc-txt { flex:1; }
+.opt-confirm .oc-l1 { font-size:11px; color:var(--mid); margin-bottom:2px; line-height:1.4; }
+.opt-confirm .oc-l2 { font-size:11px; font-weight:800; color:var(--c-past-hint); }
+.opt-confirm .oc-btns { display:flex; gap:6px; align-items:center; flex-shrink:0; margin-top:2px; }
+.oc-del, .oc-keep { font-size:10px; font-weight:700; border:none; border-radius:999px; padding:3px 10px; cursor:pointer; font-family:'Nunito',sans-serif; transition:box-shadow .15s, filter .15s; }
+.oc-del { color:var(--white); background:var(--c-del-btn); box-shadow:3px 3px 7px var(--sh-btn-dark), -3px -3px 7px var(--sh-light); }
+.oc-del:hover { filter:brightness(.9); box-shadow:4px 4px 9px var(--sh-btn-hover), -4px -4px 9px var(--sh-light); }
+.oc-del:active { filter:brightness(.85); box-shadow:inset 3px 3px 7px rgba(0,0,0,.3), inset -2px -2px 5px rgba(255,255,255,.12); }
+.oc-keep { color:var(--mid); background:var(--lavender); box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
+.oc-keep:hover { color:var(--dark); box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
+.oc-keep:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
 .sd-add { display:flex; gap:6px; padding:5px 4px 2px; margin-top:4px; box-shadow:0 -1px 0 var(--sh-dark), 0 -2px 0 var(--sh-light); }
 .sd-add input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; border:none; border-radius:7px; padding:5px 8px; background:var(--lavender); color:var(--dark); outline:none; box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
 .sd-add-btn { padding:4px 10px; border-radius:7px; border:none; background:var(--lavender); color:var(--purple); font-size:11px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); transition:box-shadow .15s; }
@@ -774,6 +846,11 @@ const I18N={
     form_save:'保存',form_cancel:'取消',
     form_skipped:'已跳过',form_select_ph:'选择…',
     form_add_opt:'添加新选项…',form_add_sub:'添加新子选项…',
+    opt_collapse:'收起',opt_more:'还有 {n} 个',opt_fold_tip:'收起一部分',
+    opt_edit:'改选项',opt_done:'完成',
+    opt_del_used:'「{o}」已被 {n} 条记录使用，历史数据会完整保存。',
+    opt_del_unused:'「{o}」目前没有记录在用。',
+    opt_del_irrev:'删除后无法复原',
     form_no_records:'这天还没有记录',
     form_start_hint:'点右上角「新记录」开始',
     form_past:'过去日期',form_earn:'预计获得',form_half:'减半',form_discard:'放弃未保存的记录？',form_discard_yes:'放弃',form_discard_no:'继续编辑',form_discard_title:'未保存的记录',form_discard_body_zh:'你正在编辑一条记录，要先保存还是放弃？',form_save_leave:'先保存再离开',
@@ -923,6 +1000,11 @@ const I18N={
     form_save:'Save',form_cancel:'Cancel',
     form_skipped:'Skipped',form_select_ph:'Select...',
     form_add_opt:'Add new option...',form_add_sub:'Add sub-option...',
+    opt_collapse:'Collapse',opt_more:'{n} more',opt_fold_tip:'Collapse some',
+    opt_edit:'Edit options',opt_done:'Done',
+    opt_del_used:'"{o}" is used in {n} record(s). Historical data will be preserved.',
+    opt_del_unused:'"{o}" is not used by any record.',
+    opt_del_irrev:'Cannot be undone.',
     form_no_records:'No entries for this day',
     form_start_hint:'Click "New Log" to start',
     form_past:'Past date',form_earn:'Will earn',form_half:'Half',form_discard:'Discard unsaved entry?',form_discard_yes:'Discard',form_discard_no:'Keep editing',form_discard_title:'Unsaved entry',form_discard_body_en:'Save your entry first or discard it?',form_save_leave:'Save and leave',
@@ -1065,7 +1147,17 @@ const todayKey=dk(today);
 let weekOffset=0,selDate=new Date(today),view='journal';
 let showForm=false,formProj=null,showProjPicker=false,formTitle='',formNote='',formLink='',formLinkLabel='';
 let formExtras={note:false,link:false};
-let openDropId=null,skippedFields={};
+/* 选项胶囊的界面状态。
+   key 一律是 'new-'+字段id（新建表单）或 'ed-'+字段id（行内编辑）——
+   沿用原来 openDropId 的前缀写法，这样两个表单共用同一套函数。 */
+let optEditId=null,      // 正在「改选项」（晃动 + 角标）的那个字段
+    optFold={},          // 哪些字段被用户主动收起了
+    optAdding=null,      // 正在新增选项的那个字段
+    optConfirmDel=null,  // {key,fid,val,count} 正在等确认删除
+    skippedFields={};
+/* ⚠️ 表单的每个重置点都要调这个。漏一个就会留下「上次那颗还陷着」之类的残影
+   （skill 第四节：openForm / cancelForm / saveEntry 必须完整重置所有变量）。 */
+function resetOptUI(){optEditId=null;optFold={};optAdding=null;optConfirmDel=null;}
 let editingId=null,editState={};
 let modal=null;
 
@@ -2737,7 +2829,7 @@ function startEdit(id,key){
     }
   });
   editState={title:e.title,projId:e.projId||'',fields:editFields,skipped:{...(e.skipped||{})},note:e.note||'',link:e.link||'',linkLabel:e.linkLabel||'',showNote:!!(e.note),showLink:!!(e.link),showProjPicker:false};
-  openDropId=null;renderAll();
+  resetOptUI();renderAll();
   setTimeout(()=>{const el=document.getElementById('edit-title');if(el){el.focus();autoGrow(el,5);}const n=document.getElementById('edit-note');if(n)autoGrow(n,10);},50);
 }
 
@@ -2754,7 +2846,7 @@ function buildEditForm(e,p){
   }
   let varsHTML='';
   (p.fields||[]).forEach((f,fi)=>{
-    const isSkip=es.skipped[f.id],curVal=es.fields[f.id]||'',isOpen=openDropId===('ed-'+f.id);
+    const isSkip=es.skipped[f.id],curVal=es.fields[f.id]||'';
     if(f.type==='number'){
       const units=f.units&&f.units.length?f.units:(f.unit?[f.unit]:['']);
       const curArr=Array.isArray(curVal)?curVal:(curVal?[{unit:units[0],val:curVal}]:[]);
@@ -2762,18 +2854,8 @@ function buildEditForm(e,p){
         <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;flex-direction:column;gap:5px'>${units.map(u=>{const found=curArr.find(c=>c.unit===u);const v=found?found.val:'';return`<div style='display:flex;align-items:center;gap:5px'><input type="number" id="edf-${f.id}-${u||'_'}" value="${v}" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:5px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)">${u?`<span style="font-size:12px;color:var(--mid);font-weight:600">${u}</span>`:''}</div>`;}).join('')}</div>`}</div>
         <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleEditSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
     } else {
-      const esArr=editState.fields[f.id]||[];
-      const esDisplay=Array.isArray(esArr)&&esArr.length?esArr.join(', '):t('form_select_ph');
-      varsHTML+=`<div class="var-row"><span class="var-label var-label-f${fi%4}">${f.label}</span>
-        <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleEditDrop('${f.id}')"><span style="color:${Array.isArray(esArr)&&esArr.length?'var(--dark)':'var(--mid)'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">${esDisplay}</span><span style="opacity:.4;flex-shrink:0">▾</span></button>
-          ${isOpen?`<div class="sel-dropdown">
-            ${f.options.map(o=>{const arr=editState.fields[f.id]||[];const isSel=Array.isArray(arr)?arr.includes(o):arr===o;return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickEditOpt('${f.id}','${o}')">
-              <span>${isSel?'✓ ':''} ${o}</span>
-              <span onclick="event.stopPropagation();deleteEditOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
-            </div>`;}).join('')}
-            <div class="sd-add"><input type="text" id="edsd-${f.id}" placeholder="${t('form_add_opt')}" autocomplete="off" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOpt('${f.id}')}"><button class="sd-add-btn" onclick="addEditOpt('${f.id}')">${t('form_save')}</button></div>
-          </div>`:''}</div>`}</div>
-        <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleEditSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
+      // 选项字段：跟新建表单共用同一份渲染，只是 key 前缀和跳过函数不同
+      varsHTML+=buildOptRow(f,fi,'ed-'+f.id,'toggleEditSkip',isSkip);
     }
   });
   const projBadge=isMissingProj
@@ -2801,31 +2883,8 @@ function buildEditForm(e,p){
   return wrap;
 }
 
-function toggleEditSkip(fid){editState.skipped[fid]=!editState.skipped[fid];if(editState.skipped[fid])delete editState.fields[fid];openDropId=null;renderAll()}
-function toggleEditDrop(fid){openDropId=openDropId===('ed-'+fid)?null:('ed-'+fid);renderAll()}
-function pickEditOpt(fid,val){
-  if(!editState.fields[fid])editState.fields[fid]=[];
-  const arr=editState.fields[fid];
-  const idx=arr.indexOf(val);
-  if(idx>=0)arr.splice(idx,1); else arr.push(val);
-  renderAll();
-}
-function addEditOpt(fid){
-  const inp=document.getElementById('edsd-'+fid);if(!inp)return;
-  const v=inp.value.trim();if(!v)return;
-  const px=projects.find(pr=>pr.fields&&pr.fields.some(f=>f.id===fid));
-  if(px){const f=px.fields.find(x=>x.id===fid);if(f&&!f.options.includes(v))f.options.push(v);}
-  if(!editState.fields[fid])editState.fields[fid]=[];
-  if(!editState.fields[fid].includes(v))editState.fields[fid].push(v);
-  saveData();renderAll();
-}
-function deleteEditOpt(fid,val){
-  const px=projects.find(pr=>pr.fields&&pr.fields.some(f=>f.id===fid));
-  if(px){const f=px.fields.find(x=>x.id===fid);if(f)f.options=f.options.filter(o=>o!==val);}
-  if(editState.fields[fid])editState.fields[fid]=editState.fields[fid].filter(o=>o!==val);
-  saveData();renderAll();
-}
-function cancelEdit(){editingId=null;editState={};openDropId=null;renderAll()}
+function toggleEditSkip(fid){editState.skipped[fid]=!editState.skipped[fid];if(editState.skipped[fid])delete editState.fields[fid];resetOptUI();renderAll()}
+function cancelEdit(){editingId=null;editState={};resetOptUI();renderAll()}
 function saveEdit(id,key){
   const e=(entries[key]||[]).find(x=>x.id===id);if(!e)return;
   const p=e.projId?proj(e.projId):null;
@@ -2847,7 +2906,7 @@ function saveEdit(id,key){
   e.fields={...editState.fields};e.skipped={...editState.skipped};
   e.note=editState.note||'';e.link=editState.link||'';e.linkLabel=editState.linkLabel||'';
   e.updatedAt=Date.now();
-  editingId=null;editState={};openDropId=null;saveData();renderAll();
+  editingId=null;editState={};resetOptUI();saveData();renderAll();
 }
 function deleteEntry(key,id,evt){
   if(evt&&evt.shiftKey){_doDeleteEntry(key,id);return;}
@@ -2877,6 +2936,221 @@ function confirmDeleteEntry(key,id){
   </div></div>`;
 }
 
+/* ══════ 选项胶囊：新建表单和行内编辑共用一套 ══════
+   两边只有「选中的值存在哪」不同（window._fv vs editState.fields），
+   所以用 key 前缀分流，渲染和处理函数都只写一份。
+   全部用字符串拼接，不用嵌套模板字符串 —— 那是文档第四节点名的高风险区。 */
+
+const OPT_FOLD_AT=6;   // 选项超过这个数，才出现「收起」
+
+function optIsNew(key){return key.indexOf('new-')===0;}
+function optFid(key){return optIsNew(key)?key.slice(4):key.slice(3);}
+function optProj(key){
+  if(optIsNew(key))return formProj?proj(formProj):null;
+  const fid=optFid(key);
+  return projects.find(pr=>pr.fields&&pr.fields.some(x=>x.id===fid));
+}
+/* 选中的值。老数据可能是单个字符串，这里统一normalize成数组 ——
+   原来的 pickEditOpt 对字符串直接 splice 会抛错，顺手修掉。 */
+function optSel(key){
+  const fid=optFid(key);
+  const store=optIsNew(key)?(window._fv||(window._fv={})):editState.fields;
+  const cur=store[fid];
+  if(!Array.isArray(cur))store[fid]=cur?[String(cur)]:[];
+  return store[fid];
+}
+/* 选项文字是用户自己打的，要塞进 onclick="...('值')" 里。
+   带撇号或双引号的选项（比如 mom's book）会把属性撑破 —— 原来的代码
+   就有这个洞，这里补上。 */
+function optEsc(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+/* 晃动分三档：旋转看到的位移 = 半宽 x sin(角度)，两个字的胶囊半宽小，
+   同样角度下几乎不动 —— 所以越短转得越多，把看到的幅度拉平。 */
+function optWiggleCls(o){const n=String(o).length;return n<=3?'w-s':(n<=6?'w-m':'w-l');}
+
+/* 一个选项被多少条记录用着。项目设置的 removeOption 也走这一份，不各写一套。 */
+function countOptUsage(fid,optVal){
+  let n=0;
+  Object.values(entries).forEach(function(arr){arr.forEach(function(e){
+    const v=e.fields&&e.fields[fid];if(!v)return;
+    const vals=Array.isArray(v)?v:String(v).split(',').map(function(s){return s.trim()});
+    if(vals.indexOf(optVal)>=0)n++;
+  })});
+  return n;
+}
+
+function optToggle(key,val){
+  const sel=optSel(key);
+  const i=sel.indexOf(val);
+  if(i>=0)sel.splice(i,1); else sel.push(val);
+  renderAll();
+}
+function optToggleFold(key){optFold[key]=!optFold[key];renderAll()}
+function optToggleEdit(key){
+  const on=optEditId!==key;
+  optEditId=on?key:null;
+  optConfirmDel=null;optAdding=null;
+  if(on)optFold[key]=false;   // 要删东西，必须看得见全部选项
+  renderAll();
+}
+function optStartAdd(key){
+  optAdding=key;renderAll();
+  const el=document.getElementById('optadd-'+key);if(el)el.focus();
+}
+function optCommitAdd(key){
+  const el=document.getElementById('optadd-'+key);
+  const v=el?el.value.trim():'';
+  if(v){
+    const p=optProj(key),fid=optFid(key);
+    const f=p&&p.fields&&p.fields.find(function(x){return x.id===fid});
+    if(f){
+      if(f.options.indexOf(v)<0)f.options.push(v);
+      /* ⚠️ 改了项目就必须打同步记号。漏了不会报错，是这条改动
+         永远同步不出去 —— 静悄悄地什么都没发生（skill 第三十三节）。 */
+      p.updatedAt=Date.now();
+    }
+    const sel=optSel(key);
+    if(sel.indexOf(v)<0)sel.push(v);
+    saveData();
+  }
+  optAdding=null;renderAll();
+}
+/* 删除选项：先数用量再确认。
+   ⚠️ 原来表单里那颗 ✕ 是一点就删、不数用量、不确认的，而项目设置那条
+      一直有确认 —— 同一个动作两套保护。现在两边一致。 */
+function optAskDel(key,val,ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  /* 已经按下去的那一颗再点一次 = 弹回来，等于选了「取消」。
+     角标和胶囊本体都算 —— 按下去之后手指落在哪都能撤。 */
+  if(optConfirmDel&&optConfirmDel.key===key&&optConfirmDel.val===val){
+    optConfirmDel=null;renderAll();return;
+  }
+  const fid=optFid(key);
+  optConfirmDel={key:key,fid:fid,val:val,count:countOptUsage(fid,val)};
+  renderAll();
+}
+function optCancelDel(){optConfirmDel=null;renderAll()}
+function optDoDel(){
+  if(!optConfirmDel)return;
+  const c=optConfirmDel,p=optProj(c.key);
+  const f=p&&p.fields&&p.fields.find(function(x){return x.id===c.fid});
+  if(f){
+    f.options=f.options.filter(function(o){return o!==c.val});
+    p.updatedAt=Date.now();   // 同步记号，同上
+  }
+  /* 从「这条记录已选中的值」里也清掉。不清的话它会被写进记录，
+     而选项已经不存在了 —— 界面上再也看不到、也取消不了。 */
+  const sel=optSel(c.key);
+  const i=sel.indexOf(c.val);if(i>=0)sel.splice(i,1);
+  optConfirmDel=null;
+  saveData();renderAll();
+}
+
+function optConfirmRow(key){
+  const c=optConfirmDel;
+  if(!c||c.key!==key)return '';
+  const val='<span style="color:var(--purple);font-weight:700">'+c.val+'</span>';
+  const num='<span style="color:var(--c-past-hint);font-weight:800">'+c.count+'</span>';
+  const l1=c.count>0
+    ? t('opt_del_used').replace('{o}',val).replace('{n}',num)
+    : t('opt_del_unused').replace('{o}',val);
+  return '<div class="opt-confirm"><div class="oc-txt">'
+    +'<div class="oc-l1">'+l1+'</div>'
+    +'<div class="oc-l2">'+t('opt_del_irrev')+'</div></div>'
+    +'<div class="oc-btns">'
+    +'<button class="oc-del" onclick="optDoDel()">'+t('modal_delete')+'</button>'
+    +'<button class="oc-keep" onclick="optCancelDel()">'+t('form_cancel')+'</button>'
+    +'</div></div>';
+}
+
+/* 项目设置里重命名选项用的那颗铅笔（设计文档第三节），不另画 */
+const OPT_PENCIL='<svg width="13" height="13" viewBox="0 0 20 20" fill="none">'
+  +'<path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>'
+  +'<path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg>';
+const OPT_XSVG='<svg width="11" height="11" viewBox="0 0 18 18" fill="none">'
+  +'<path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+
+/* 整整一行（含标签、胶囊、铅笔、跳过），两个表单都调这个。
+   skipFn 是各自的跳过函数名 —— 新建是 toggleSkip，行内编辑是 toggleEditSkip。 */
+function buildOptRow(f,fi,key,skipFn,isSkip){
+  const kq=optEsc(key),fq=optEsc(f.id);
+  const skipTip=lang==='zh'?'跳过':'Skip';
+  const skipBtn='<button class="skip-btn'+(isSkip?' skipped':'')+'" data-tip="'+skipTip
+    +'" onclick="'+skipFn+"('"+fq+"')\">"+OPT_XSVG+'</button>';
+
+  if(isSkip){
+    return '<div class="var-row"><span class="var-label var-label-f'+(fi%4)+'">'+f.label+'</span>'
+      +'<div class="var-val"><span class="skipped-label">'+t('form_skipped')+'</span></div>'
+      +skipBtn+'</div>';
+  }
+
+  const opts=f.options||[];
+  const sel=optSel(key);
+  const editing=optEditId===key;
+  const folded=!!optFold[key];
+  const canFold=opts.length>OPT_FOLD_AT;
+
+  /* 收起时：前 OPT_FOLD_AT 个，外加所有已选中的 —— 选过的永远看得见 */
+  let shown=opts,hidden=0;
+  if(canFold&&folded){
+    const head=opts.slice(0,OPT_FOLD_AT);
+    const extra=opts.slice(OPT_FOLD_AT).filter(function(o){return sel.indexOf(o)>=0});
+    shown=head.concat(extra);
+    hidden=opts.length-shown.length;
+  }
+
+  let chips='';
+  shown.forEach(function(o){
+    const oq=optEsc(o);
+    const isSel=sel.indexOf(o)>=0;
+    const pend=optConfirmDel&&optConfirmDel.key===key&&optConfirmDel.val===o;
+    /* ⚠️ 角标写在胶囊前面：它是绝对定位所以看起来位置不变，但只有这样
+       才能用相邻兄弟选择器让按角标时整颗胶囊跟着陷下去，不需要 :has()。 */
+    const badge=editing
+      ? '<span class="chip-badge" onclick="optAskDel(\''+kq+'\',\''+oq+'\',event)">✕</span>' : '';
+    /* 普通态：点胶囊 = 选中/取消。
+       改选项态：点胶囊什么都不做 —— 除非它已经按下去了，那时候
+       再点一次就弹回来（等于选了「取消」）。 */
+    const chipAct = editing
+      ? (pend?' onclick="optCancelDel()"':'')
+      : ' onclick="optToggle(\''+kq+'\',\''+oq+'\')"';
+    chips+='<span class="chip-unit '+optWiggleCls(o)+(pend?' pending':'')+'">'+badge
+      +'<button class="opt-chip'+(isSel?' on':'')+'"'+chipAct+'>'+o+'</button></span>';
+  });
+
+  if(canFold&&!editing){
+    if(folded&&hidden>0){
+      chips+='<button class="opt-chip more" data-tip="'+t('opt_more').replace('{n}',hidden)
+        +'" onclick="optToggleFold(\''+kq+'\')">...+'+hidden+'</button>';
+    }else if(!folded){
+      chips+='<button class="opt-chip more" data-tip="'+t('opt_fold_tip')
+        +'" onclick="optToggleFold(\''+kq+'\')">'+t('opt_collapse')+'</button>';
+    }
+  }
+  if(!editing){
+    chips+='<button class="chip-add" title="'+t('form_add_opt')
+      +'" onclick="optStartAdd(\''+kq+'\')">+</button>';
+  }
+
+  let extra='';
+  if(optAdding===key){
+    extra+='<div class="chip-addrow"><input type="text" id="optadd-'+key
+      +'" placeholder="'+t('form_add_opt')+'" autocomplete="off"'
+      +' onkeydown="if(event.key===&quot;Enter&quot;){event.preventDefault();optCommitAdd(\''+kq+'\')}'
+      +'if(event.key===&quot;Escape&quot;){optCommitAdd(\''+kq+'\')}">'
+      +'<button class="sd-add-btn" onclick="optCommitAdd(\''+kq+'\')">'+t('form_save')+'</button></div>';
+  }
+  extra+=optConfirmRow(key);
+
+  /* 铅笔放在跳过 ✕ 的左边 */
+  const pencil='<button class="opt-edit-btn'+(editing?' on':'')+'" data-tip="'
+    +(editing?t('opt_done'):t('opt_edit'))+'" onclick="optToggleEdit(\''+kq+'\')">'+OPT_PENCIL+'</button>';
+
+  return '<div class="var-row" style="align-items:flex-start">'
+    +'<span class="var-label var-label-f'+(fi%4)+'" style="padding-top:13px">'+f.label+'</span>'
+    +'<div class="var-val"><div class="opt-chips'+(editing?' wiggling':'')+'">'+chips+'</div>'+extra+'</div>'
+    +pencil+skipBtn+'</div>';
+}
+
 function buildNewForm(){
   const wrap=document.createElement('div');wrap.className='form-card';
   const p=formProj?proj(formProj):null;
@@ -2889,7 +3163,7 @@ function buildNewForm(){
   if(p&&p.fields&&p.fields.length){
     dynHTML='<div class="var-rows">';
     p.fields.forEach((f,fi)=>{
-      const isSkip=skippedFields[f.id],curVal=window._fv&&window._fv[f.id]||'',isOpen=openDropId===('new-'+f.id);
+      const isSkip=skippedFields[f.id],curVal=window._fv&&window._fv[f.id]||'';
       if(f.type==='number'){
         const units=f.units&&f.units.length?f.units:(f.unit?[f.unit]:['']);
         const multiUnit=units.length>1;
@@ -2897,18 +3171,8 @@ function buildNewForm(){
           <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div style='display:flex;flex-direction:column;gap:5px'>${units.map(u=>`<div style='display:flex;align-items:center;gap:5px'><input type='number' id='ff-${f.id}-${u||'_'}' placeholder="0" min="0" style="width:80px;font-size:13px;font-family:'Nunito',sans-serif;border:none;border-radius:8px;padding:5px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)">${u?`<span style="font-size:12px;color:var(--mid);font-weight:600">${u}</span>`:''}</div>`).join('')}</div>`}</div>
           <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
       } else {
-        const selArr=(window._fv&&window._fv[f.id])||[];
-        const selDisplay=selArr.length?selArr.join(', '):t('form_select_ph');
-        dynHTML+=`<div class="var-row"><span class="var-label var-label-f${fi%4}">${f.label}</span>
-          <div class="var-val">${isSkip?`<span class='skipped-label'>${t('form_skipped')}</span>`:`<div class='sel-wrap'><button class="sel-btn" onclick="toggleNewDrop('${f.id}')"><span style="color:${selArr.length?'var(--dark)':'var(--mid)'}">${selDisplay}</span><span style="opacity:.4;flex-shrink:0">▾</span></button>
-            ${isOpen?`<div class="sel-dropdown">
-              ${f.options.map(o=>{const isSel=selArr.includes(o);return`<div class="sd-opt${isSel?' sel':''}" style="display:flex;align-items:center;justify-content:space-between" onclick="pickNewOpt('${f.id}','${o}')">
-                <span>${isSel?'✓ ':''} ${o}</span>
-                <span onclick="event.stopPropagation();deleteNewOpt('${f.id}','${o}')" style="opacity:.4;cursor:pointer;padding:0 4px;font-size:12px" onmouseover="this.style.opacity=1;this.style.color='var(--pink)'" onmouseout="this.style.opacity=.4;this.style.color=''">✕</span>
-              </div>`;}).join('')}
-              <div class="sd-add"><input type="text" id="sdnew-${f.id}" placeholder="${t('form_add_opt')}" autocomplete="off" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewOpt('${f.id}')}"><button class="sd-add-btn" onclick="addNewOpt('${f.id}')">${t('form_save')}</button></div>
-            </div>`:''}</div>`}</div>
-          <button class="skip-btn${isSkip?' skipped':''}" data-tip="${lang==='zh'?'跳过':'Skip'}" onclick="toggleSkip('${f.id}')"><svg width="11" height="11" viewBox="0 0 18 18" fill="none"><path d="M3 3L15 15M15 3L3 15" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>`;
+        // 选项字段：常驻胶囊，渲染走共用的 buildOptRow（行内编辑也是同一份）
+        dynHTML+=buildOptRow(f,fi,'new-'+f.id,'toggleSkip',isSkip);
       }
     });
     dynHTML+='</div>';
@@ -2940,32 +3204,7 @@ function buildNewForm(){
   return wrap;
 }
 
-function toggleSkip(fid){skippedFields[fid]=!skippedFields[fid];if(skippedFields[fid]&&window._fv)delete window._fv[fid];openDropId=null;renderAll()}
-function toggleNewDrop(fid){openDropId=openDropId===('new-'+fid)?null:('new-'+fid);renderAll()}
-function pickNewOpt(fid,val){
-  if(!window._fv)window._fv={};
-  if(!window._fv[fid])window._fv[fid]=[];
-  const arr=window._fv[fid];
-  const idx=arr.indexOf(val);
-  if(idx>=0)arr.splice(idx,1); else arr.push(val);
-  renderAll();
-}
-function addNewOpt(fid){
-  const inp=document.getElementById('sdnew-'+fid);if(!inp)return;
-  const v=inp.value.trim();if(!v)return;
-  const px=proj(formProj);const f=px&&px.fields&&px.fields.find(x=>x.id===fid);
-  if(f&&!f.options.includes(v))f.options.push(v);
-  if(!window._fv)window._fv={};
-  if(!window._fv[fid])window._fv[fid]=[];
-  if(!window._fv[fid].includes(v))window._fv[fid].push(v);
-  saveData();renderAll();
-}
-function deleteNewOpt(fid,val){
-  const px=proj(formProj);const f=px&&px.fields&&px.fields.find(x=>x.id===fid);
-  if(f){f.options=f.options.filter(o=>o!==val);}
-  if(window._fv&&window._fv[fid]){window._fv[fid]=window._fv[fid].filter(o=>o!==val);}
-  saveData();renderAll();
-}
+function toggleSkip(fid){skippedFields[fid]=!skippedFields[fid];if(skippedFields[fid]&&window._fv)delete window._fv[fid];resetOptUI();renderAll()}
 function toggleProjPicker(){showProjPicker=!showProjPicker;renderAll()}
 function selectProj(id){
   formProj=id;showProjPicker=false;
@@ -2973,7 +3212,7 @@ function selectProj(id){
   // pre-init all select fields as empty arrays
   const p=proj(id);
   if(p&&p.fields)p.fields.forEach(f=>{if(f.type==='select')window._fv[f.id]=[];});
-  skippedFields={};openDropId=null;renderAll();
+  skippedFields={};resetOptUI();renderAll();
 }
 function toggleExtra(k){formExtras[k]=!formExtras[k];renderAll()}
 
@@ -3006,7 +3245,7 @@ function _skipSignin(){
   try{return localStorage.getItem('cj_skip_signin')==='1';}catch(e){return false;}
 }
 function _openFormNow(){
-  formTitle='';formNote='';formLink='';formLinkLabel='';formProj=null;showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};openDropId=null;editingId=null;renderAll();
+  formTitle='';formNote='';formLink='';formLinkLabel='';formProj=null;showForm=true;view='journal';showProjPicker=false;window._fv={};skippedFields={};resetOptUI();editingId=null;renderAll();
   setTimeout(()=>{const el=document.getElementById('f-title');if(el)el.focus()},50);
 }
 function askSigninFirst(){
@@ -3044,7 +3283,7 @@ function _openSyncFromAsk(){
   const b=document.getElementById('sync-nav-btn');if(b)b.classList.add('active');
   renderSyncModal(true);
 }
-function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;renderAll()}
+function cancelForm(){formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};resetOptUI();renderAll()}
 function safeCancelForm(){
   if(!hasFormContent()){cancelForm();return;}
   const mc=document.getElementById('modal-container');
@@ -3141,7 +3380,7 @@ function saveEntry(){
   const saveKey=dk(selDate);
   if(!entries[saveKey])entries[saveKey]=[];
   entries[saveKey].push({id:newEntryId(),updatedAt:Date.now(),projId:formProj||'',title:t,fields,skipped,note,link,linkLabel:linklabel});
-  formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};openDropId=null;
+  formTitle='';formNote='';formLink='';formLinkLabel='';showForm=false;showProjPicker=false;formExtras={note:false,link:false};window._fv={};skippedFields={};resetOptUI();
   saveData();renderAll();
 }
 
@@ -3237,8 +3476,8 @@ function renderModal(){
                 <div style="font-size:11px;font-weight:800;color:var(--c-past-hint)">${line2}</div>
               </div>
               <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-top:2px">
-                <button onclick="confirmDelOption()" style="font-size:10px;font-weight:700;color:var(--white);background:var(--c-past-hint);border:none;border-radius:999px;padding:3px 10px;cursor:pointer;font-family:'Nunito',sans-serif">${btnDel}</button>
-                <button onclick="cancelDelOption()" style="font-size:10px;font-weight:600;color:var(--mid);background:var(--lavender);border:none;border-radius:999px;padding:3px 10px;cursor:pointer;font-family:'Nunito',sans-serif;box-shadow:2px 2px 5px var(--sh-dark),-2px -2px 5px var(--sh-light)">${btnCancel}</button>
+                <button class="oc-del" onclick="confirmDelOption()">${btnDel}</button>
+                <button class="oc-keep" onclick="cancelDelOption()">${btnCancel}</button>
               </div>
             </div>`;
           }
@@ -3344,13 +3583,8 @@ function removeOption(fi,oi){
   if(!modal||!modal.fields[fi])return;
   const optVal=modal.fields[fi].options[oi];
   const fid=modal.fields[fi].id;
-  // count how many entries use this option
-  let usageCount=0;
-  Object.values(entries).forEach(arr=>arr.forEach(e=>{
-    const v=e.fields&&e.fields[fid];if(!v)return;
-    const vals=Array.isArray(v)?v:String(v).split(',').map(s=>s.trim());
-    if(vals.includes(optVal))usageCount++;
-  }));
+  // 用量统计走顶层那一份 countOptUsage()，跟表单里的删除共用同一个算法
+  const usageCount=countOptUsage(fid,optVal);
   if(usageCount>0){
     modal._confirmDel={fi,oi,count:usageCount};renderModal();return;
   }
@@ -3367,7 +3601,13 @@ function confirmDelOption(){
     // persist to project immediately
     if(pid){
       const p=projects.find(x=>x.id===pid);
-      if(p)p.fields=modal.fields.map(f=>({...f,options:[...f.options],units:[...f.units]}));
+      if(p){
+        p.fields=modal.fields.map(f=>({...f,options:[...f.options],units:[...f.units]}));
+        /* ⚠️ 这里立刻就写进 projects 了，所以记号也必须立刻打。
+           原来只靠用户之后点「保存」走 saveProject 才补上 —— 删完选项
+           直接点背景关掉弹窗的话，改动进了本机却永远同步不出去。 */
+        p.updatedAt=Date.now();
+      }
       saveData();
     }
   }
@@ -4373,7 +4613,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=30;
+const APP_BUILD=31;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';

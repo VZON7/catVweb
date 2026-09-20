@@ -33,6 +33,7 @@
 | Done 状态色 | `--c-done` | `var(--purple)` |
 | Archived 状态色（归档红） | `--c-archived` | `#A32D2D` |
 | 过去日期 ×½ 提示 | `--c-past-hint` | `#B87878` |
+| **删除键红**（第240次定案） | `--c-del-btn` | `#9A5C5C` |
 | 模糊红框警告色 | （保留字面值，动画 keyframes 内） | `rgba(229,57,53,0.55)` |
 | Tracker records 数字色 | `var(--dark)` | `#2d2b3d` |
 | Tracker records 文字色 | `var(--mid)` | `#888` |
@@ -202,6 +203,53 @@ background: #fff; box-shadow: 1px 1px 3px #B8BEC8;
 left: 3px（关闭） / left: 17px（开启）; transition: left 0.2s;
 ```
 → 用在：周报告「显示使用提示」开关
+
+### 选项胶囊 + 删除角标（第240次定案）
+
+**选项胶囊** `.opt-chip` —— 记录表单里多选字段的常驻选项，取代原来的下拉框。
+阴影语言就是标准三态（默认凸起 3px / hover 4px / 按下 inset 3px），
+选中态沿用「胶囊选中凹陷」（见本节下方第191次那条）。
+
+**改选项态**（点行末铅笔进入）：胶囊持续轻微晃动，右上角冒出删除角标。
+
+```
+晃动 optWiggle —— 按字数分三档，越短转得越多
+  ≤3 字   rotate ±3deg
+  4-6 字  rotate ±2deg
+  >6 字   rotate ±1.2deg
+  周期 0.5s ease-in-out infinite，每三个错开 .13s / .26s
+```
+
+**为什么要分档**：旋转看到的位移 = 半宽 × sin(角度)。两个字的胶囊约 45px 宽，
+±1.2° 只让端点动 0.5px；十来个字的约 150px 宽，端点动 1.6px —— 三倍多。
+不分档的话短胶囊看起来几乎不动。
+
+⚠️ **不要复用 `@keyframes shake`** —— 那是一次性横抖（±5px / 0.35s），
+语义已经被「你漏了选项目」的警告占用。
+
+```
+删除角标 .chip-badge —— 17×17 圆，top -7px / right -6px
+  默认   color: var(--c-past-hint)   box-shadow: 1.5px 1.5px 3px var(--sh-dark), -1.5px -1.5px 3px var(--sh-light)
+  hover  color: var(--danger)        阴影 2px/4px，scale(1.14)
+  按下   color: var(--c-del-btn)     阴影转 inset 1.5px
+```
+
+**为什么阴影是 1.5px（比文档最小的 3px 又小一档）**：角标只有 17px，
+3px 的阴影会摊到胶囊文字上去。同时圆心要落在胶囊拐角**之外**，
+这样暗影朝右下摊出去的那一半基本落在胶囊外面。
+
+**按住角标时整颗胶囊联动**：底色 `rgba(229,57,53,0.08)`（沿用全站 0.08 染色惯例）、
+文字 `var(--c-del-btn)`、凹陷 inset 3px。点完之后**保持按压、停止晃动**，
+直到答完确认 —— 松手就弹回去的话，确认行说的是哪一颗就没了线索。
+再点一次（角标或胶囊本体都算）弹回来，等于选了「取消」。
+
+⚠️ **角标在 DOM 里必须写在胶囊前面**。它是绝对定位所以看起来位置不变，
+但只有这样才能用相邻兄弟选择器 `.chip-badge:active + .opt-chip` 做联动，
+不必依赖 `:has()`。
+
+⚠️ **`.opt-chips` 的 `row-gap` 在普通态和改选项态必须一样**（现为 11px）。
+行距一变，点铅笔时胶囊会重新换行、位置全乱（第一排本来 6 个会变 4 个）——
+「整理模式」那一版就是因为这个被否掉的。
 
 ### 键帽效果（双层立体按钮，可复用）
 
@@ -665,7 +713,7 @@ const getISOWeek = d => {
 | `--cb-radio` | `#6E7B96`（两主题同值） | Chart Builder 单选组选中填充 |
 | `--cb-multi` | `#5A6270`（两主题同值） | Chart Builder 多选组选中填充 |
 
-**沿用亮色值（ZONZON 决定）**：`--purple` `--danger` `--cyan` `--white` `--sh-blue-inset` `--c-select` `--c-number` `--c-active` `--c-done` `--c-archived` `--c-past-hint` `--c-note` `--c-last` `--c-coin-hint` `--c-undo`。
+**沿用亮色值（ZONZON 决定）**：`--purple` `--danger` `--cyan` `--white` `--sh-blue-inset` `--c-select` `--c-number` `--c-active` `--c-done` `--c-archived` `--c-past-hint` `--c-del-btn` `--c-note` `--c-last` `--c-coin-hint` `--c-undo`。
 
 ### 亮色专属新变量（第177–179次，亮色值）
 `--cloth-wash:rgba(180,190,210,0.55)` `--cloth-sheen:rgba(255,255,255,0.9)`（-sm: 0.45/0.85）、`--cal-sel-bg:rgba(255,255,255,0.9)`、`--c-other-month:rgba(90,88,112,0.35)`、`--badge-shade:rgba(0,0,0,.12)`、`--badge-sheen:rgba(255,255,255,.5)`、`--c-icon-idle:#C8C8D8`、`--c-icon-edit:#266ea7`
@@ -880,6 +928,15 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 改密码按钮再缩小；登出回到主按钮同排、靠左、红字 `.m-danger`；「一并清除」话术改成「只清这台设备，云端那份还在」 | 第229次 |
 | 登录/注册改成顶部分段切换 `.seg`；两栏说明各写各的；登录栏加「忘记密码了？找 VZON 帮你重设」 | 第230次 |
 | 注册邮箱验证码：注册后停在「输验证码」一步、重新发送 60 秒倒计时、未验证邮箱登录时带回验证码步、识破已注册邮箱、Supabase 英文报错翻中文 | 第231次 |
+| 切走就立刻同步（`visibilitychange`）+ 待上传标记落盘 `cj_dirty` | 第232次 |
+| 同步面板显示版本号；修 `sw.js` 的 206 假警报 | 第233次 |
+| Service Worker 不再缓存接口请求（`req.destination===''` 放行）—— 手机永远拉不到新数据的真凶 | 第234次 |
+| 未登录时同步圆点改灰点常驻（原为 `display:none`）；上传安全闸补上项目（`wouldLoseDetail`） | 第235次 |
+| 修「未登录」提示条把版面挤成三栏（误插进 `main-layout` 这个横向容器） | 第236次 |
+| 「未登录」提醒挪进顶部固定栏 | 第237次 |
+| 撤回「未登录」提醒，导航栏和正文版面回到第234次的样子；只保留灰点 | 第238次 |
+| 点「新记录」时先问一句要不要登录（`cj_skip_signin`，一辈子只问一次） | 第239次 |
+| 选项字段从下拉框改成常驻胶囊 + 铅笔改选项态（晃动 + 删除角标 + 用量确认）；新增 `--c-del-btn`；表单删选项补上确认与同步记号 | 第240次 |
 
 ---
 
@@ -912,6 +969,10 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 「横向雕刻线」 | `border-top` + `border-bottom`（整行宽度） |
 | 「胶囊选中凹陷」 | `.on` 态 `inset 3px 3px 7px rgba(0,0,0,.25)` |
 | 「回到当天」 | `.tr-date-area` 跳转容器 + tooltip |
+| 「选项胶囊」 | `.opt-chip`，取代原来的下拉框 |
+| 「改选项态」 | 点铅笔进入，胶囊晃动 + 冒删除角标 |
+| 「删除角标」 | `.chip-badge`，17px 圆，1.5px 阴影 |
+| 「删除键红」 | `--c-del-btn` `#9A5C5C`，只给确认删除那颗按钮 |
 
 ---
 
