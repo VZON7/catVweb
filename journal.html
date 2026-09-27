@@ -379,6 +379,19 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .unit-mv:hover { color:var(--purple); filter:var(--icon-shadow-hover); }
 .unit-mv:active { filter:var(--icon-shadow-active); }
 .unit-mv:disabled { opacity:.25; cursor:default; color:var(--c-icon-idle); filter:none; }
+/* 周报告数字的汇总方式（第244次）：虚线字 → 点开四颗小胶囊 */
+.ag-link { font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; color:var(--purple); background:none; border:none; cursor:pointer; padding:0; border-bottom:1px dashed currentColor; }
+.ag-link:hover { opacity:.75; }
+.ag-link:active { opacity:.55; }
+.ag-mini { display:inline-flex; gap:3px; padding:2px; border-radius:999px; box-shadow:inset 2px 2px 4px var(--sh-dark), inset -2px -2px 4px var(--sh-light); }
+.ag-mini button { font-family:'Nunito',sans-serif; font-size:9.5px; font-weight:800; color:var(--mid); background:transparent; border:none; border-radius:999px; padding:2px 8px; cursor:pointer; transition:box-shadow .15s, color .15s; }
+.ag-mini button:hover { color:var(--purple); }
+.wr-ag { margin-left:8px; vertical-align:1px; }
+.wr-num-name.off, .wr-num-val.off { color:var(--c-faint); }
+.wr-hidden-link { font-family:'Nunito',sans-serif; font-size:10px; font-weight:700; color:var(--c-faint); background:none; border:none; cursor:pointer; padding:2px 0; margin:2px 0 4px; transition:color .15s; }
+.wr-hidden-link:hover { color:var(--purple); }
+.wr-hidden-link:active { opacity:.6; }
+.ag-mini button:active, .ag-mini button.on { color:var(--purple); background:var(--lavender); box-shadow:2px 2px 4px var(--sh-dark), -2px -2px 4px var(--sh-light); }
 .sd-add { display:flex; gap:6px; padding:5px 4px 2px; margin-top:4px; box-shadow:0 -1px 0 var(--sh-dark), 0 -2px 0 var(--sh-light); }
 .sd-add input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; border:none; border-radius:7px; padding:5px 8px; background:var(--lavender); color:var(--dark); outline:none; box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
 .sd-add-btn { padding:4px 10px; border-radius:7px; border:none; background:var(--lavender); color:var(--purple); font-size:11px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); transition:box-shadow .15s; }
@@ -423,15 +436,32 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .wr-proj-bar-fill { height:100%; border-radius:4px; transition:width .4s; }
 .wr-proj-count { font-size:11px; color:var(--mid); font-weight:700; white-space:nowrap; min-width:28px; text-align:right; }
 .wr-proj-chip { font-size:10px; font-weight:700; color:var(--purple); background:var(--lavender); box-shadow:inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light); border-radius:999px; padding:3px 10px; white-space:nowrap; }
-.wr-hint-toggle { display:flex; align-items:center; gap:8px; cursor:pointer; }
-.wr-hint-toggle-label { font-size:10px; font-weight:700; color:var(--mid); letter-spacing:.04em; }
-.wr-toggle-track { width:32px; height:18px; border-radius:999px; background:var(--lavender); box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); cursor:pointer; position:relative; transition:all .2s; flex-shrink:0; }
-.wr-toggle-track.on { background:var(--purple); box-shadow:inset 2px 2px 5px var(--sh-blue-inset), inset -1px -1px 3px rgba(255,255,255,.15); }
-.wr-toggle-knob { width:12px; height:12px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px; transition:left .2s; box-shadow:1px 1px 3px var(--sh-btn-dark); }
-.wr-toggle-track.on .wr-toggle-knob { left:17px; }
-.wr-proj-hint { font-size:11px; color:var(--mid); margin-top:5px; font-style:italic; display:none; }
-.wr-proj-hint.visible { display:block; }
-.wr-proj-hint-star { color:var(--purple); font-style:normal; margin-right:3px; }
+/* 项目日志（第244次）：点项目那一块展开 / 收起。PROJECT LOG 是凹陷容器，里面走「七日效果」三态 */
+.wr-all-btn { font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; color:var(--purple); background:var(--lavender); border:none; border-radius:999px; padding:3px 10px; cursor:pointer; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s; }
+.wr-all-btn:hover { box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); }
+.wr-all-btn:active { box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.wr-proj-head { cursor:pointer; border-radius:10px; margin:-6px -8px; padding:6px 8px; transition:box-shadow .15s; }
+.wr-proj-head:hover { box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
+.wr-proj-head:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+.wr-proj-head:hover .tracker-proj-chevron { filter:var(--icon-shadow-hover); }
+.wr-proj-head:active .tracker-proj-chevron { filter:var(--icon-shadow-active); }
+.wr-sum { display:grid; grid-template-columns:max-content 1fr; column-gap:10px; row-gap:3px; margin-top:8px; font-size:10.5px; font-weight:700; color:var(--mid); line-height:1.5; }
+.wr-sum b { color:var(--dark); font-weight:800; }
+.wr-sum-k, .wr-flbl { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--mid); }
+.wr-sum-k { padding-top:2px; }
+.wr-plus { font-size:12.5px; font-weight:900; color:var(--purple); margin-left:2px; white-space:nowrap; }
+.wr-flbl { margin:12px 0 6px; }
+.wr-opt-grid { display:grid; grid-template-columns:max-content 1fr 28px; column-gap:10px; row-gap:5px; align-items:center; }
+.wr-opt-name { font-size:11px; font-weight:700; color:var(--dark); }
+.wr-opt-bar { height:6px; }
+.wr-opt-bar .wr-proj-bar-fill { opacity:.75; }
+.wr-opt-n, .wr-num-val { font-size:11px; font-weight:800; color:var(--dark); font-variant-numeric:tabular-nums; }
+.wr-opt-n { text-align:right; }
+.wr-num-grid { display:grid; grid-template-columns:max-content 1fr; column-gap:12px; row-gap:4px; align-items:baseline; margin-bottom:4px; }
+.wr-num-name { font-size:11px; font-weight:700; color:var(--dark); }
+.wr-num-val { font-size:12px; }
+.wr-num-val small { font-size:9.5px; font-weight:600; color:var(--mid); margin-left:3px; }
+.wr-agg { font-size:8.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--mid); margin-left:6px; opacity:.8; }
 
 /* MODAL */
 .modal-bg { position:fixed; inset:0; background:rgba(45,43,61,.35); display:flex; align-items:center; justify-content:center; z-index:300; border-radius:0; }
@@ -970,11 +1000,9 @@ const I18N={
     wr_highlights:'本周亮点',wr_proj_log:'各项目记录',
     wr_active_day:'最活跃的一天',wr_active_proj:'最常回来的项目',wr_debut:'首次登場',
     wr_entries_zh:'条',
-    wr_hint1:'{option} 是你在 {project} 的秘密武器\uff01',
-    wr_hint2:'Psst——这周 {option} 出现得最多',
-    wr_hint3:'看来 {option} 是你的得力工具\uff01',
-    wr_hint_once:'这周试了一下 {option}\uff0c感觉怎么样\uff1f',
-    wr_show_hints:'显示使用提示',
+    wr_expand_all:'全部展开',wr_collapse_all:'全部收起',wr_numbers:'数字',wr_avg_n:'{n} 笔',
+    agg_sum:'合计',agg_avg:'平均',agg_last:'最新',agg_none:'不显示',
+    agg_title:'周报告怎么汇总',agg_hidden_toast:'已隐藏 {name}',wr_hidden_n:'{n} 个已隐藏',wr_hide_hidden:'收起已隐藏',
     export_status:'状态',export_total:'总记录',export_detail:'详细记录',
     export_chart:'统计图表',export_fail:'导出失败',export_gen_fail:'生成失败',
     export_tracker_title:'项目追踪报告',export_date:'导出日期',
@@ -1125,11 +1153,9 @@ const I18N={
     wr_highlights:'Weekly Highlights',wr_proj_log:'Project Log',
     wr_active_day:'Most active day',wr_active_proj:'Kept coming back to',wr_debut:'First appearance',
     wr_entries_zh:' entries',
-    wr_hint1:'{option} is your secret weapon in {project}!',
-    wr_hint2:'Psst — {option} showed up the most this week',
-    wr_hint3:'Looks like {option} is your go-to tool!',
-    wr_hint_once:'You tried {option} this week — how was it?',
-    wr_show_hints:'Show usage hints',
+    wr_expand_all:'Expand all',wr_collapse_all:'Collapse all',wr_numbers:'Numbers',wr_avg_n:'{n} entries',
+    agg_sum:'Sum',agg_avg:'Average',agg_last:'Latest',agg_none:'Hidden',
+    agg_title:'Weekly summary',agg_hidden_toast:'Hidden: {name}',wr_hidden_n:'{n} hidden',wr_hide_hidden:'Hide these again',
     export_status:'Status',export_total:'Total entries',export_detail:'Detailed Records',
     export_chart:'Statistics Chart',export_fail:'Export failed',export_gen_fail:'Generation failed',
     export_tracker_title:'Project Tracker Report',export_date:'Export date',
@@ -1697,6 +1723,15 @@ function fieldText(f,v){
   }
   return Array.isArray(v)?v.join(', '):String(v);
 }
+/* 周报告数字汇总（第244次）。agg 来自项目设置里数字字段的 f.agg，没设过 = 合计。
+   「最新」= 这周最后一笔（按日期、同一天按记录先后） */
+function wrAgg(agg,vals){
+  const sum=vals.reduce((x,y)=>x+y,0);
+  if(agg==='avg')return sum/vals.length;
+  if(agg==='last')return vals[vals.length-1];
+  return sum;
+}
+function wrNum(n){const r=Math.round(n*100)/100;return r.toLocaleString('en-US',{maximumFractionDigits:2});}
 
 let _cbState={};
 if(!window.charts)window.charts={};
@@ -3696,10 +3731,37 @@ function renameUnit(fi,ui,val){
   const old=f.units[ui];if(old===v)return;
   if(f.units.some((u,j)=>j!==ui&&u===v))return;
   f.units[ui]=v;
+  if(f.aggs&&Object.prototype.hasOwnProperty.call(f.aggs,old)){f.aggs[v]=f.aggs[old];delete f.aggs[old];}
   if(!f.id)return;
   const ren=(modal._unitRen=modal._unitRen||{})[f.id]=(modal._unitRen[f.id]||{});
   const orig=Object.keys(ren).find(k=>ren[k]===old);
   ren[orig!==undefined?orig:old]=v;
+}
+/* 周报告数字的汇总方式（第244次）。存在数字字段的 f.aggs = {单位: 'sum'|'avg'|'last'|'none'}，
+   每个单位各自一个 —— 同一个字段里 RM 要合计、Rate 要平均。没设过 = 合计。
+   在周报告展开后直接点：虚线字 → 四颗小胶囊。「不显示」= 完全隐藏，跳撤销提示，
+   展开后底下留一个「N 个已隐藏」可以叫出来改回去。 */
+const AGG_ORDER=['sum','avg','last','none'];
+function wrAggOf(f,unit){return (f.aggs&&f.aggs[unit||''])||'sum';}
+function wrSetAgg(pid,fid,unit,v){
+  const p=projects.find(x=>x.id===pid);const f=p&&(p.fields||[]).find(x=>x.id===fid);if(!f)return;
+  const prev=wrAggOf(f,unit);window._wrAggOpen=null;
+  if(prev===v){renderStats();return;}
+  f.aggs=Object.assign({},f.aggs,{[unit||'']:v});
+  delete f.agg;   // 预览初期「整个字段一个设置」留下的，不再用
+  p.updatedAt=Date.now();
+  saveData();renderStats();
+  if(v==='none')showUndoToast(t('agg_hidden_toast').replace('{name}',f.label+(unit?' ('+unit+')':'')),()=>wrSetAgg(pid,fid,unit,prev));
+}
+function wrTogAgg(k){window._wrAggOpen=window._wrAggOpen===k?null:k;renderStats();}
+function wrTogHidden(pid){if(!window._wrShowHidden)window._wrShowHidden={};window._wrShowHidden[pid]=!window._wrShowHidden[pid];renderStats();}
+function wrAggCtl(pid,r){
+  const k=pid+':'+r.fid+':'+r.unit,a=r.agg,q="'";
+  const arg=x=>q+optEsc(x)+q;
+  if(window._wrAggOpen===k)
+    return '<span class="ag-mini wr-ag">'+AGG_ORDER.map(v=>'<button class="'+(a===v?'on':'')+'" onclick="wrSetAgg('+[pid,r.fid,r.unit,v].map(arg).join(',')+')">'+t('agg_'+v)+'</button>').join('')+'</span>';
+  return '<button class="ag-link wr-ag" title="'+t('agg_title')+'" onclick="wrTogAgg('+arg(k)+')">'+t('agg_'+a)+'</button>'
+    +(a==='avg'?'<span class="wr-agg">· '+t('wr_avg_n').replace('{n}',r.n)+'</span>':'');
 }
 function toggleUnitSort(fi){if(!modal)return;modal._sortUnit=modal._sortUnit===fi?null:fi;modal._editKey=null;renderModal()}
 function moveUnit(fi,ui,d){
@@ -3738,7 +3800,7 @@ function saveProject(){
   }
   modal=null;renderModal();saveData();renderAll();
 }
-function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',units:[...(f.units||[])],options:[...(f.options||[])]})),nf:'',nft:'select'};renderModal()}
+function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',units:[...(f.units||[])],options:[...(f.options||[])],...(f.aggs?{aggs:{...f.aggs}}:{})})),nf:'',nft:'select'};renderModal()}
 let _deletedProj=null,_delTimer=null;
 
 function deleteProject(id){
@@ -3847,13 +3909,21 @@ function _permDeleteProject(id){
   showUndoToast(t('perm_deleted')+'"'+p.name+'」'+(entryCount?' '+t('records_suffix')+' '+entryCount+' '+t('records_suffix'):''));
 }
 
-function showUndoToast(msg){
+/* onUndo 不给 = 撤销删除项目（原来的用法）；给了就按「撤销」时跑它（第244次：周报告隐藏数字） */
+function showUndoToast(msg,onUndo){
   clearTimeout(_delTimer);
+  if(onUndo)_deletedProj=null;   // 别让 Ctrl+Z 去撤销一个已经看不到提示的删除
+  window._undoFn=onUndo||null;
   let _toast=document.getElementById('undo-toast');
   if(!_toast){_toast=document.createElement('div');_toast.id='undo-toast';_toast.className='undo-toast';document.body.appendChild(_toast);}
-  _toast.innerHTML=msg+' <button class="undo-btn" onclick="undoDelete()">'+t('undo')+'</button>';
+  _toast.innerHTML=msg+' <button class="undo-btn" onclick="'+(onUndo?'runUndoFn()':'undoDelete()')+'">'+t('undo')+'</button>';
   _toast.style.display='flex';
-  _delTimer=setTimeout(()=>{_toast.style.display='none';_deletedProj=null;},5000);
+  _delTimer=setTimeout(()=>{_toast.style.display='none';_deletedProj=null;window._undoFn=null;},5000);
+}
+function runUndoFn(){
+  clearTimeout(_delTimer);const f=window._undoFn;window._undoFn=null;
+  const tt=document.getElementById('undo-toast');if(tt)tt.style.display='none';
+  if(f)f();
 }
 
 function undoDelete(){
@@ -3874,7 +3944,7 @@ function undoDelete(){
   saveData();renderAll();_deletedProj=null;
   const t=document.getElementById('undo-toast');if(t)t.style.display='none';
 }
-document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'&&_deletedProj)undoDelete();});
+document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.key!=='z')return;if(window._undoFn)runUndoFn();else if(_deletedProj)undoDelete();});
 
 // STATS
 function renderStats(){
@@ -3894,16 +3964,21 @@ function renderStats(){
         if(e.skipped&&e.skipped[f.id])return;
         const v=e.fields&&e.fields[f.id];if(!v)return;
         if(f.type==='number'){
-          const entries2=Array.isArray(v)?v:[{unit:f.unit||'',val:v}];
+          const u0=f.units&&f.units.length?f.units[0]:(f.unit||'');
+          const entries2=Array.isArray(v)?v:[{unit:u0,val:v}];
           entries2.forEach(o=>{
             const n=parseFloat(o.val);if(isNaN(n))return;
             const fkey=f.id+'::'+(o.unit||'');
-            if(!projStats[e.projId].fields[fkey])projStats[e.projId].fields[fkey]={label:f.label,unit:o.unit||'',type:'number',total:0};
-            projStats[e.projId].fields[fkey].total+=n;
+            if(!projStats[e.projId].fields[fkey])projStats[e.projId].fields[fkey]={fid:f.id,unit:o.unit||'',type:'number',vals:[]};
+            projStats[e.projId].fields[fkey].vals.push(n);
           });
         } else {
-          if(!projStats[e.projId].fields[f.id])projStats[e.projId].fields[f.id]={label:f.label,type:'select',vals:{}};
-          projStats[e.projId].fields[f.id].vals[v]=(projStats[e.projId].fields[f.id].vals[v]||0)+1;
+          // 多选存成数组：逐个选项数，一条记录勾了 P/O 和 Excel 两边各算一次。空数组 [] 跳过
+          const tags=Array.isArray(v)?v.filter(Boolean):String(v).split(',').map(x=>x.trim()).filter(Boolean);
+          if(!tags.length)return;
+          if(!projStats[e.projId].fields[f.id])projStats[e.projId].fields[f.id]={type:'select',vals:{}};
+          const vals=projStats[e.projId].fields[f.id].vals;
+          tags.forEach(tg=>{vals[tg]=(vals[tg]||0)+1;});
         }
       });
     });
@@ -3980,67 +4055,84 @@ function renderStats(){
   calOuter.appendChild(calWrap);
   area.appendChild(calOuter);
 
-  // ④ 项目条形图 + toggle
+  // ④ 项目日志（第244次改版）：每个项目可展开 / 收起。
+  //    收起时摘要 = 每个选项字段的前 5 名（多出来的用醒目的 +N 引你展开）+ 数字汇总；展开看条形表。
+  //    数字怎么汇总（合计 / 平均 / 最新 / 不显示）由项目设置里每个数字字段的 f.agg 决定，默认合计。
   if(sortedProjs.length>0){
+    if(!window._wrOpen)window._wrOpen={};
     const projLogWrap=document.createElement('div');projLogWrap.className='wr-proj-log-wrap';
-
-    // header 行：PROJECT LOG 标题左，toggle 右
     const logHeader=document.createElement('div');logHeader.className='wr-proj-log-header';
     const sl3=document.createElement('div');sl3.className='wr-section-label large';sl3.textContent=t('wr_proj_log');
-    if(window._wrHintsOn===undefined)window._wrHintsOn=false;
-    const toggleRow=document.createElement('div');toggleRow.className='wr-hint-toggle';
-    const toggleTrack=document.createElement('div');toggleTrack.className='wr-toggle-track'+(window._wrHintsOn?' on':'');
-    const toggleKnob=document.createElement('div');toggleKnob.className='wr-toggle-knob';
-    toggleTrack.appendChild(toggleKnob);
-    const toggleLabel=document.createElement('div');toggleLabel.className='wr-hint-toggle-label';toggleLabel.textContent=t('wr_show_hints');
-    toggleRow.appendChild(toggleTrack);toggleRow.appendChild(toggleLabel);
-    toggleRow.onclick=()=>{
-      window._wrHintsOn=!window._wrHintsOn;
-      toggleTrack.classList.toggle('on',window._wrHintsOn);
-      document.querySelectorAll('.wr-proj-hint').forEach(el=>el.classList.toggle('visible',window._wrHintsOn));
-    };
-    logHeader.appendChild(sl3);logHeader.appendChild(toggleRow);
+    const allOpen=sortedProjs.every(pid=>window._wrOpen[pid]);
+    const allBtn=document.createElement('button');allBtn.className='wr-all-btn';
+    allBtn.textContent=t(allOpen?'wr_collapse_all':'wr_expand_all');
+    allBtn.onclick=()=>{sortedProjs.forEach(pid=>{window._wrOpen[pid]=!allOpen;});renderStats();};
+    logHeader.appendChild(sl3);logHeader.appendChild(allBtn);
     projLogWrap.appendChild(logHeader);
     const divider=document.createElement('hr');divider.className='wr-proj-log-divider';projLogWrap.appendChild(divider);
 
     const maxCount=projStats[sortedProjs[0]].count;
-    const hints=['wr_hint1','wr_hint2','wr_hint3'];
-    sortedProjs.forEach((pid,idx2)=>{
+    const WR_SHOW=5;
+    sortedProjs.forEach(pid=>{
       const p=proj(pid),ps=projStats[pid];
       const isArchived=p.status==='archived';
+      const open=!!window._wrOpen[pid];
+      // 选项字段、数字字段都照项目设置里的顺序
+      const selRows=(p.fields||[]).filter(f=>f.type!=='number').map(f=>{
+        const fs=ps.fields[f.id];if(!fs)return null;
+        const opts=Object.entries(fs.vals).sort((x,y)=>y[1]-x[1]);
+        return opts.length?{label:f.label,opts}:null;
+      }).filter(Boolean);
+      const numRows=[];
+      (p.fields||[]).filter(f=>f.type==='number').forEach(f=>{
+        const ul=f.units&&f.units.length?f.units:[f.unit||''];
+        const ix=u=>{const i=ul.indexOf(u);return i<0?1e9:i;};
+        Object.values(ps.fields).filter(x=>x.type==='number'&&x.fid===f.id&&x.vals.length)
+          .sort((x,y)=>ix(x.unit)-ix(y.unit))
+          .forEach(x=>{const agg=wrAggOf(f,x.unit);numRows.push({fid:f.id,label:f.label,unit:x.unit,agg,n:x.vals.length,val:wrAgg(agg,x.vals)});});
+      });
+
       const card=document.createElement('div');card.className='wr-proj-card'+(isArchived?' archived':'');
-
-      // 顶部：圆点 + 名称 + 数字字段 chip
-      const topRow=document.createElement('div');topRow.className='wr-proj-top';
-      const dot=document.createElement('div');dot.className='wr-proj-dot';dot.style.background=p.color;
-      const name=document.createElement('div');name.className='wr-proj-name';
-      name.innerHTML=p.name+(isArchived?'<span class="wr-proj-archived-badge">ARCHIVED</span>':'');
-      topRow.appendChild(dot);topRow.appendChild(name);
-      card.appendChild(topRow);
-
-      // 条形图
-      const barRow=document.createElement('div');barRow.className='wr-proj-bar-row';
-      const barBg=document.createElement('div');barBg.className='wr-proj-bar-bg';
-      const barFill=document.createElement('div');barFill.className='wr-proj-bar-fill';
-      barFill.style.width=Math.round(ps.count/maxCount*100)+'%';
-      barFill.style.background=p.color;
-      barBg.appendChild(barFill);
-      const countEl=document.createElement('div');countEl.className='wr-proj-count';
-      countEl.textContent=lang==='zh'?ps.count+'条记录':ps.count+' records';
-      barRow.appendChild(barBg);barRow.appendChild(countEl);
-      card.appendChild(barRow);
-
-      // 调皮提示（select 字段，≥2次秘密武器，1次轻描淡写）
-      const selF=Object.values(ps.fields).find(f=>f.type==='select'&&Object.keys(f.vals).length>0);
-      if(selF){
-        const topEntry=Object.entries(selF.vals).sort((a,b)=>b[1]-a[1])[0];
-        const topOption=topEntry[0],topCount=topEntry[1];
-        let hint='';
-        if(topCount>=2){hint=t(hints[idx2%3]).replace('{option}',topOption).replace('{project}',p.name);}
-        else{hint=t('wr_hint_once').replace('{option}',topOption);}
-        const hintEl=document.createElement('div');hintEl.className='wr-proj-hint'+(window._wrHintsOn?' visible':'');
-        hintEl.innerHTML='<span class="wr-proj-hint-star">✦</span>'+hint;
-        card.appendChild(hintEl);
+      const chev='<span class="tracker-proj-chevron'+(open?' open':'')+'"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M6 1L12 6L6 11M12 6H1" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      let head='<div class="wr-proj-top"><div class="wr-proj-dot" style="background:'+p.color+'"></div>'
+        +'<div class="wr-proj-name">'+p.name+(isArchived?'<span class="wr-proj-archived-badge">ARCHIVED</span>':'')+'</div>'+chev+'</div>'
+        +'<div class="wr-proj-bar-row"><div class="wr-proj-bar-bg"><div class="wr-proj-bar-fill" style="width:'+Math.round(ps.count/maxCount*100)+'%;background:'+p.color+'"></div></div>'
+        +'<div class="wr-proj-count">'+(lang==='zh'?ps.count+'条记录':ps.count+' records')+'</div></div>';
+      if(!open){
+        let sum='';
+        selRows.forEach(r=>{
+          const rest=r.opts.length-WR_SHOW;
+          sum+='<span class="wr-sum-k">'+r.label+'</span><span class="wr-sum-v">'
+            +r.opts.slice(0,WR_SHOW).map(o=>o[0]+' <b>'+o[1]+'</b>').join(' · ')
+            +(rest>0?' <span class="wr-plus">+'+rest+'</span>':'')+'</span>';
+        });
+        const shown=numRows.filter(r=>r.agg!=='none');
+        if(shown.length)sum+='<span class="wr-sum-k">'+t('wr_numbers')+'</span><span class="wr-sum-v">'
+          +shown.map(r=>r.label+' <b>'+wrNum(r.val)+'</b>'+(r.unit?' '+r.unit:'')).join(' · ')+'</span>';
+        if(sum)head+='<div class="wr-sum">'+sum+'</div>';
+      }
+      const headEl=document.createElement('div');headEl.className='wr-proj-head';headEl.innerHTML=head;
+      headEl.onclick=()=>{window._wrOpen[pid]=!open;renderStats();};
+      card.appendChild(headEl);
+      if(open){
+        let body='';
+        selRows.forEach(r=>{
+          const m=r.opts[0][1];
+          body+='<div class="wr-flbl">'+r.label+'</div><div class="wr-opt-grid">'
+            +r.opts.map(o=>'<span class="wr-opt-name">'+o[0]+'</span><div class="wr-proj-bar-bg wr-opt-bar"><div class="wr-proj-bar-fill" style="width:'+Math.round(o[1]/m*100)+'%;background:'+p.color+'"></div></div><span class="wr-opt-n">'+o[1]+'</span>').join('')
+            +'</div>';
+        });
+        if(numRows.length){
+          const vis=numRows.filter(r=>r.agg!=='none'),hid=numRows.filter(r=>r.agg==='none');
+          const showHid=!!(window._wrShowHidden&&window._wrShowHidden[pid]);
+          const row=(r,off)=>'<span class="wr-num-name'+(off?' off':'')+'">'+r.label+'</span><span class="wr-num-val'+(off?' off':'')+'">'
+            +(off?'—':wrNum(r.val))+(r.unit?'<small>'+r.unit+'</small>':'')+wrAggCtl(pid,r)+'</span>';
+          body+='<div class="wr-flbl">'+t('wr_numbers')+'</div><div class="wr-num-grid">'
+            +vis.map(r=>row(r,false)).join('')+(showHid?hid.map(r=>row(r,true)).join(''):'')+'</div>';
+          if(hid.length)body+='<button class="wr-hidden-link" onclick="wrTogHidden(\''+pid+'\')">'
+            +(showHid?t('wr_hide_hidden'):t('wr_hidden_n').replace('{n}',hid.length))+'</button>';
+        }
+        const bodyEl=document.createElement('div');bodyEl.innerHTML=body;card.appendChild(bodyEl);
       }
       projLogWrap.appendChild(card);
     });
@@ -4687,7 +4779,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=34;
+const APP_BUILD=35;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
