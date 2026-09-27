@@ -349,6 +349,19 @@ filter: drop-shadow(.5px .5px 1px rgba(38,110,167,.3)) drop-shadow(-.5px -.5px .
 
 三态 filter 通过 CSS class 实现，不写在 SVG inline style 里。
 
+### ⚠️ 会落在彩色 / 深色底上的图标，不准用新拟态阴影色（2026-09-27 踩过）
+
+`--sh-dark` / `--sh-btn-dark` / `--sh-light` 这组是给**浅色底面（--lavender）**调的浅灰和白。
+图标一旦落在深色底上（月报告最深那阶的蓝格、蓝色按钮、夜间模式），这些「阴影」反而比底色**亮**，
+看起来就是图标外面一圈白光。月报告的图钉就是 `drop-shadow(... var(--sh-btn-dark))` 插在深蓝格子上出事的。
+
+- 线条图标默认**不加阴影**；真要加，只能用比所有可能底色都暗的颜色（黑色 + 透明度）
+- 游标图片（`cursor:url(data:...)`）同理：**不要描白边**
+- 上面那组蓝色三态 `--icon-shadow` 只用在浅色底面上的导航 / 展开箭头
+
+**做完图标必须截图实际看**（不能只读数值）：浅色格子、**最深那一阶的色块**、**夜间模式**，三个地方各看一次。
+无头 Edge 截图：`msedge --headless=new --force-device-scale-factor=2 --window-size=680,760 --screenshot=out.png 网址`，再用 Read 看图。
+
 ---
 
 ## 十七、多单位数字字段规则

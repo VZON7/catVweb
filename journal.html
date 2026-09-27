@@ -55,6 +55,7 @@ window.addEventListener('load', function(){
   --c-tint0:#2E6090; --c-tint1:#5887A8; --c-tint2:#7FA4BE; --c-tint3:#3A7A9C;
   --c-token-bg:#FAEEDA; --c-token-text:#633806; --c-token-alt:#854F0B;
   --c-coin-hint:#8A9BB0; --c-undo:#B0A8FF; --c-unit-hint:#C8CFD8;
+  --c-pin:#D9434E;   /* 月报告选中日子的图钉（第245次）。日夜同值；改这里时 .mo-day.has 游标里写死的色值也要改 */
   --cb-chip-bg:#f5f4f9; --cb-chip-hover:#eeedf4; --cb-sub-hover:#f0f0f0;
   --cb-radio:#6E7B96; --cb-multi:#5A6270; /* 选中填充，两主题同值 */
   --cloth-wash:rgba(180,190,210,0.55); --cloth-sheen:rgba(255,255,255,0.9);
@@ -393,7 +394,7 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .wr-hidden-link:active { opacity:.6; }
 .ag-mini button:active, .ag-mini button.on { color:var(--purple); background:var(--lavender); box-shadow:2px 2px 4px var(--sh-dark), -2px -2px 4px var(--sh-light); }
 .sd-add { display:flex; gap:6px; padding:5px 4px 2px; margin-top:4px; box-shadow:0 -1px 0 var(--sh-dark), 0 -2px 0 var(--sh-light); }
-.sd-add input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; border:none; border-radius:7px; padding:5px 8px; background:var(--lavender); color:var(--dark); outline:none; box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.sd-add input, .chip-addrow input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; border:none; border-radius:7px; padding:5px 8px; background:var(--lavender); color:var(--dark); outline:none; box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
 .sd-add-btn { padding:4px 10px; border-radius:7px; border:none; background:var(--lavender); color:var(--purple); font-size:11px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); transition:box-shadow .15s; }
 .sd-add-btn:hover { box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
 .sd-add-btn:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
@@ -462,6 +463,89 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .wr-num-val { font-size:12px; }
 .wr-num-val small { font-size:9.5px; font-weight:600; color:var(--mid); margin-left:3px; }
 .wr-agg { font-size:8.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--mid); margin-left:6px; opacity:.8; }
+/* ── 月报告（第245次）──────────────────────────────
+   月历沿用周报告的蓝框 / 挂钩 / 顶栏；格子 = 日期当主角 + 右下角条数，主蓝四阶（按这个月最多那天切），维持凹陷 */
+.mo-top-l { display:flex; align-items:center; gap:4px; min-width:0; }
+.mo-nav { display:flex; align-items:center; justify-content:center; width:26px; height:24px; border:none; border-radius:8px; background:transparent; color:var(--white); cursor:pointer; opacity:.85; transition:opacity .15s, transform .15s; }
+.mo-nav:hover { opacity:1; transform:translateX(var(--nx,0)); }
+.mo-nav.prev { --nx:-2px; } .mo-nav.next { --nx:2px; }
+.mo-nav:active { transform:scale(.88); }
+.mo-nav:disabled { opacity:.3; cursor:default; transform:none; }
+.mo-today { font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; color:var(--purple); background:var(--white); border:none; border-radius:999px; padding:3px 10px; cursor:pointer; margin-left:6px; opacity:.92; transition:opacity .15s, transform .15s; }
+.mo-today:hover { opacity:1; }
+.mo-today:active { transform:scale(.92); }
+.mo-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+.mo-day { position:relative; height:46px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Nunito',sans-serif; }
+.mo-day .face { position:absolute; inset:0; border-radius:8px; overflow:hidden; }
+.mo-day .face::before { content:''; position:absolute; inset:0; background:var(--purple); opacity:0; }
+.mo-day.l1 .face::before { opacity:.14; }
+.mo-day.l2 .face::before { opacity:.32; }
+.mo-day.l3 .face::before { opacity:.58; }
+.mo-day.l4 .face::before { opacity:.88; }
+.mo-day .d { position:relative; z-index:1; font-size:14px; font-weight:800; color:var(--dark); line-height:1; }
+.mo-day .n { position:absolute; z-index:1; right:5px; bottom:3px; font-size:9px; font-weight:900; color:var(--purple); font-variant-numeric:tabular-nums; }
+.mo-day.l3 .d, .mo-day.l4 .d, .mo-day.l3 .n, .mo-day.l4 .n { color:var(--white); }
+.mo-day.empty, .mo-day.future { box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
+.mo-day.empty .d, .mo-day.future .d { color:var(--c-empty); font-weight:700; }
+.mo-day.future { opacity:.4; }
+.mo-day.out { visibility:hidden; }
+.mo-day.has { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); transition:box-shadow .12s; }
+/* hover / 按下：用键帽那组较深的阴影、模糊小一点 —— 浮起来边缘利、压下去看得出来 */
+.mo-day.has:hover { box-shadow:3px 3px 5px var(--sh-btn-dark), -3px -3px 5px var(--sh-light); }
+.mo-day.has:active { box-shadow:inset 4px 4px 7px var(--sh-btn-dark), inset -3px -3px 5px var(--sh-light); }
+/* 有记录的日子：游标 = 番茄红线条图钉，按住 = 扎进去（头往针尖推 4px、针变短，针尖 8,20 不动）。
+   ⚠️ 游标图片读不到 CSS 变量，色值写死 #D9434E = --c-pin，改变量时这里要一起改。手机没有游标 */
+.mo-day.has { cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%2724%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%23D9434E%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cg%20transform%3D%27rotate(25%2012%2012)%27%3E%3Cpath%20d%3D%27M8%203h8M10%203.5%209%2010h6l-1-6.5M6.5%2010h11l-1.5%203.5h-8z%27%2F%3E%3Cpath%20d%3D%27M12%2013.5V21%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 8 20, pointer; }
+.mo-day.has:active { cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2724%27%20height%3D%2724%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27%23D9434E%27%20stroke-width%3D%272%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cg%20transform%3D%27rotate(25%2012%2012)%27%3E%3Cg%20transform%3D%27translate(0%204)%27%3E%3Cpath%20d%3D%27M8%203h8M10%203.5%209%2010h6l-1-6.5M6.5%2010h11l-1.5%203.5h-8z%27%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%27M12%2017.5V21%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 8 20, pointer; }
+.mo-day.today .d::after { content:''; position:absolute; left:15%; right:15%; bottom:-4px; height:2px; border-radius:1px; background:var(--purple); }
+.mo-day.l3.today .d::after, .mo-day.l4.today .d::after { background:var(--white); }
+/* 选中：右上角钉一根扎进去的图钉，针尖冒一圈凹痕；格子本身不变。⚠️ 图钉不加阴影（--sh-* 落在深蓝格上会变白圈） */
+.mo-day .pin { position:absolute; z-index:3; top:-11px; right:-7px; width:22px; height:22px; pointer-events:none; color:var(--c-pin); }
+.mo-day .pin svg { width:100%; height:100%; display:block; overflow:visible; }
+.mo-day .pin .pr { fill:none; stroke:currentColor; stroke-width:1.2; transform-box:fill-box; transform-origin:center; animation:moPinRing .5s ease-out .05s both; }
+@keyframes moPinRing { 0% { transform:scale(.3); opacity:.9; } 100% { transform:scale(2.6); opacity:0; } }
+/* 最长连续：按下图例的胶囊才出现，格子左上角 6px 金点 */
+.mo-day .sd { position:absolute; z-index:1; left:5px; top:5px; width:6px; height:6px; border-radius:50%; background:var(--c-pill-title); display:none; }
+.mo-grid.streak-on .mo-day .sd { display:block; }
+.mo-legend { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.mo-scale { display:flex; align-items:center; gap:4px; font-size:9.5px; font-weight:700; color:var(--mid); }
+.mo-scale i { position:relative; display:inline-block; width:14px; height:14px; border-radius:4px; overflow:hidden; box-shadow:inset 1.5px 1.5px 3px var(--sh-dark), inset -1.5px -1.5px 3px var(--sh-light); }
+.mo-scale i.l0 { box-shadow:1.5px 1.5px 3px var(--sh-dark), -1.5px -1.5px 3px var(--sh-light); }
+.mo-scale i::before { content:''; position:absolute; inset:0; background:var(--purple); opacity:0; }
+.mo-scale i.l1::before { opacity:.14; } .mo-scale i.l2::before { opacity:.32; } .mo-scale i.l3::before { opacity:.58; } .mo-scale i.l4::before { opacity:.88; }
+.mo-streak-btn { display:inline-flex; align-items:center; gap:6px; font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; color:var(--mid); background:var(--lavender); border:none; border-radius:999px; padding:4px 11px; cursor:pointer; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s, color .15s; }
+.mo-streak-btn:hover { box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); }
+.mo-streak-btn:active, .mo-streak-btn.on { color:var(--c-pill-title); box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.mo-streak-btn i { width:6px; height:6px; border-radius:50%; border:1.5px solid var(--c-pill-title); box-sizing:border-box; }
+.mo-streak-btn.on i { background:var(--c-pill-title); }
+/* 当天明细 */
+.mo-day-panel { margin-top:14px; border-radius:14px; padding:12px 14px; box-shadow:var(--neu-inset); }
+.mo-dp-top { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.mo-dp-t { font-size:12.5px; font-weight:800; color:var(--purple); flex:1; }
+.mo-jump { display:inline-flex; align-items:center; gap:4px; font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; color:var(--purple); background:var(--lavender); border:none; border-radius:999px; padding:3px 10px; cursor:pointer; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s; }
+.mo-jump:hover { box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); }
+.mo-jump:active { box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.mo-dp-row { display:flex; gap:8px; align-items:baseline; font-size:11px; font-weight:700; color:var(--dark); padding:5px 0; border-top:1px solid var(--line-dark); box-shadow:inset 0 1px 0 var(--line-light); }
+.mo-dp-row:first-of-type { border-top:none; box-shadow:none; }
+.mo-dp-row .wr-proj-dot { margin-top:3px; flex-shrink:0; }
+.mo-dp-row small { color:var(--mid); font-weight:600; }
+.mo-dp-empty { font-size:11px; font-weight:600; color:var(--mid); }
+/* 跟上个月比 / 本月亮点 */
+.mo-card { border-radius:16px; padding:14px; margin-top:16px; box-shadow:var(--neu-inset); }
+.mo-sec { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--mid); margin:0 0 10px; }
+.mo-cmp { width:100%; border-collapse:collapse; font-size:12px; }
+.mo-cmp th { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--mid); text-align:right; padding:0 0 6px; }
+.mo-cmp th:first-child, .mo-cmp td:first-child { text-align:left; }
+.mo-cmp td { padding:6px 0; text-align:right; font-weight:800; color:var(--dark); font-variant-numeric:tabular-nums; border-top:1px solid var(--line-dark); box-shadow:inset 0 1px 0 var(--line-light); }
+.mo-cmp td:first-child { font-weight:700; color:var(--mid); font-size:11px; }
+.mo-cmp td.last { color:var(--mid); font-weight:700; }
+.mo-d { font-size:10px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.mo-d.up { color:var(--c-active); } .mo-d.dn { color:var(--c-past-hint); } .mo-d.eq { color:var(--c-faint); }
+.mo-hl-list { display:grid; grid-template-columns:max-content 1fr; column-gap:12px; row-gap:7px; font-size:11.5px; font-weight:700; color:var(--dark); }
+.mo-hl-k { font-size:11px; font-weight:800; color:var(--c-pill-title); }
+.mo-empty { font-size:12px; font-weight:600; color:var(--mid); text-align:center; padding:18px 0 4px; }
+@media (max-width:420px){ .mo-day { height:40px; } .mo-day .d { font-size:12.5px; } .mo-grid { gap:4px; } }
+
 
 /* MODAL */
 .modal-bg { position:fixed; inset:0; background:rgba(45,43,61,.35); display:flex; align-items:center; justify-content:center; z-index:300; border-radius:0; }
@@ -667,7 +751,20 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .cal-nav { background:none; border:none; cursor:pointer; font-size:15px; color:var(--mid); padding:2px 6px; border-radius:4px; }
 .cal-nav:hover { background:rgba(123,104,238,0.1); color:var(--dark); }
 .cal-selects { display:flex; gap:6px; margin-bottom:10px; }
-.cal-sel { flex:1; font-size:12px; font-family:'Nunito',sans-serif; border:0.5px solid rgba(123,104,238,0.25); border-radius:8px; padding:5px 6px; background:var(--cal-sel-bg); color:var(--dark); outline:none; cursor:pointer; }
+/* 年 / 月下拉（第246次，取代原生 <select>）：收起 = 凹陷格；展开 = 凸起浮层；选项 hover / 选中照设计文档第七节 */
+.cal-dd { position:relative; flex:1; }
+.cal-dd-btn { width:100%; height:30px; display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 10px; border:none; border-radius:8px; background:var(--lavender); color:var(--dark); font-size:12px; font-weight:700; font-family:'Nunito',sans-serif; cursor:pointer; box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); transition:box-shadow .15s; }
+.cal-dd-btn:hover { box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.cal-dd-btn:active { box-shadow:inset 4px 4px 8px var(--sh-dark), inset -3px -3px 6px var(--sh-light); }
+.cal-dd-btn svg { flex-shrink:0; color:var(--mid); transition:transform .15s; }
+.cal-dd.open .cal-dd-btn svg { transform:rotate(180deg); color:var(--purple); }
+.cal-dd-list { position:absolute; top:36px; left:0; right:0; z-index:5; display:flex; flex-direction:column; gap:1px; padding:6px; border-radius:10px; background:var(--lavender); box-shadow:6px 6px 12px var(--sh-dark), -6px -6px 12px var(--sh-light); }
+.cal-dd-list.months { left:auto; right:0; width:212px; display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+.cal-dd-opt { border:none; background:none; border-radius:6px; padding:6px 8px; font-size:12px; font-weight:600; font-family:'Nunito',sans-serif; color:var(--dark); cursor:pointer; text-align:left; transition:background .12s; }
+.cal-dd-list.months .cal-dd-opt { text-align:center; padding:7px 4px; }
+.cal-dd-opt:hover { background:rgba(38,110,167,0.03); }
+.cal-dd-opt:active { background:rgba(38,110,167,0.08); }
+.cal-dd-opt.on { background:rgba(38,110,167,0.08); color:var(--purple); font-weight:700; }
 .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
 .cal-day-hdr { font-size:10px; font-weight:700; color:var(--mid); text-align:center; padding:3px 0; }
 .cal-day { font-size:11px; text-align:center; padding:5px 2px; border-radius:6px; cursor:pointer; color:var(--dark); }
@@ -1002,7 +1099,11 @@ const I18N={
     wr_entries_zh:'条',
     wr_expand_all:'全部展开',wr_collapse_all:'全部收起',wr_numbers:'数字',wr_avg_n:'{n} 笔',
     agg_sum:'合计',agg_avg:'平均',agg_last:'最新',agg_none:'不显示',
-    agg_title:'周报告怎么汇总',agg_hidden_toast:'已隐藏 {name}',wr_hidden_n:'{n} 个已隐藏',wr_hide_hidden:'收起已隐藏',
+    agg_title:'周报告怎么汇总',
+    mo_hello:'{y}年{m}月，你好！',mo_title:'{y}年{m}月',mo_topright:'{n} 条 · {d} 天有记录',mo_prev:'上个月',mo_next:'下个月',mo_today:'回到本月',
+    mo_less:'少',mo_more:'多',mo_streak:'最长连续 {n} 天 · {r}',mo_pick_hint:'点月历上有记录的日子，这里会列出那天做了什么。',mo_n_entries:'{n} 条',mo_jump:'回到这天',
+    mo_cmp:'跟上个月比',mo_cmp_first:'这是最早有记录的月份，没有上个月可以比。',mo_c_total:'记录数',mo_c_days:'有记录的天数',mo_c_streak:'最长连续',mo_c_avg:'每个活跃天平均',mo_c_proj:'项目数',mo_c_change:'变化',
+    mo_hl:'本月亮点',mo_hl_day:'最活跃的一天',mo_hl_proj:'最常回来的项目',mo_hl_debut:'首次登场',mo_hl_streak:'最长连续',mo_days:'{n} 天',mo_empty:'这个月还没有记录。',agg_hidden_toast:'已隐藏 {name}',wr_hidden_n:'{n} 个已隐藏',wr_hide_hidden:'收起已隐藏',
     export_status:'状态',export_total:'总记录',export_detail:'详细记录',
     export_chart:'统计图表',export_fail:'导出失败',export_gen_fail:'生成失败',
     export_tracker_title:'项目追踪报告',export_date:'导出日期',
@@ -1155,7 +1256,11 @@ const I18N={
     wr_entries_zh:' entries',
     wr_expand_all:'Expand all',wr_collapse_all:'Collapse all',wr_numbers:'Numbers',wr_avg_n:'{n} entries',
     agg_sum:'Sum',agg_avg:'Average',agg_last:'Latest',agg_none:'Hidden',
-    agg_title:'Weekly summary',agg_hidden_toast:'Hidden: {name}',wr_hidden_n:'{n} hidden',wr_hide_hidden:'Hide these again',
+    agg_title:'Weekly summary',
+    mo_hello:'Hello, {m} {y}!',mo_title:'{m} {y}',mo_topright:'{n} entries · {d} active days',mo_prev:'Previous month',mo_next:'Next month',mo_today:'This month',
+    mo_less:'Less',mo_more:'More',mo_streak:'Longest streak {n} days · {r}',mo_pick_hint:'Tap a day with entries to see what you did that day.',mo_n_entries:'{n} entries',mo_jump:'Go to this day',
+    mo_cmp:'Compared with last month',mo_cmp_first:'This is your first month with entries, so there is nothing to compare yet.',mo_c_total:'Entries',mo_c_days:'Active days',mo_c_streak:'Longest streak',mo_c_avg:'Per active day',mo_c_proj:'Projects',mo_c_change:'Change',
+    mo_hl:'Highlights this month',mo_hl_day:'Most active day',mo_hl_proj:'Kept coming back to',mo_hl_debut:'New this month',mo_hl_streak:'Longest streak',mo_days:'{n} days',mo_empty:'No entries this month yet.',agg_hidden_toast:'Hidden: {name}',wr_hidden_n:'{n} hidden',wr_hide_hidden:'Hide these again',
     export_status:'Status',export_total:'Total entries',export_detail:'Detailed Records',
     export_chart:'Statistics Chart',export_fail:'Export failed',export_gen_fail:'Generation failed',
     export_tracker_title:'Project Tracker Report',export_date:'Export date',
@@ -3746,15 +3851,15 @@ function wrAggOf(f,unit){return (f.aggs&&f.aggs[unit||''])||'sum';}
 function wrSetAgg(pid,fid,unit,v){
   const p=projects.find(x=>x.id===pid);const f=p&&(p.fields||[]).find(x=>x.id===fid);if(!f)return;
   const prev=wrAggOf(f,unit);window._wrAggOpen=null;
-  if(prev===v){renderStats();return;}
+  if(prev===v){wrRerender();return;}
   f.aggs=Object.assign({},f.aggs,{[unit||'']:v});
   delete f.agg;   // 预览初期「整个字段一个设置」留下的，不再用
   p.updatedAt=Date.now();
-  saveData();renderStats();
+  saveData();wrRerender();
   if(v==='none')showUndoToast(t('agg_hidden_toast').replace('{name}',f.label+(unit?' ('+unit+')':'')),()=>wrSetAgg(pid,fid,unit,prev));
 }
-function wrTogAgg(k){window._wrAggOpen=window._wrAggOpen===k?null:k;renderStats();}
-function wrTogHidden(pid){if(!window._wrShowHidden)window._wrShowHidden={};window._wrShowHidden[pid]=!window._wrShowHidden[pid];renderStats();}
+function wrTogAgg(k){window._wrAggOpen=window._wrAggOpen===k?null:k;wrRerender();}
+function wrTogHidden(k){if(!window._wrShowHidden)window._wrShowHidden={};window._wrShowHidden[k]=!window._wrShowHidden[k];wrRerender();}
 function wrAggCtl(pid,r){
   const k=pid+':'+r.fid+':'+r.unit,a=r.agg,q="'";
   const arg=x=>q+optEsc(x)+q;
@@ -3947,13 +4052,12 @@ function undoDelete(){
 document.addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey)||e.key!=='z')return;if(window._undoFn)runUndoFn();else if(_deletedProj)undoDelete();});
 
 // STATS
-function renderStats(){
-  const _pd=document.getElementById('page-date');if(_pd)_pd.textContent=t('btn_weekly');
-  const area=document.getElementById('main-area');area.innerHTML='';
-  const ws=getWeekStart();
+/* 周报告、月报告共用（第245次从 renderStats 抽出来）：从 start 起数 n 天，
+   算每天几条、每个项目的选项次数（多选逐个数）和数字原始值（汇总方式到渲染时才套） */
+function wrCollect(start,n){
   const perDay=[];let totalE=0;const projStats={};const projFirstSeen={};
-  for(let i=0;i<7;i++){
-    const d=new Date(ws);d.setDate(d.getDate()+i);
+  for(let i=0;i<n;i++){
+    const d=new Date(start);d.setDate(d.getDate()+i);
     const list=entries[dk(d)]||[];totalE+=list.length;
     list.forEach(e=>{
       if(!projStats[e.projId])projStats[e.projId]={count:0,fields:{}};
@@ -3984,8 +4088,102 @@ function renderStats(){
     });
     perDay.push({d,cnt:list.length});
   }
-  const maxDay=perDay.reduce((a,b)=>b.cnt>a.cnt?b:a,perDay[0]);
   const sortedProjs=Object.keys(projStats).sort((a,b)=>projStats[b].count-projStats[a].count);
+  return {perDay,totalE,projStats,projFirstSeen,sortedProjs};
+}
+/* 汇总方式、展开 / 收起这些按钮是两份报告共用的，点了之后重画当前那一份 */
+function wrRerender(){if(view==='month')renderMonth();else renderStats();}
+/* 项目日志（第244次改版，第245次抽成共用）：每个项目可展开 / 收起。
+   收起 = 每个选项字段前 5 名（多的用醒目的 +N 引你展开）+ 数字汇总；展开 = 每个选项一条小横条 + 数字区。
+   数字怎么汇总由数字字段的 f.aggs 决定（每个单位各一个，默认合计）。scope：'w' 周报告 / 'm' 月报告，展开状态各记各的 */
+function wrProjLog(area,sortedProjs,projStats,scope){
+  if(!sortedProjs.length)return;
+    if(!window._wrOpen)window._wrOpen={};
+    const K=pid=>scope+':'+pid;
+    const projLogWrap=document.createElement('div');projLogWrap.className='wr-proj-log-wrap';
+    const logHeader=document.createElement('div');logHeader.className='wr-proj-log-header';
+    const sl3=document.createElement('div');sl3.className='wr-section-label large';sl3.textContent=t('wr_proj_log');
+    const allOpen=sortedProjs.every(pid=>window._wrOpen[K(pid)]);
+    const allBtn=document.createElement('button');allBtn.className='wr-all-btn';
+    allBtn.textContent=t(allOpen?'wr_collapse_all':'wr_expand_all');
+    allBtn.onclick=()=>{sortedProjs.forEach(pid=>{window._wrOpen[K(pid)]=!allOpen;});wrRerender();};
+    logHeader.appendChild(sl3);logHeader.appendChild(allBtn);
+    projLogWrap.appendChild(logHeader);
+    const divider=document.createElement('hr');divider.className='wr-proj-log-divider';projLogWrap.appendChild(divider);
+
+    const maxCount=projStats[sortedProjs[0]].count;
+    const WR_SHOW=5;
+    sortedProjs.forEach(pid=>{
+      const p=proj(pid),ps=projStats[pid];
+      const isArchived=p.status==='archived';
+      const open=!!window._wrOpen[K(pid)];
+      // 选项字段、数字字段都照项目设置里的顺序
+      const selRows=(p.fields||[]).filter(f=>f.type!=='number').map(f=>{
+        const fs=ps.fields[f.id];if(!fs)return null;
+        const opts=Object.entries(fs.vals).sort((x,y)=>y[1]-x[1]);
+        return opts.length?{label:f.label,opts}:null;
+      }).filter(Boolean);
+      const numRows=[];
+      (p.fields||[]).filter(f=>f.type==='number').forEach(f=>{
+        const ul=f.units&&f.units.length?f.units:[f.unit||''];
+        const ix=u=>{const i=ul.indexOf(u);return i<0?1e9:i;};
+        Object.values(ps.fields).filter(x=>x.type==='number'&&x.fid===f.id&&x.vals.length)
+          .sort((x,y)=>ix(x.unit)-ix(y.unit))
+          .forEach(x=>{const agg=wrAggOf(f,x.unit);numRows.push({fid:f.id,label:f.label,unit:x.unit,agg,n:x.vals.length,val:wrAgg(agg,x.vals)});});
+      });
+
+      const card=document.createElement('div');card.className='wr-proj-card'+(isArchived?' archived':'');
+      const chev='<span class="tracker-proj-chevron'+(open?' open':'')+'"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M6 1L12 6L6 11M12 6H1" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      let head='<div class="wr-proj-top"><div class="wr-proj-dot" style="background:'+p.color+'"></div>'
+        +'<div class="wr-proj-name">'+p.name+(isArchived?'<span class="wr-proj-archived-badge">ARCHIVED</span>':'')+'</div>'+chev+'</div>'
+        +'<div class="wr-proj-bar-row"><div class="wr-proj-bar-bg"><div class="wr-proj-bar-fill" style="width:'+Math.round(ps.count/maxCount*100)+'%;background:'+p.color+'"></div></div>'
+        +'<div class="wr-proj-count">'+(lang==='zh'?ps.count+'条记录':ps.count+' records')+'</div></div>';
+      if(!open){
+        let sum='';
+        selRows.forEach(r=>{
+          const rest=r.opts.length-WR_SHOW;
+          sum+='<span class="wr-sum-k">'+r.label+'</span><span class="wr-sum-v">'
+            +r.opts.slice(0,WR_SHOW).map(o=>o[0]+' <b>'+o[1]+'</b>').join(' · ')
+            +(rest>0?' <span class="wr-plus">+'+rest+'</span>':'')+'</span>';
+        });
+        const shown=numRows.filter(r=>r.agg!=='none');
+        if(shown.length)sum+='<span class="wr-sum-k">'+t('wr_numbers')+'</span><span class="wr-sum-v">'
+          +shown.map(r=>r.label+' <b>'+wrNum(r.val)+'</b>'+(r.unit?' '+r.unit:'')).join(' · ')+'</span>';
+        if(sum)head+='<div class="wr-sum">'+sum+'</div>';
+      }
+      const headEl=document.createElement('div');headEl.className='wr-proj-head';headEl.innerHTML=head;
+      headEl.onclick=()=>{window._wrOpen[K(pid)]=!open;wrRerender();};
+      card.appendChild(headEl);
+      if(open){
+        let body='';
+        selRows.forEach(r=>{
+          const m=r.opts[0][1];
+          body+='<div class="wr-flbl">'+r.label+'</div><div class="wr-opt-grid">'
+            +r.opts.map(o=>'<span class="wr-opt-name">'+o[0]+'</span><div class="wr-proj-bar-bg wr-opt-bar"><div class="wr-proj-bar-fill" style="width:'+Math.round(o[1]/m*100)+'%;background:'+p.color+'"></div></div><span class="wr-opt-n">'+o[1]+'</span>').join('')
+            +'</div>';
+        });
+        if(numRows.length){
+          const vis=numRows.filter(r=>r.agg!=='none'),hid=numRows.filter(r=>r.agg==='none');
+          const showHid=!!(window._wrShowHidden&&window._wrShowHidden[K(pid)]);
+          const row=(r,off)=>'<span class="wr-num-name'+(off?' off':'')+'">'+r.label+'</span><span class="wr-num-val'+(off?' off':'')+'">'
+            +(off?'—':wrNum(r.val))+(r.unit?'<small>'+r.unit+'</small>':'')+wrAggCtl(pid,r)+'</span>';
+          body+='<div class="wr-flbl">'+t('wr_numbers')+'</div><div class="wr-num-grid">'
+            +vis.map(r=>row(r,false)).join('')+(showHid?hid.map(r=>row(r,true)).join(''):'')+'</div>';
+          if(hid.length)body+='<button class="wr-hidden-link" onclick="wrTogHidden(\''+K(pid)+'\')">'
+            +(showHid?t('wr_hide_hidden'):t('wr_hidden_n').replace('{n}',hid.length))+'</button>';
+        }
+        const bodyEl=document.createElement('div');bodyEl.innerHTML=body;card.appendChild(bodyEl);
+      }
+      projLogWrap.appendChild(card);
+    });
+    area.appendChild(projLogWrap);
+}
+function renderStats(){
+  const _pd=document.getElementById('page-date');if(_pd)_pd.textContent=t('btn_weekly');
+  const area=document.getElementById('main-area');area.innerHTML='';
+  const ws=getWeekStart();
+  const {perDay,totalE,projStats,projFirstSeen,sortedProjs}=wrCollect(ws,7);
+  const maxDay=perDay.reduce((a,b)=>b.cnt>a.cnt?b:a,perDay[0]);
   const mostActiveProj=sortedProjs[0]||null;
   const debutProj=sortedProjs.find(pid=>projFirstSeen[pid]>0)||null;
   const zhWD=['日','一','二','三','四','五','六'];
@@ -4055,98 +4253,117 @@ function renderStats(){
   calOuter.appendChild(calWrap);
   area.appendChild(calOuter);
 
-  // ④ 项目日志（第244次改版）：每个项目可展开 / 收起。
-  //    收起时摘要 = 每个选项字段的前 5 名（多出来的用醒目的 +N 引你展开）+ 数字汇总；展开看条形表。
-  //    数字怎么汇总（合计 / 平均 / 最新 / 不显示）由项目设置里每个数字字段的 f.agg 决定，默认合计。
-  if(sortedProjs.length>0){
-    if(!window._wrOpen)window._wrOpen={};
-    const projLogWrap=document.createElement('div');projLogWrap.className='wr-proj-log-wrap';
-    const logHeader=document.createElement('div');logHeader.className='wr-proj-log-header';
-    const sl3=document.createElement('div');sl3.className='wr-section-label large';sl3.textContent=t('wr_proj_log');
-    const allOpen=sortedProjs.every(pid=>window._wrOpen[pid]);
-    const allBtn=document.createElement('button');allBtn.className='wr-all-btn';
-    allBtn.textContent=t(allOpen?'wr_collapse_all':'wr_expand_all');
-    allBtn.onclick=()=>{sortedProjs.forEach(pid=>{window._wrOpen[pid]=!allOpen;});renderStats();};
-    logHeader.appendChild(sl3);logHeader.appendChild(allBtn);
-    projLogWrap.appendChild(logHeader);
-    const divider=document.createElement('hr');divider.className='wr-proj-log-divider';projLogWrap.appendChild(divider);
-
-    const maxCount=projStats[sortedProjs[0]].count;
-    const WR_SHOW=5;
-    sortedProjs.forEach(pid=>{
-      const p=proj(pid),ps=projStats[pid];
-      const isArchived=p.status==='archived';
-      const open=!!window._wrOpen[pid];
-      // 选项字段、数字字段都照项目设置里的顺序
-      const selRows=(p.fields||[]).filter(f=>f.type!=='number').map(f=>{
-        const fs=ps.fields[f.id];if(!fs)return null;
-        const opts=Object.entries(fs.vals).sort((x,y)=>y[1]-x[1]);
-        return opts.length?{label:f.label,opts}:null;
-      }).filter(Boolean);
-      const numRows=[];
-      (p.fields||[]).filter(f=>f.type==='number').forEach(f=>{
-        const ul=f.units&&f.units.length?f.units:[f.unit||''];
-        const ix=u=>{const i=ul.indexOf(u);return i<0?1e9:i;};
-        Object.values(ps.fields).filter(x=>x.type==='number'&&x.fid===f.id&&x.vals.length)
-          .sort((x,y)=>ix(x.unit)-ix(y.unit))
-          .forEach(x=>{const agg=wrAggOf(f,x.unit);numRows.push({fid:f.id,label:f.label,unit:x.unit,agg,n:x.vals.length,val:wrAgg(agg,x.vals)});});
-      });
-
-      const card=document.createElement('div');card.className='wr-proj-card'+(isArchived?' archived':'');
-      const chev='<span class="tracker-proj-chevron'+(open?' open':'')+'"><svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M6 1L12 6L6 11M12 6H1" stroke="#266ea7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
-      let head='<div class="wr-proj-top"><div class="wr-proj-dot" style="background:'+p.color+'"></div>'
-        +'<div class="wr-proj-name">'+p.name+(isArchived?'<span class="wr-proj-archived-badge">ARCHIVED</span>':'')+'</div>'+chev+'</div>'
-        +'<div class="wr-proj-bar-row"><div class="wr-proj-bar-bg"><div class="wr-proj-bar-fill" style="width:'+Math.round(ps.count/maxCount*100)+'%;background:'+p.color+'"></div></div>'
-        +'<div class="wr-proj-count">'+(lang==='zh'?ps.count+'条记录':ps.count+' records')+'</div></div>';
-      if(!open){
-        let sum='';
-        selRows.forEach(r=>{
-          const rest=r.opts.length-WR_SHOW;
-          sum+='<span class="wr-sum-k">'+r.label+'</span><span class="wr-sum-v">'
-            +r.opts.slice(0,WR_SHOW).map(o=>o[0]+' <b>'+o[1]+'</b>').join(' · ')
-            +(rest>0?' <span class="wr-plus">+'+rest+'</span>':'')+'</span>';
-        });
-        const shown=numRows.filter(r=>r.agg!=='none');
-        if(shown.length)sum+='<span class="wr-sum-k">'+t('wr_numbers')+'</span><span class="wr-sum-v">'
-          +shown.map(r=>r.label+' <b>'+wrNum(r.val)+'</b>'+(r.unit?' '+r.unit:'')).join(' · ')+'</span>';
-        if(sum)head+='<div class="wr-sum">'+sum+'</div>';
-      }
-      const headEl=document.createElement('div');headEl.className='wr-proj-head';headEl.innerHTML=head;
-      headEl.onclick=()=>{window._wrOpen[pid]=!open;renderStats();};
-      card.appendChild(headEl);
-      if(open){
-        let body='';
-        selRows.forEach(r=>{
-          const m=r.opts[0][1];
-          body+='<div class="wr-flbl">'+r.label+'</div><div class="wr-opt-grid">'
-            +r.opts.map(o=>'<span class="wr-opt-name">'+o[0]+'</span><div class="wr-proj-bar-bg wr-opt-bar"><div class="wr-proj-bar-fill" style="width:'+Math.round(o[1]/m*100)+'%;background:'+p.color+'"></div></div><span class="wr-opt-n">'+o[1]+'</span>').join('')
-            +'</div>';
-        });
-        if(numRows.length){
-          const vis=numRows.filter(r=>r.agg!=='none'),hid=numRows.filter(r=>r.agg==='none');
-          const showHid=!!(window._wrShowHidden&&window._wrShowHidden[pid]);
-          const row=(r,off)=>'<span class="wr-num-name'+(off?' off':'')+'">'+r.label+'</span><span class="wr-num-val'+(off?' off':'')+'">'
-            +(off?'—':wrNum(r.val))+(r.unit?'<small>'+r.unit+'</small>':'')+wrAggCtl(pid,r)+'</span>';
-          body+='<div class="wr-flbl">'+t('wr_numbers')+'</div><div class="wr-num-grid">'
-            +vis.map(r=>row(r,false)).join('')+(showHid?hid.map(r=>row(r,true)).join(''):'')+'</div>';
-          if(hid.length)body+='<button class="wr-hidden-link" onclick="wrTogHidden(\''+pid+'\')">'
-            +(showHid?t('wr_hide_hidden'):t('wr_hidden_n').replace('{n}',hid.length))+'</button>';
-        }
-        const bodyEl=document.createElement('div');bodyEl.innerHTML=body;card.appendChild(bodyEl);
-      }
-      projLogWrap.appendChild(card);
-    });
-    area.appendChild(projLogWrap);
-  }
+  // ④ 项目日志（跟月报告共用）
+  wrProjLog(area,sortedProjs,projStats,'w');
 }
 
+/* 月报告（第245次）。顺序：月历 → 当天明细 → 跟上个月比 → 本月亮点 → 项目日志。
+   状态：window._moOff（离当月几个月，≤0）、_moSel（选中的日子，undefined = 默认最活跃那天）、_moStreak（最长连续开没开） */
+const MO_PIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(25 12 12)"><circle class="pr" cx="12" cy="21" r="2"/><g transform="translate(0 4)"><path d="M8 3h8"/><path d="M10 3.5 9 10h6l-1-6.5"/><path d="M6.5 10h11l-1.5 3.5h-8z"/></g><path d="M12 17.5V21"/></g></svg>';
+function moGo(off){window._moOff=off;window._moSel=undefined;window._moStreak=false;renderMonth();}
+function moPick(d){window._moSel=window._moSel===d?null:d;renderMonth();}
+function moJump(y,m,d){tryNavigateDate(new Date(y,m,d));}
+function moStats(c){
+  let run=0,best=0,bestEnd=-1,maxI=-1,active=0;
+  c.perDay.forEach((x,i)=>{if(x.cnt){active++;run++;if(run>best){best=run;bestEnd=i;}if(maxI<0||x.cnt>c.perDay[maxI].cnt)maxI=i;}else run=0;});
+  return {active,streak:best,from:bestEnd-best+2,to:bestEnd+1,maxDay:maxI+1};
+}
 function renderMonth(){
   const _pd=document.getElementById('page-date');if(_pd)_pd.textContent=t('btn_month');
   const area=document.getElementById('main-area');area.innerHTML='';
-  const placeholder=document.createElement('div');
-  placeholder.style.cssText='padding:40px;text-align:center;color:var(--mid);font-size:13px;font-family:Nunito,sans-serif;';
-  placeholder.textContent='月报告 — Coming soon';
-  area.appendChild(placeholder);
+  const off=window._moOff||0;
+  const base=new Date(today.getFullYear(),today.getMonth()+off,1);
+  const Y=base.getFullYear(),M=base.getMonth(),last=new Date(Y,M+1,0).getDate();
+  const cur=wrCollect(base,last),cs=moStats(cur);
+  const prev=wrCollect(new Date(Y,M-1,1),new Date(Y,M,0).getDate()),ps=moStats(prev);
+  // 最早有记录的月份：上个月按钮到这里为止；这个月之前完全没记录 = 没有上个月可以比
+  const firstKey=Object.keys(entries).filter(k=>(entries[k]||[]).length).sort()[0];
+  let minOff=0;if(firstKey){const [fy,fm]=firstKey.split('-').map(Number);minOff=Math.min(0,(fy-today.getFullYear())*12+(fm-1-today.getMonth()));}
+  const noPrev=off<=minOff;
+  if(window._moSel===undefined)window._moSel=cs.maxDay||null;
+  const sel=window._moSel;
+  const dd=n=>String(n).padStart(2,'0');
+  const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const WD=lang==='zh'?['日','一','二','三','四','五','六']:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const WDL=lang==='zh'?['星期日','星期一','星期二','星期三','星期四','星期五','星期六']:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const monthName=(y,m)=>lang==='zh'?(m+1)+'月':MN[m].slice(0,3);
+  const dayLabel=d=>WDL[new Date(Y,M,d).getDay()]+' · '+dd(d)+'/'+dd(M+1);
+  const nEnt=n=>t('mo_n_entries').replace('{n}',n);
+  const delta=(a,b)=>{const x=Math.round((a-b)*10)/10;return x>0?'<span class="mo-d up">▲'+x+'</span>':x<0?'<span class="mo-d dn">▼'+(-x)+'</span>':'<span class="mo-d eq">—</span>';};
+
+  // ① 月历
+  const max=Math.max(1,...cur.perDay.map(x=>x.cnt));
+  const lv=n=>n?Math.min(4,Math.ceil(n/max*4)):0;
+  let cells=WD.map(h=>'<div class="wr-cal-hdr">'+h+'</div>').join('');
+  for(let i=0;i<base.getDay();i++)cells+='<div class="mo-day out"></div>';
+  cur.perDay.forEach((x,i)=>{
+    const d=i+1,n=x.cnt,fut=x.d>today;
+    let c='mo-day '+(fut?'future':n?'has l'+lv(n):'empty');
+    if(+x.d===+today)c+=' today';
+    const inStreak=cs.streak>1&&d>=cs.from&&d<=cs.to;
+    cells+='<div class="'+c+'"'+(n?' onclick="moPick('+d+')"':'')+'><span class="face"></span>'
+      +(inStreak?'<i class="sd"></i>':'')+'<span class="d">'+d+'</span>'+(n?'<span class="n">'+n+'</span>':'')
+      +(sel===d&&n?'<span class="pin">'+MO_PIN+'</span>':'')+'</div>';
+  });
+  const isCur=off===0;
+  const title=t(isCur?'mo_hello':'mo_title').replace('{y}',Y).replace('{m}',lang==='zh'?M+1:MN[M]);
+  const arrow=dir=>'<svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="'+(dir<0?'M8 1L2 6L8 11M2 6H13':'M6 1L12 6L6 11M12 6H1')+'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const streakBtn=cs.streak>1?'<button class="mo-streak-btn'+(window._moStreak?' on':'')+'" onclick="window._moStreak=!window._moStreak;renderMonth()"><i></i>'
+    +t('mo_streak').replace('{n}',cs.streak).replace('{r}',dd(cs.from)+'–'+dd(cs.to)+'/'+dd(M+1))+'</button>':'';
+  const cal=document.createElement('div');cal.className='wr-cal-outer';
+  cal.innerHTML='<div class="wr-cal-hooks"><div class="wr-cal-hook"></div><div class="wr-cal-hook"></div></div>'
+    +'<div class="wr-cal-topbar"><span class="mo-top-l">'
+      +'<button class="mo-nav prev" title="'+t('mo_prev')+'"'+(noPrev?' disabled':'')+' onclick="moGo('+(off-1)+')">'+arrow(-1)+'</button>'
+      +'<span class="wr-cal-topbar-label">'+title+'</span>'
+      +'<button class="mo-nav next" title="'+t('mo_next')+'"'+(isCur?' disabled':'')+' onclick="moGo('+(off+1)+')">'+arrow(1)+'</button>'
+      +(isCur?'':'<button class="mo-today" onclick="moGo(0)">'+t('mo_today')+'</button>')
+    +'</span><span class="wr-cal-topbar-range">'+t('mo_topright').replace('{n}',cur.totalE).replace('{d}',cs.active)+'</span></div>'
+    +'<div class="wr-cal-wrap"><div class="mo-grid'+(window._moStreak?' streak-on':'')+'">'+cells+'</div>'
+    +'<div class="mo-legend"><div class="mo-scale">'+t('mo_less')+' '+[0,1,2,3,4].map(l=>'<i class="l'+l+'"></i>').join('')+' '+t('mo_more')+'</div>'+streakBtn+'</div></div>';
+  area.appendChild(cal);
+  if(!cur.totalE){const e=document.createElement('div');e.className='mo-empty';e.textContent=t('mo_empty');area.appendChild(e);return;}
+
+  // ② 当天明细
+  const panel=document.createElement('div');panel.className='mo-day-panel';
+  if(!sel){panel.innerHTML='<div class="mo-dp-empty">'+t('mo_pick_hint')+'</div>';}
+  else{
+    const list=entries[dk(new Date(Y,M,sel))]||[];
+    panel.innerHTML='<div class="mo-dp-top"><span class="mo-dp-t">'+dayLabel(sel)+' · '+nEnt(list.length)+'</span>'
+      +'<button class="mo-jump" onclick="moJump('+Y+','+M+','+sel+')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 1 1 0 8h-1"/></svg> '+t('mo_jump')+'</button></div>'
+      +list.map(e=>{const p=proj(e.projId);
+        const bits=(p.fields||[]).map(f=>{if(e.skipped&&e.skipped[f.id])return '';const v=e.fields&&e.fields[f.id];if(!v)return '';const tx=fieldText(f,v);return tx?(f.type==='number'?f.label+' '+tx:tx):'';}).filter(Boolean);
+        if(e.title&&e.title.trim())bits.unshift(e.title.trim());
+        return '<div class="mo-dp-row"><div class="wr-proj-dot" style="background:'+p.color+'"></div><div><b>'+p.name+'</b> <small>'+bits.join(' · ')+'</small></div></div>';
+      }).join('');
+  }
+  area.appendChild(panel);
+
+  // ③ 跟上个月比
+  const cmp=document.createElement('div');cmp.className='mo-card';
+  if(noPrev){cmp.innerHTML='<div class="mo-sec">'+t('mo_cmp')+'</div><div class="mo-dp-empty">'+t('mo_cmp_first')+'</div>';}
+  else{
+    const avg=(c,x)=>x.active?Math.round(c.totalE/x.active*10)/10:0;
+    const rows=[['mo_c_total',cur.totalE,prev.totalE],['mo_c_days',cs.active,ps.active],['mo_c_streak',cs.streak,ps.streak],['mo_c_avg',avg(cur,cs),avg(prev,ps)],['mo_c_proj',cur.sortedProjs.length,prev.sortedProjs.length]];
+    const pm=new Date(Y,M-1,1);
+    cmp.innerHTML='<div class="mo-sec">'+t('mo_cmp')+'</div><table class="mo-cmp"><tr><th></th><th>'+monthName(pm.getFullYear(),pm.getMonth())+'</th><th>'+monthName(Y,M)+'</th><th>'+t('mo_c_change')+'</th></tr>'
+      +rows.map(([k,a,b])=>'<tr><td>'+t(k)+'</td><td class="last">'+b+'</td><td>'+a+'</td><td>'+delta(a,b)+'</td></tr>').join('')+'</table>';
+  }
+  area.appendChild(cmp);
+
+  // ④ 本月亮点（首次登场 = 这个月有、上个月没有的项目）
+  const top=cur.sortedProjs[0];
+  const debut=noPrev?null:cur.sortedProjs.find(pid=>!prev.projStats[pid]);
+  const hl=document.createElement('div');hl.className='mo-card';
+  hl.innerHTML='<div class="mo-sec">'+t('mo_hl')+'</div><div class="mo-hl-list">'
+    +'<span class="mo-hl-k">'+t('mo_hl_day')+'</span><span>'+dayLabel(cs.maxDay)+' · '+nEnt(cur.perDay[cs.maxDay-1].cnt)+'</span>'
+    +'<span class="mo-hl-k">'+t('mo_hl_proj')+'</span><span>'+proj(top).name+' · '+nEnt(cur.projStats[top].count)+'</span>'
+    +(debut?'<span class="mo-hl-k">'+t('mo_hl_debut')+'</span><span>'+proj(debut).name+' · '+dd(cur.projFirstSeen[debut]+1)+'/'+dd(M+1)+'</span>':'')
+    +'<span class="mo-hl-k">'+t('mo_hl_streak')+'</span><span>'+t('mo_days').replace('{n}',cs.streak)+'</span></div>';
+  area.appendChild(hl);
+
+  // ⑤ 项目日志（跟周报告同一套）
+  const gap=document.createElement('div');gap.style.height='16px';area.appendChild(gap);
+  wrProjLog(area,cur.sortedProjs,cur.projStats,'m');
 }
 
 // CALENDAR PICKER
@@ -4157,6 +4374,7 @@ function openCalPicker(){
   const popup = document.getElementById('cal-popup');
   if(popup.style.display === 'none' || !popup.style.display){
     calPickerDate = new Date(selDate);
+    calDD=null;
     renderCalPopup();
     popup.style.display = 'block';
   } else {
@@ -4173,14 +4391,14 @@ function renderCalPopup(){
   const currentYear = today.getFullYear();
   let yearOpts = '';
   for(let y = currentYear; y >= currentYear - 5; y--){
-    yearOpts += `<option value="${y}"${year===y?' selected':''}>${y}</option>`;
+    yearOpts += `<button class="cal-dd-opt${year===y?' on':''}" onclick="event.stopPropagation();setCalYear(${y})">${y}</button>`;
   }
 
   // Build month options
   const monthNames = lang==='zh'
     ?['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
     :['January','February','March','April','May','June','July','August','September','October','November','December'];
-  let monthOpts = monthNames.map((m,i) => `<option value="${i}"${month===i?' selected':''}>${m}</option>`).join('');
+  let monthOpts = monthNames.map((m,i) => `<button class="cal-dd-opt${month===i?' on':''}" onclick="event.stopPropagation();setCalMonth(${i})">${m}</button>`).join('');
 
   // Build calendar grid
   const firstDay = new Date(year, month, 1).getDay();
@@ -4222,13 +4440,13 @@ function renderCalPopup(){
 
   popup.innerHTML = `
     <div class="cal-popup-header">
-      <button class="cal-nav" onclick="shiftCalMonth(-1)">‹</button>
+      <button class="cal-nav" onclick="event.stopPropagation();shiftCalMonth(-1)">‹</button>
       <span class="cal-popup-title">${lang==='zh'?year+'年 '+monthNames[month]:monthNames[month]+' '+year}</span>
-      <button class="cal-nav" onclick="shiftCalMonth(1)">›</button>
+      <button class="cal-nav" onclick="event.stopPropagation();shiftCalMonth(1)">›</button>
     </div>
     <div class="cal-selects">
-      <select class="cal-sel" onchange="setCalYear(this.value)">${yearOpts}</select>
-      <select class="cal-sel" onchange="setCalMonth(this.value)">${monthOpts}</select>
+      <div class="cal-dd${calDD==='y'?' open':''}"><button class="cal-dd-btn" onclick="event.stopPropagation();calToggleDD('y')">${year}${CAL_DD_CHEV}</button>${calDD==='y'?`<div class="cal-dd-list">${yearOpts}</div>`:''}</div>
+      <div class="cal-dd${calDD==='m'?' open':''}"><button class="cal-dd-btn" onclick="event.stopPropagation();calToggleDD('m')">${monthNames[month]}${CAL_DD_CHEV}</button>${calDD==='m'?`<div class="cal-dd-list months">${monthOpts}</div>`:''}</div>
     </div>
     <div class="cal-grid">${gridHTML}</div>
   `;
@@ -4238,8 +4456,12 @@ function shiftCalMonth(dir){
   calPickerDate.setMonth(calPickerDate.getMonth() + dir);
   renderCalPopup();
 }
-function setCalYear(y){ calPickerDate.setFullYear(parseInt(y)); renderCalPopup(); }
-function setCalMonth(m){ calPickerDate.setMonth(parseInt(m)); renderCalPopup(); }
+/* 年 / 月下拉：哪一个开着（'y' / 'm' / null）。选完自动收回 */
+let calDD=null;
+const CAL_DD_CHEV='<svg width="10" height="7" viewBox="0 0 12 8" fill="none"><path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+function calToggleDD(w){ calDD=calDD===w?null:w; renderCalPopup(); }
+function setCalYear(y){ calPickerDate.setFullYear(parseInt(y)); calDD=null; renderCalPopup(); }
+function setCalMonth(m){ calPickerDate.setMonth(parseInt(m)); calDD=null; renderCalPopup(); }
 
 function pickCalDate(y, m, d){
   const target=new Date(y, m, d);target.setHours(0,0,0,0);
@@ -4779,7 +5001,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=35;
+const APP_BUILD=37;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
