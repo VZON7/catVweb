@@ -939,6 +939,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 选项字段从下拉框改成常驻胶囊 + 铅笔改选项态（晃动 + 删除角标 + 用量确认）；新增 `--c-del-btn`；表单删选项补上确认与同步记号 | 第240次 |
 | Note 换行显示修复：`.ec-note` 加 `pre-wrap`（卡片 + Tracker）、两处打印 HTML 同步、DOCX 用 `docxLines()` 按行拆 TextRun、TXT 续行缩进 | 第241次 |
 | 数字字段改成「字段名 + 数值胶囊」（方案 C，`.ec-num*`）；单位排序模式（`↕ 排序` → ▲▼，`.unit-sort-btn` / `.unit-mv`）；显示与导出一律照设置里的单位顺序（`sortUnitVals` / `fieldText`）；修单位改名后旧记录断线；修五个导出多单位印出 [object Object] | 第242次 |
+| 修卡片上两条分隔线叠在一起：选项全取消勾选会留下空数组 `[]`（JS 里算有值），先数胶囊再画线；存档不再存 `[]`；五个导出跳过空字段 | 第243次 |
 
 ---
 

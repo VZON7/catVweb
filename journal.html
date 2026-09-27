@@ -2457,7 +2457,7 @@ function cbExportDocx(pid){
       (p.fields||[]).forEach(f=>{
         if(e.skipped&&e.skipped[f.id])return;
         const v=e.fields&&e.fields[f.id];if(!v)return;
-        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+fieldText(f,v)),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        if(!fieldText(f,v))return;children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+fieldText(f,v)),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
       });
       if(e.note)children.push(new Paragraph({children:docxLines(TextRun,t('form_note')+': '+e.note,{size:18,color:MID,italics:true,font:'Arial'}),spacing:{before:10,after:10},indent:{left:480}}));
       children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
@@ -2529,7 +2529,7 @@ function cbExportPdf(pid){
       (p.fields||[]).forEach(f=>{
         if(e.skipped&&e.skipped[f.id])return;
         const v=e.fields&&e.fields[f.id];if(!v)return;
-        fieldsHtml+=`<span class="tag">${f.label}: ${fieldText(f,v)}</span>`;
+        if(!fieldText(f,v))return;fieldsHtml+=`<span class="tag">${f.label}: ${fieldText(f,v)}</span>`;
       });
       entriesHtml+=`<div class="entry">
         <div class="date">${parts[0]}年${parts[1]}月${parts[2]}日</div>
@@ -2621,7 +2621,7 @@ function exportTracker(pid,type){
         (p.fields||[]).forEach(f=>{
           if(e.skipped&&e.skipped[f.id])return;
           const v=e.fields&&e.fields[f.id];if(!v)return;
-          children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+fieldText(f,v)),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+          if(!fieldText(f,v))return;children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+fieldText(f,v)),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
         });
         if(e.note)children.push(new Paragraph({children:docxLines(TextRun,t('form_note')+': '+e.note,{size:18,color:MID,italics:true,font:'Arial'}),spacing:{before:10,after:10},indent:{left:480}}));
         children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
@@ -2636,7 +2636,7 @@ function exportTracker(pid,type){
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
-      (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;txt+='  '+f.label+': '+fieldText(f,v)+'\n';});
+      (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v||!fieldText(f,v))return;txt+='  '+f.label+': '+fieldText(f,v)+'\n';});
       if(e.note)txt+='  '+t('form_note')+': '+e.note.replace(/\r?\n/g,'\n    ')+'\n';txt+='\n';
     });
     try{
@@ -2651,7 +2651,7 @@ function exportTracker(pid,type){
     html+='<h1>'+p.name+'</h1><div class="meta">'+t('export_status')+': '+getStatusLabels()[p.status||'active']+' | '+t('export_total')+': '+pe.length+' | '+new Date().toLocaleDateString()+'</div>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');let f='';
-      (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+fieldText(fld,v)+'</span>';});
+      (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v||!fieldText(fld,v))return;f+='<span class="tag">'+fld.label+': '+fieldText(fld,v)+'</span>';});
       html+='<div class="entry"><div class="date">'+parts[0]+'年'+parts[1]+'月'+parts[2]+'日</div>'+(e.title&&e.title.trim()?'<div class="title">'+e.title.trim()+'</div>':'')+(f?'<div>'+f+'</div>':'')+(e.note?'<div class="note">'+e.note+'</div>':'')+'</div>';
     });
     html+='<script>window.onload=function(){window.print();}<\/script></body></html>';
@@ -2808,8 +2808,10 @@ function buildCard(e,p){
     if(e.skipped&&e.skipped[f.id])return;
     const v=e.fields&&e.fields[f.id];if(!v)return;
     const cls='ec-selval-f'+(fi%4);
-    if(fi>0&&fHTML)fHTML+=`<div class="ec-vdivider"></div>`;
-    const tags=Array.isArray(v)?v:String(v).split(',').map(s=>s.trim()).filter(Boolean);
+    const tags=Array.isArray(v)?v.filter(Boolean):String(v).split(',').map(s=>s.trim()).filter(Boolean);
+    // 先数胶囊再画分隔线：空数组 [] 在 JS 里算有值，原来先画线后发现没东西，就叠成两条
+    if(!tags.length)return;
+    if(fHTML)fHTML+=`<div class="ec-vdivider"></div>`;
     fHTML+=tags.map(tg=>`<span class="ec-selval ${cls}">${tg}</span>`).join('');
   });
   // number fields after
@@ -2936,6 +2938,8 @@ function saveEdit(id,key){
   e.title=editState.title||e.title;
   if(editState.projId&&editState.projId!==e.projId)e.projId=editState.projId;
   e.fields={...editState.fields};e.skipped={...editState.skipped};
+  // 选项全取消勾选会留下空数组 []，它在 JS 里算「有值」—— 不存，免得卡片多画一条分隔线、导出多一行空标签
+  Object.keys(e.fields).forEach(k=>{if(Array.isArray(e.fields[k])&&!e.fields[k].length)delete e.fields[k];});
   e.note=editState.note||'';e.link=editState.link||'';e.linkLabel=editState.linkLabel||'';
   e.updatedAt=Date.now();
   editingId=null;editState={};resetOptUI();saveData();renderAll();
@@ -3400,7 +3404,7 @@ function saveEntry(){
           if(el&&el.value)fields[f.id]=el.value;
         }
       }
-      else{const v=window._fv&&window._fv[f.id];if(v)fields[f.id]=v;}
+      else{const v=window._fv&&window._fv[f.id];if(v&&(!Array.isArray(v)||v.length))fields[f.id]=v;}
     });
   }
   const noteEl=document.getElementById('f-note');
@@ -4683,7 +4687,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=33;
+const APP_BUILD=34;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
