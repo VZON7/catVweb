@@ -856,7 +856,6 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 
 | 项目 | 说明 |
 |---|---|
-| **Note 换行在显示时丢了**（2026-09-21 报的，根因已查实） | 表单里分了三行，记录卡片上连成一整段。**根因**：`.ec-note`（[journal.html:220](journal.html#L220)）和 `.tracker-entry-note`（:592）都**没有 `white-space:pre-wrap`**，HTML 默认把换行折叠成空格。存的数据是完整的，只是显示层吃掉了。**改动涉及 4 处**：卡片 `.ec-note`、Tracker `.tracker-entry-note`、打印 HTML（:2507 的 `.note`）、DOCX 导出（:2430 / :2595 —— TextRun 里的 `\n` 也不会换行，要拆成多个 Paragraph 或用 break）|
 | **字段值 / 单位数字的显示要改 UX**（2026-09-21 报的） | 现在是 `· Price: 6908.65 RM · 1.64 Rate` 这种一行平铺（[journal.html:2789-2791](journal.html#L2789-L2791)：多单位用 ` · ` 拼、外面套 `.ec-field`）。多个单位挤在一行读起来费劲，尤其金额+汇率这种语义不同的值并列。**要先定设计再动手** —— 怎么排还没决定 |
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
@@ -939,6 +938,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 撤回「未登录」提醒，导航栏和正文版面回到第234次的样子；只保留灰点 | 第238次 |
 | 点「新记录」时先问一句要不要登录（`cj_skip_signin`，一辈子只问一次） | 第239次 |
 | 选项字段从下拉框改成常驻胶囊 + 铅笔改选项态（晃动 + 删除角标 + 用量确认）；新增 `--c-del-btn`；表单删选项补上确认与同步记号 | 第240次 |
+| Note 换行显示修复：`.ec-note` 加 `pre-wrap`（卡片 + Tracker）、两处打印 HTML 同步、DOCX 用 `docxLines()` 按行拆 TextRun、TXT 续行缩进 | 第241次 |
 
 ---
 

@@ -217,7 +217,7 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .ec-selval-f2 { color:var(--c-tint2); }
 .ec-selval-f3 { color:var(--c-tint3); }
 .ec-vdivider { width:0; height:14px; flex-shrink:0; align-self:center; border-left:1px solid var(--line-dark); border-right:1px solid var(--line-light); }
-.ec-note { font-size:11px; font-style:italic; color:var(--c-note-text); margin-top:6px; line-height:1.5; display:flex; align-items:flex-start; gap:5px; }
+.ec-note { font-size:11px; font-style:italic; color:var(--c-note-text); margin-top:6px; line-height:1.5; display:flex; align-items:flex-start; gap:5px; white-space:pre-wrap; overflow-wrap:anywhere; }
 .ec-note-icon { flex-shrink:0; margin-top:1px; color:var(--c-tint2); }
 .ec-coin { font-size:10px; color:var(--c-tint0); background:var(--lavender); border-radius:999px; padding:4px 14px; white-space:nowrap; flex-shrink:0; font-weight:700; box-shadow:4px 4px 10px var(--sh-cloth), -4px -4px 10px var(--sh-light), inset 0 3px 8px var(--cloth-wash), inset 0 -1px 3px var(--cloth-sheen); }
 .ec-acts { display:flex; gap:6px; flex-shrink:0; align-items:center; }
@@ -1664,6 +1664,10 @@ function getStatusLabels(){return{active:t('status_active'),done:t('status_done'
 function stripEmoji(str){
   return String(str||'').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}\u{FE00}-\u{FEFF}\u{1F300}-\u{1F9FF}]/gu,'').trim();
 }
+/* 多行文字 → 多个 TextRun。docx 的 TextRun 里 '\n' 不会换行，要逐行拆开、第二行起加 break */
+function docxLines(TextRun,str,opts){
+  return String(str||'').split(/\r?\n/).map((ln,i)=>new TextRun(Object.assign({},opts,{text:stripEmoji(ln),break:i?1:0})));
+}
 
 let _cbState={};
 if(!window.charts)window.charts={};
@@ -2427,7 +2431,7 @@ function cbExportDocx(pid){
         const display=Array.isArray(v)?v.join(', '):String(v);
         children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+display+(f.unit?' '+f.unit:'')),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
       });
-      if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('form_note')+': '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+      if(e.note)children.push(new Paragraph({children:docxLines(TextRun,t('form_note')+': '+e.note,{size:18,color:MID,italics:true,font:'Arial'}),spacing:{before:10,after:10},indent:{left:480}}));
       children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
     });
   }
@@ -2557,7 +2561,7 @@ function cbExportPdf(pid){
     .date{color:#7B68EE;font-weight:700;font-size:12px}
     .title{font-size:14px;font-weight:600;margin:3px 0}
     .tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}
-    .note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}
+    .note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px;white-space:pre-wrap}
     @media print{body{padding:20px}img{max-width:100%!important}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}
   </style></head><body>
     <h1>${p.name}</h1>
@@ -2592,7 +2596,7 @@ function exportTracker(pid,type){
           const v=e.fields&&e.fields[f.id];if(!v)return;
           children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+v),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
         });
-        if(e.note)children.push(new Paragraph({children:[new TextRun({text:stripEmoji(t('form_note')+': '+e.note),size:18,color:MID,italics:true,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        if(e.note)children.push(new Paragraph({children:docxLines(TextRun,t('form_note')+': '+e.note,{size:18,color:MID,italics:true,font:'Arial'}),spacing:{before:10,after:10},indent:{left:480}}));
         children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
       });
       const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
@@ -2606,7 +2610,7 @@ function exportTracker(pid,type){
       const parts=e.dateKey.split('-');
       txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
       (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;txt+='  '+f.label+': '+v+'\n';});
-      if(e.note)txt+='  '+t('form_note')+': '+e.note+'\n';txt+='\n';
+      if(e.note)txt+='  '+t('form_note')+': '+e.note.replace(/\r?\n/g,'\n    ')+'\n';txt+='\n';
     });
     try{
       triggerDownload('data:text/plain;charset=utf-8,'+encodeURIComponent(txt),p.name+'_tracker.txt');
@@ -2616,7 +2620,7 @@ function exportTracker(pid,type){
       else{alert(t('export_popup_warn')+'\n\n'+txt);}
     }
   } else {
-    let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px}@media print{body{padding:20px}}</style></head><body>';
+    let html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;color:#2d2b3d;max-width:700px;margin:0 auto}h1{color:#7B68EE;border-bottom:2px solid #7B68EE;padding-bottom:8px}.meta{font-size:12px;color:#888;margin-bottom:20px}.entry{border-left:3px solid #7B68EE;padding:8px 16px;margin:10px 0;background:#f9f9ff;border-radius:0 8px 8px 0}.date{color:#7B68EE;font-weight:700;font-size:13px}.title{font-size:14px;font-weight:600;margin:4px 0}.tag{display:inline-block;background:#EEEDFE;color:#7B68EE;padding:2px 8px;border-radius:999px;font-size:11px;margin:2px}.note{font-size:12px;color:#5a5870;font-style:italic;margin-top:4px;white-space:pre-wrap}@media print{body{padding:20px}}</style></head><body>';
     html+='<h1>'+p.name+'</h1><div class="meta">'+t('export_status')+': '+getStatusLabels()[p.status||'active']+' | '+t('export_total')+': '+pe.length+' | '+new Date().toLocaleDateString()+'</div>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');let f='';
@@ -4613,7 +4617,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=31;
+const APP_BUILD=32;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
