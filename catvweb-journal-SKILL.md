@@ -369,8 +369,11 @@ f.unit = ''                 // 旧版单一字符串，保留向后兼容，不�
 1. **项目设置 Modal**（renderModal）— 单位列表 UI：`addUnitInModal` / `removeUnit` / `renameUnit`
 2. **填写记录表单**（buildNewForm / saveEntry）— 每个单位一行独立 input，保存时遍历 units 收集数组
 3. **Inline Edit**（buildInlineEdit / saveEdit）— 同上，从 DOM 读取多个 `edf-${f.id}-${unit}` input
-4. **显示层**（Entry Card / Tracker 卡片）— 数组必须 `.map(o=>o.val+' '+o.unit).join(' · ')`，禁止直接 `${v}` 插值（会变成 `[object Object]`）
+4. **显示层**（Entry Card / Tracker / 五个导出）— **一律走 `fieldText(f,v)`**（纯文字）或 `sortUnitVals(f,arr)`（卡片胶囊），两者都照 `f.units` 的顺序排。禁止直接 `${v}` 插值或 `v.join()`（会变成 `[object Object]` —— 第242次前五个导出全中招）
 5. **统计/计算**（calcCoins / Weekly Stats projStats / Chart Builder `_varData`）— 必须判断 `Array.isArray(v)`，按单位分别处理，不可不同单位直接相加
+
+**单位改名（第242次）：** 记录里存的是 `{unit:'名字',val}`，**靠名字对应**。改名必须走 `renameUnit()`：它在 `modal._unitRen` 记下「原名 → 新名」，`saveProject()` 时一次性改掉这个项目的旧记录并更新 `updatedAt`。直接写 `modal.fields[i].units[ui]=v` 会让旧记录跟单位断线（编辑时那格变空、图表对不上）。
+**调顺序**（`moveUnit`）只动 `f.units`，不用改记录。
 
 **Chart Builder 专属规则：**
 多单位字段在 `initChartBuilder` 的 `vars` 构建时，拆分成多个独立变量，`key = f.id+'::'+unit`，`label = f.label+' ('+unit+')'`，让颜色分配/图例/统计天然走现有单变量逻辑，不需要改下游渲染代码。

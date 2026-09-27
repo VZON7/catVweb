@@ -856,7 +856,6 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 
 | 项目 | 说明 |
 |---|---|
-| **字段值 / 单位数字的显示要改 UX**（2026-09-21 报的） | 现在是 `· Price: 6908.65 RM · 1.64 Rate` 这种一行平铺（[journal.html:2789-2791](journal.html#L2789-L2791)：多单位用 ` · ` 拼、外面套 `.ec-field`）。多个单位挤在一行读起来费劲，尤其金额+汇率这种语义不同的值并列。**要先定设计再动手** —— 怎么排还没决定 |
 | Cat Token 逻辑 | 暂搁置，待后续讨论 |
 | 周报告亮点 pill 图标 | 待替换为白色德文猫 SVG 图标（跳舞/心/小树苗），图标凹陷方块内，颜色 `#A07850` |
 | 侧滑导出面板 | 字段勾选 + 范围选择 + 预览 |
@@ -939,6 +938,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 点「新记录」时先问一句要不要登录（`cj_skip_signin`，一辈子只问一次） | 第239次 |
 | 选项字段从下拉框改成常驻胶囊 + 铅笔改选项态（晃动 + 删除角标 + 用量确认）；新增 `--c-del-btn`；表单删选项补上确认与同步记号 | 第240次 |
 | Note 换行显示修复：`.ec-note` 加 `pre-wrap`（卡片 + Tracker）、两处打印 HTML 同步、DOCX 用 `docxLines()` 按行拆 TextRun、TXT 续行缩进 | 第241次 |
+| 数字字段改成「字段名 + 数值胶囊」（方案 C，`.ec-num*`）；单位排序模式（`↕ 排序` → ▲▼，`.unit-sort-btn` / `.unit-mv`）；显示与导出一律照设置里的单位顺序（`sortUnitVals` / `fieldText`）；修单位改名后旧记录断线；修五个导出多单位印出 [object Object] | 第242次 |
 
 ---
 
@@ -980,8 +980,23 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 
 ## 十三、多单位数字字段显示规则
 
-**多单位**：`time: 30 min · 1 hour`（`·` 分隔）
-**单单位**：`length: 23 cm`（从 `f.units[0]` 拼接单位）
+**记录卡片（第242次，方案 C）**：`字段名 [数值 单位] [数值 单位]`，每个数值一颗胶囊。
+- `.ec-num-lbl` 10px / 700 / `--mid`
+- `.ec-num-pill` 11px / 800 / `--dark`，`tabular-nums`，阴影沿用 `.ec-selval` 内凹柔光（inset 2px 2px 4px `--sh-dark` / inset -2px -2px 4px `--sh-light-soft`）
+- 单位 `small` 9.5px / 600 / `--mid`，跟数值空 3px
+
+**纯文字场合**（Tracker 行、DOCX、打印、TXT）：一律走 `fieldText(f,v)` → `6908.65 RM · 1.64 Rate`。
+
+**顺序**：一律照项目设置里 `f.units` 的顺序（`sortUnitVals`），不是记录存的时候的先后。
+
+**单位排序模式（第242次）**：数字字段有 ≥2 个单位时，标题行出现 `↕ 排序`（`.unit-sort-btn`，标准三态，排序中保持按下 `.on`）。
+进入后每行 ✎ × 换成 ▲▼（`.unit-mv`），新增单位输入框隐藏；首行 ▲、末行 ▼ `disabled`（opacity .25）。
+
+▲▼ 图标（12×8，线宽 2，圆头，`currentColor`；默认 `--c-icon-idle`，hover `--purple` + `--icon-shadow-hover`，按下 `--icon-shadow-active`）：
+```html
+<svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 7L6 2L11 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>  <!-- ▲ -->
+<svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>  <!-- ▼ -->
+```
 
 ---
 

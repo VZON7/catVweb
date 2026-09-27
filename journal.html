@@ -210,7 +210,11 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 .ec-body { flex:1; min-width:0; }
 .ec-title { font-size:13px; font-weight:700; color:var(--dark); line-height:1.4; }
 .ec-meta { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:5px; }
-.ec-field { font-size:11px; color:var(--mid); display:flex; align-items:center; gap:3px; }
+/* 数字字段：字段名 + 数值胶囊（第242次，方案 C）。胶囊阴影沿用 .ec-selval 的内凹柔光 */
+.ec-num { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
+.ec-num-lbl { font-size:10px; font-weight:700; color:var(--mid); margin-right:1px; }
+.ec-num-pill { font-size:11px; font-weight:800; color:var(--dark); padding:2px 9px; border-radius:999px; background:var(--lavender); box-shadow:inset 2px 2px 4px var(--sh-dark), inset -2px -2px 4px var(--sh-light-soft); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ec-num-pill small { font-size:9.5px; font-weight:600; color:var(--mid); margin-left:3px; }
 .ec-selval { font-size:10px; padding:2px 8px; border-radius:999px; background:var(--lavender); box-shadow:inset 2px 2px 4px var(--sh-dark), inset -2px -2px 4px var(--sh-light-soft); font-weight:550; }
 .ec-selval-f0 { color:var(--c-tint0); }
 .ec-selval-f1 { color:var(--c-tint1); }
@@ -367,6 +371,14 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .oc-keep { color:var(--mid); background:var(--lavender); box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
 .oc-keep:hover { color:var(--dark); box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
 .oc-keep:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
+/* 单位排序模式（第242次）：「↕ 排序」胶囊按钮 + 每行 ▲▼。三态照标准新拟态，排序中保持按下 */
+.unit-sort-btn { font-size:10px; font-weight:800; font-family:'Nunito',sans-serif; color:var(--mid); background:var(--lavender); border:none; border-radius:999px; padding:3px 10px; cursor:pointer; flex-shrink:0; white-space:nowrap; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s, color .15s; }
+.unit-sort-btn:hover { color:var(--purple); box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); }
+.unit-sort-btn:active, .unit-sort-btn.on { color:var(--purple); box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+.unit-mv { background:none; border:none; cursor:pointer; padding:2px 3px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--c-icon-idle); transition:color .15s, filter .15s; }
+.unit-mv:hover { color:var(--purple); filter:var(--icon-shadow-hover); }
+.unit-mv:active { filter:var(--icon-shadow-active); }
+.unit-mv:disabled { opacity:.25; cursor:default; color:var(--c-icon-idle); filter:none; }
 .sd-add { display:flex; gap:6px; padding:5px 4px 2px; margin-top:4px; box-shadow:0 -1px 0 var(--sh-dark), 0 -2px 0 var(--sh-light); }
 .sd-add input { flex:1; font-size:12px; font-family:'Nunito',sans-serif; border:none; border-radius:7px; padding:5px 8px; background:var(--lavender); color:var(--dark); outline:none; box-shadow:inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
 .sd-add-btn { padding:4px 10px; border-radius:7px; border:none; background:var(--lavender); color:var(--purple); font-size:11px; font-weight:700; cursor:pointer; font-family:'Nunito',sans-serif; box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); transition:box-shadow .15s; }
@@ -921,6 +933,7 @@ const I18N={
     modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
     modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',modal_sel_title:'文字选择项',modal_sel_desc:'建立一组选项，记录时从中勾选，如工具、状态、项目阶段',modal_num_title:'数字栏位',modal_num_desc:'记录可量化的数据，例如时间、距离、次数',
     modal_unit:'单位',modal_unit_ph:'如 min、km、次…',
+    unit_sort:'↕ 排序',unit_sort_done:'完成',unit_up:'上移',unit_down:'下移',
     modal_save:'保存',modal_cancel:'取消',modal_delete:'删除',modal_edit:'编辑',
     del_title:'删除「',del_archive_btn:'保留历史记录，先归档',
     del_archive_desc:'Project 和所有记录完整保留，可在「已归档」里复原',
@@ -1075,6 +1088,7 @@ const I18N={
     modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
     modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',modal_sel_title:'Text Options',modal_sel_desc:'Create a set of options to pick from when logging, e.g. tools, status, project stage',modal_num_title:'Number Field',modal_num_desc:'Record quantifiable data, e.g. time, distance, count',
     modal_unit:'Unit',modal_unit_ph:'e.g. min, km, times...',
+    unit_sort:'↕ Reorder',unit_sort_done:'Done',unit_up:'Move up',unit_down:'Move down',
     modal_save:'Save',modal_cancel:'Cancel',modal_delete:'Delete',modal_edit:'Edit',
     del_title:'Delete "',del_archive_btn:'Archive — keep all records',
     del_archive_desc:'Project and all entries are preserved. Restore from the Archived tab.',
@@ -1436,7 +1450,7 @@ function renderTracker(){
           const row=document.createElement('div');row.className='tracker-entry-row';
           const parts=e.dateKey.split('-');const m2=parts[1],d2=parts[2];
           let fHTML='';
-          (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;let dv;if(f.type==='number'&&Array.isArray(v)){dv=v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' · ');}else if(Array.isArray(v)){dv=v.join(', ');}else{dv=String(v);}if(!dv)return;fHTML+=`<span class="tracker-field-tag">${f.label}: ${dv}</span>`;});
+          (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;const dv=fieldText(f,v);if(!dv)return;fHTML+=`<span class="tracker-field-tag">${f.label}: ${dv}</span>`;});
           if(e.total)fHTML+=`<span class="tracker-field-tag">Total: ${e.total}</span>`;
           const dateStr=(d2.length<2?'0':'')+d2+'/'+(m2.length<2?'0':'')+m2+'/'+parts[0];
           const tipText=lang==='zh'?'回到当天':'Jump to date';
@@ -1667,6 +1681,21 @@ function stripEmoji(str){
 /* 多行文字 → 多个 TextRun。docx 的 TextRun 里 '\n' 不会换行，要逐行拆开、第二行起加 break */
 function docxLines(TextRun,str,opts){
   return String(str||'').split(/\r?\n/).map((ln,i)=>new TextRun(Object.assign({},opts,{text:stripEmoji(ln),break:i?1:0})));
+}
+/* 多单位数值照「项目设置里的单位顺序」排。记录里存的是 [{unit,val}]，靠单位名字对应，
+   存的时候的先后不算数 —— 用户调过顺序后，旧记录也要照新顺序显示。设置里没有的单位排最后。 */
+function sortUnitVals(f,arr){
+  const ord=(f&&f.units)||[];const ix=u=>{const i=ord.indexOf(u);return i<0?1e9:i;};
+  return [...arr].sort((a,b)=>ix(a.unit)-ix(b.unit));
+}
+/* 字段值 → 纯文字（导出、Tracker 行共用）。多单位数组不能直接转字符串，会变成 [object Object] */
+function fieldText(f,v){
+  if(f.type==='number'){
+    if(Array.isArray(v))return sortUnitVals(f,v).map(o=>o.val+(o.unit?' '+o.unit:'')).join(' · ');
+    const u=f.units&&f.units.length?f.units[0]:(f.unit||'');
+    return v+(u?' '+u:'');
+  }
+  return Array.isArray(v)?v.join(', '):String(v);
 }
 
 let _cbState={};
@@ -2428,8 +2457,7 @@ function cbExportDocx(pid){
       (p.fields||[]).forEach(f=>{
         if(e.skipped&&e.skipped[f.id])return;
         const v=e.fields&&e.fields[f.id];if(!v)return;
-        const display=Array.isArray(v)?v.join(', '):String(v);
-        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+display+(f.unit?' '+f.unit:'')),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+        children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+fieldText(f,v)),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
       });
       if(e.note)children.push(new Paragraph({children:docxLines(TextRun,t('form_note')+': '+e.note,{size:18,color:MID,italics:true,font:'Arial'}),spacing:{before:10,after:10},indent:{left:480}}));
       children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
@@ -2501,8 +2529,7 @@ function cbExportPdf(pid){
       (p.fields||[]).forEach(f=>{
         if(e.skipped&&e.skipped[f.id])return;
         const v=e.fields&&e.fields[f.id];if(!v)return;
-        const display=Array.isArray(v)?v.join(', '):String(v);
-        fieldsHtml+=`<span class="tag">${f.label}: ${display}${f.unit?' '+f.unit:''}</span>`;
+        fieldsHtml+=`<span class="tag">${f.label}: ${fieldText(f,v)}</span>`;
       });
       entriesHtml+=`<div class="entry">
         <div class="date">${parts[0]}年${parts[1]}月${parts[2]}日</div>
@@ -2594,7 +2621,7 @@ function exportTracker(pid,type){
         (p.fields||[]).forEach(f=>{
           if(e.skipped&&e.skipped[f.id])return;
           const v=e.fields&&e.fields[f.id];if(!v)return;
-          children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+v),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
+          children.push(new Paragraph({children:[new TextRun({text:stripEmoji(f.label+': '+fieldText(f,v)),size:18,color:MID,font:'Arial'})],spacing:{before:10,after:10},indent:{left:480}}));
         });
         if(e.note)children.push(new Paragraph({children:docxLines(TextRun,t('form_note')+': '+e.note,{size:18,color:MID,italics:true,font:'Arial'}),spacing:{before:10,after:10},indent:{left:480}}));
         children.push(new Paragraph({children:[new TextRun({text:'Cat Token: +'+calcCoins(e,e.dateKey),size:16,color:'854F0B',font:'Arial'})],spacing:{before:6,after:6},indent:{left:480}}));
@@ -2609,7 +2636,7 @@ function exportTracker(pid,type){
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');
       txt+=parts[0]+'年'+parts[1]+'月'+parts[2]+'日\n'+(e.title&&e.title.trim()?'  '+e.title.trim()+'\n':'');
-      (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;txt+='  '+f.label+': '+v+'\n';});
+      (p.fields||[]).forEach(f=>{if(e.skipped&&e.skipped[f.id])return;const v=e.fields&&e.fields[f.id];if(!v)return;txt+='  '+f.label+': '+fieldText(f,v)+'\n';});
       if(e.note)txt+='  '+t('form_note')+': '+e.note.replace(/\r?\n/g,'\n    ')+'\n';txt+='\n';
     });
     try{
@@ -2624,7 +2651,7 @@ function exportTracker(pid,type){
     html+='<h1>'+p.name+'</h1><div class="meta">'+t('export_status')+': '+getStatusLabels()[p.status||'active']+' | '+t('export_total')+': '+pe.length+' | '+new Date().toLocaleDateString()+'</div>';
     pe.forEach(e=>{
       const parts=e.dateKey.split('-');let f='';
-      (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+v+'</span>';});
+      (p.fields||[]).forEach(fld=>{if(e.skipped&&e.skipped[fld.id])return;const v=e.fields&&e.fields[fld.id];if(!v)return;f+='<span class="tag">'+fld.label+': '+fieldText(fld,v)+'</span>';});
       html+='<div class="entry"><div class="date">'+parts[0]+'年'+parts[1]+'月'+parts[2]+'日</div>'+(e.title&&e.title.trim()?'<div class="title">'+e.title.trim()+'</div>':'')+(f?'<div>'+f+'</div>':'')+(e.note?'<div class="note">'+e.note+'</div>':'')+'</div>';
     });
     html+='<script>window.onload=function(){window.print();}<\/script></body></html>';
@@ -2789,10 +2816,11 @@ function buildCard(e,p){
   (p.fields||[]).filter(x=>x.type==='number').forEach(f=>{
     if(e.skipped&&e.skipped[f.id])return;
     const v=e.fields&&e.fields[f.id];if(!v)return;
-    const unit=Array.isArray(v)?'':(f.units&&f.units.length?f.units[0]:(f.unit||''));
-    const display=Array.isArray(v)?v.map(o=>o.val+(o.unit?' '+o.unit:'')).join(' · '):(v+(unit?' '+unit:''));
+    // 每个数值一颗胶囊（数值 + 淡一级的单位），照设置里的单位顺序排
+    const vals=Array.isArray(v)?sortUnitVals(f,v).filter(o=>o.val!==''):[{val:v,unit:f.units&&f.units.length?f.units[0]:(f.unit||'')}];
+    if(!vals.length)return;
     if(fHTML)fHTML+=`<div class="ec-vdivider"></div>`;
-    fHTML+=`<span class="ec-field">· ${f.label}: <strong>${display}</strong></span>`;
+    fHTML+=`<span class="ec-num"><span class="ec-num-lbl">${f.label}</span>${vals.map(o=>`<span class="ec-num-pill">${o.val}${o.unit?`<small>${o.unit}</small>`:''}</span>`).join('')}</span>`;
   });
   const coins=calcCoins(e, dk(selDate));
   card.innerHTML=`<div class="ec-inner">
@@ -3513,14 +3541,23 @@ function renderModal(){
         subHtml=`<div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
             ${units.map((u,ui)=>{
           const isEditingU=(modal._editKey===`unit-${i}-${ui}`);
+          // 排序模式：✎ × 换成 ▲▼（第242次）
+          if(modal._sortUnit===i){
+            return`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px var(--sh-dark),-3px -3px 7px var(--sh-light)">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--mid);flex-shrink:0;opacity:.4;display:inline-block"></span>
+              <span style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--mid);min-width:0">${u}</span>
+              <button class="unit-mv" title="${t('unit_up')}" ${ui===0?'disabled':''} onclick="moveUnit(${i},${ui},-1)"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 7L6 2L11 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="unit-mv" title="${t('unit_down')}" ${ui===units.length-1?'disabled':''} onclick="moveUnit(${i},${ui},1)"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>`;
+          }
           if(isEditingU){
             return`<div style="display:flex;align-items:center;gap:6px">
               <input id="munit-${i}-${ui}" type="text" autocomplete="off" value="${u}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px var(--sh-dark),inset -2px -2px 5px var(--sh-light)"
-                onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].units[${ui}]=v;}modal._editKey=null;renderModal()}"
-                onchange="modal.fields[${i}].units[${ui}]=this.value.trim()"
-                onblur="const v=this.value.trim();if(v)modal.fields[${i}].units[${ui}]=v;modal._editKey=null;renderModal()">
+                onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){renameUnit(${i},${ui},v);}modal._editKey=null;renderModal()}"
+                onchange="renameUnit(${i},${ui},this.value)"
+                onblur="const v=this.value.trim();if(v)renameUnit(${i},${ui},v);modal._editKey=null;renderModal()">
               <span style="font-size:9px;font-weight:600;color:var(--c-unit-hint);flex-shrink:0;text-transform:lowercase">${t('modal_unit')}</span>
-              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--c-icon-edit);display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('munit-${i}-${ui}').value.trim();if(v)modal.fields[${i}].units[${ui}]=v;modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--c-icon-edit);display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('munit-${i}-${ui}').value.trim();if(v)renameUnit(${i},${ui},v);modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
               <button style="background:none;border:none;color:var(--c-icon-idle);cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="removeUnit(${i},${ui})">×</button>
             </div>`;
           } else {
@@ -3533,16 +3570,17 @@ function renderModal(){
             </div>`;
           }
         }).join('')}
-            <div style="display:flex;gap:6px;margin-top:4px">
+            ${modal._sortUnit===i?'':`<div style="display:flex;gap:6px;margin-top:4px">
               <input type="text" id="modal-new-unit-${i}" placeholder="${t('modal_unit_ph')}" autocomplete="off" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px var(--sh-dark),inset -2px -2px 5px var(--sh-light)" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addUnitInModal(${i})}">
               <button style="width:28px;height:28px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 8px var(--sh-btn-dark),-3px -3px 8px var(--sh-light);flex-shrink:0" onclick="addUnitInModal(${i})">+</button>
-            </div>
+            </div>`}
           </div>`;
       }
       return`<div style="background:var(--lavender);border-radius:12px;padding:10px 12px;box-shadow:6px 6px 12px var(--sh-dark),-6px -6px 12px var(--sh-light)">
         <div style="display:flex;align-items:center;gap:8px;width:100%">
           <span style="font-size:10px;font-weight:800;font-family:'Nunito',sans-serif;padding:3px 10px;border-radius:999px;background:${badgeBg};color:${badgeColor};flex-shrink:0;box-shadow:3px 3px 8px var(--sh-cloth),-3px -3px 8px var(--sh-light),inset 0 2px 6px var(--cloth-wash-sm),inset 0 -1px 2px var(--cloth-sheen-sm)">${isSel?t('modal_sel'):t('modal_num')}</span>
           <input type="text" autocomplete="off" value="${f.label}" placeholder="${t('modal_field_name')}" style="flex:1;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:4px 8px;background:var(--lavender);color:var(--dark);outline:none;min-width:0;box-shadow:inset 2px 2px 5px var(--sh-dark),inset -2px -2px 5px var(--sh-light)" onchange="renameField(${i},this.value)">
+          ${!isSel&&(f.units||[]).length>1?`<button class="unit-sort-btn${modal._sortUnit===i?' on':''}" onclick="toggleUnitSort(${i})">${modal._sortUnit===i?t('unit_sort_done'):t('unit_sort')}</button>`:''}
           <button style="background:none;border:none;color:var(--c-icon-idle);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="removeField(${i})">\u2715</button>
         </div>
         ${subHtml}
@@ -3631,7 +3669,7 @@ function addOptionInModal(fi){
     renderModal();
   }
 }
-function removeField(i){modal.fields.splice(i,1);renderModal()}
+function removeField(i){modal.fields.splice(i,1);modal._sortUnit=null;renderModal()}
 function addUnitInModal(fi){
   const inp=document.getElementById('modal-new-unit-'+fi);
   if(!inp)return;
@@ -3645,7 +3683,26 @@ function addUnitInModal(fi){
   }
 }
 function removeUnit(fi,ui){if(modal&&modal.fields[fi]&&modal.fields[fi].units)modal.fields[fi].units.splice(ui,1);renderModal()}
-function renameUnit(fi,ui,val){if(modal&&modal.fields[fi]&&modal.fields[fi].units&&val.trim())modal.fields[fi].units[ui]=val.trim()}
+/* 改单位名字。记录里存的是 {unit:'名字',val}，只改设置不改记录的话，旧记录就跟单位断线
+   （编辑时那格变空、图表对不上）。所以这里只记下「原名 → 新名」，按保存时 saveProject 再一次性改记录，
+   按取消就什么都不动。连改两次（A→B→C）记成 A→C；改成同字段里已有的名字会撞车，不收。 */
+function renameUnit(fi,ui,val){
+  const f=modal&&modal.fields[fi];const v=String(val||'').trim();
+  if(!f||!f.units||!v)return;
+  const old=f.units[ui];if(old===v)return;
+  if(f.units.some((u,j)=>j!==ui&&u===v))return;
+  f.units[ui]=v;
+  if(!f.id)return;
+  const ren=(modal._unitRen=modal._unitRen||{})[f.id]=(modal._unitRen[f.id]||{});
+  const orig=Object.keys(ren).find(k=>ren[k]===old);
+  ren[orig!==undefined?orig:old]=v;
+}
+function toggleUnitSort(fi){if(!modal)return;modal._sortUnit=modal._sortUnit===fi?null:fi;modal._editKey=null;renderModal()}
+function moveUnit(fi,ui,d){
+  const u=modal&&modal.fields[fi]&&modal.fields[fi].units;const j=ui+d;
+  if(!u||j<0||j>=u.length)return;
+  [u[ui],u[j]]=[u[j],u[ui]];renderModal();
+}
 function _bgClose(){
   if(!modal)return;
   if(!modal.name.trim()){
@@ -3665,7 +3722,16 @@ function saveProject(){
   if(!modal||!modal.name.trim())return;
   const status=modal.status||'active';
   if(modal.mode==='add')projects.push({id:'p'+Date.now(),updatedAt:Date.now(),name:modal.name,color:modal.color,status,fields:modal.fields});
-  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;p.updatedAt=Date.now();}}
+  else{const p=projects.find(x=>x.id===modal.pid);if(p){p.name=modal.name;p.color=modal.color;p.status=status;p.fields=modal.fields;p.updatedAt=Date.now();}
+    // 单位改过名 → 把这个项目的旧记录一起改过去，并更新记号，不然改动同步不出去
+    const ren=modal._unitRen||{};const now=Date.now();
+    if(Object.keys(ren).length)Object.values(entries).forEach(arr=>arr.forEach(e=>{
+      if(e.projId!==modal.pid||!e.fields)return;let hit=false;
+      Object.keys(ren).forEach(fid=>{const v=e.fields[fid];if(!Array.isArray(v))return;
+        v.forEach(o=>{if(o&&Object.prototype.hasOwnProperty.call(ren[fid],o.unit)){o.unit=ren[fid][o.unit];hit=true;}});});
+      if(hit)e.updatedAt=now;
+    }));
+  }
   modal=null;renderModal();saveData();renderAll();
 }
 function openEditProject(id){const p=proj(id);modal={mode:'edit',pid:id,name:p.name,color:p.color,status:p.status||'active',fields:p.fields.map(f=>({...f,unit:f.unit||'',units:[...(f.units||[])],options:[...(f.options||[])]})),nf:'',nft:'select'};renderModal()}
@@ -4617,7 +4683,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=32;
+const APP_BUILD=33;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
