@@ -1046,7 +1046,10 @@ const I18N={
     bk_choose:'选择要备份的项目',bk_sel_all:'全选',bk_sel_none:'全不选',bk_sel_cnt:'已选',
     bk_content:'备份内容',bk_view_data:'查看数据',bk_arch_n:'个已归档',
     bk_data:'备份数据',bk_copy_this:'复制这段数据',
-    bk_renamed:'个同名项目已自动重命名',bk_imported:'导入',
+    bk_renamed:'个同名项目已自动重命名',
+    bk_rs_title:'文件里有你删过的东西',bk_rs_body:'这个账号以前删过其中 {p} 个项目、{e} 条记录。要一起恢复吗？',
+    bk_rs_note:'恢复 = 放回来，并同步到你的其他设备。跳过 = 这些照旧当作删掉，其他内容正常导入。',bk_rs_restore:'恢复',bk_rs_skip:'跳过这些',
+    bk_result:'实际：新增 {a} 条 · 更新 {u} 条 · 本来就一样 {s} 条',bk_res_proj:'新项目 {n} 个',bk_res_rev:'恢复 {n} 项',bk_res_skip:'跳过 {n} 项（删过的）',bk_res_dup:'合并重复 {n} 条',bk_imported:'导入',
     bk_arch_note:'已归档项目不显示在侧边栏，但仍会被备份',
     bk_none_sel:'请至少选择一个项目',
     bk_warn_btn:'两边同时记录会怎样？',
@@ -1101,7 +1104,7 @@ const I18N={
     agg_sum:'合计',agg_avg:'平均',agg_last:'最新',agg_none:'不显示',
     agg_title:'周报告怎么汇总',
     mo_hello:'{y}年{m}月，你好！',mo_title:'{y}年{m}月',mo_topright:'{n} 条 · {d} 天有记录',mo_prev:'上个月',mo_next:'下个月',mo_today:'回到本月',
-    mo_less:'少',mo_more:'多',mo_streak:'最长连续 {n} 天 · {r}',mo_pick_hint:'点月历上有记录的日子，这里会列出那天做了什么。',mo_n_entries:'{n} 条',mo_jump:'回到这天',
+    mo_less:'少',mo_more:'多',mo_streak:'最长连续 {n} 天 · {r}',mo_pick_hint:'点月历上有记录的日子，这里会列出那天做了什么。',mo_n_entry:'{n} 条',mo_n_entries:'{n} 条',mo_jump:'回到这天',
     mo_cmp:'跟上个月比',mo_cmp_first:'这是最早有记录的月份，没有上个月可以比。',mo_c_total:'记录数',mo_c_days:'有记录的天数',mo_c_streak:'最长连续',mo_c_avg:'每个活跃天平均',mo_c_proj:'项目数',mo_c_change:'变化',
     mo_hl:'本月亮点',mo_hl_day:'最活跃的一天',mo_hl_proj:'最常回来的项目',mo_hl_debut:'首次登场',mo_hl_streak:'最长连续',mo_days:'{n} 天',mo_empty:'这个月还没有记录。',agg_hidden_toast:'已隐藏 {name}',wr_hidden_n:'{n} 个已隐藏',wr_hide_hidden:'收起已隐藏',
     export_status:'状态',export_total:'总记录',export_detail:'详细记录',
@@ -1203,7 +1206,10 @@ const I18N={
     bk_choose:'Choose projects to back up',bk_sel_all:'All',bk_sel_none:'None',bk_sel_cnt:'selected',
     bk_content:'Backup contents',bk_view_data:'View data',bk_arch_n:'archived',
     bk_data:'Backup data',bk_copy_this:'Copy this data',
-    bk_renamed:'projects renamed to avoid a name clash',bk_imported:'imported',
+    bk_renamed:'projects renamed to avoid a name clash',
+    bk_rs_title:'Some of this was deleted before',bk_rs_body:'This account deleted {p} project(s) and {e} entries in this file. Restore them too?',
+    bk_rs_note:'Restore = bring them back and sync to your other devices. Skip = keep them deleted; everything else imports normally.',bk_rs_restore:'Restore',bk_rs_skip:'Skip these',
+    bk_result:'Actually: {a} added · {u} updated · {s} already the same',bk_res_proj:'{n} new project(s)',bk_res_rev:'{n} restored',bk_res_skip:'{n} skipped (deleted before)',bk_res_dup:'{n} duplicates merged',bk_imported:'imported',
     bk_arch_note:'Archived projects are hidden from the sidebar but still backed up',
     bk_none_sel:'Select at least one project',
     bk_warn_btn:'What happens if I record on both devices?',
@@ -1258,7 +1264,7 @@ const I18N={
     agg_sum:'Sum',agg_avg:'Average',agg_last:'Latest',agg_none:'Hidden',
     agg_title:'Weekly summary',
     mo_hello:'Hello, {m} {y}!',mo_title:'{m} {y}',mo_topright:'{n} entries · {d} active days',mo_prev:'Previous month',mo_next:'Next month',mo_today:'This month',
-    mo_less:'Less',mo_more:'More',mo_streak:'Longest streak {n} days · {r}',mo_pick_hint:'Tap a day with entries to see what you did that day.',mo_n_entries:'{n} entries',mo_jump:'Go to this day',
+    mo_less:'Less',mo_more:'More',mo_streak:'Longest streak {n} days · {r}',mo_pick_hint:'Tap a day with entries to see what you did that day.',mo_n_entry:'{n} entry',mo_n_entries:'{n} entries',mo_jump:'Go to this day',
     mo_cmp:'Compared with last month',mo_cmp_first:'This is your first month with entries, so there is nothing to compare yet.',mo_c_total:'Entries',mo_c_days:'Active days',mo_c_streak:'Longest streak',mo_c_avg:'Per active day',mo_c_proj:'Projects',mo_c_change:'Change',
     mo_hl:'Highlights this month',mo_hl_day:'Most active day',mo_hl_proj:'Kept coming back to',mo_hl_debut:'New this month',mo_hl_streak:'Longest streak',mo_days:'{n} days',mo_empty:'No entries this month yet.',agg_hidden_toast:'Hidden: {name}',wr_hidden_n:'{n} hidden',wr_hide_hidden:'Hide these again',
     export_status:'Status',export_total:'Total entries',export_detail:'Detailed Records',
@@ -1350,11 +1356,100 @@ function gcTombs(){
 }
 // 合并收尾：把名单上的东西从现有数据里清掉
 // （对方删过、我这边还留着的，在这一步清理）
-function purgeTombed(){
+/* ── 最后一个动作算数（第247次）──────────────────────────
+   删除名单里记的是「什么时候删的」，记录 / 项目身上记的是「最后什么时候改的」（updatedAt）。
+     删除时间 ≥ 修改时间 → 删掉的赢
+     修改比删除晚（别台设备删了之后我又改过，或手动导入时选了「恢复」）→ 留下，删除名单那一笔作废
+   刻意偏向「留下」：删掉的东西回来了看得见、再删一次就好；数据安静地消失才是不能接受的。
+   ⚠️ 代价：某台设备时钟调快了，它改过的东西会赢过别台较晚的删除。
+   ─────────────────────────────────────────────────────── */
+function tombWins(kind,id,upd){
+  const t=tombs[kind][String(id)];
+  return t!==undefined&&t>=(upd||0);
+}
+// 合并收尾：删除名单赢的清掉；东西赢的，删除名单那一笔作废（算「恢复」）。
+// 做完之后保证：名单上有的 id，数据里一定没有；数据里有的 id，名单上一定没有。
+function purgeTombed(rep){
   Object.keys(entries).forEach(k=>{
-    if(Array.isArray(entries[k]))entries[k]=entries[k].filter(e=>!isTombedEntry(e.id));
+    if(!Array.isArray(entries[k]))return;
+    entries[k]=entries[k].filter(e=>{
+      if(!e||e.id==null)return true;
+      const id=String(e.id);
+      if(!Object.prototype.hasOwnProperty.call(tombs.e,id))return true;
+      if(tombWins('e',id,e.updatedAt))return false;
+      delete tombs.e[id];if(rep)rep.revived++;return true;
+    });
   });
-  projects=projects.filter(p=>!isTombedProj(p.id));
+  projects=projects.filter(p=>{
+    const id=String(p.id);
+    if(!Object.prototype.hasOwnProperty.call(tombs.p,id))return true;
+    if(tombWins('p',id,p.updatedAt))return false;
+    delete tombs.p[id];if(rep)rep.revived++;return true;
+  });
+}
+
+/* ── 日期标签补零 + 同一个编号只留一份（第247次）─────────────
+   旧版存成 2026-6-4 的，dk()（补零）找不到 → 画面上隐形、也不被统计。
+   同一个编号在两个日期标签底下各一份 → 留修改时间较新的那份。
+   不改传进来的物件；回传整理好的新表和合并掉的重复数。 */
+function normKey(k){
+  const m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(k);
+  return m?m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'):k;
+}
+function normEntries(src){
+  const out={},where=new Map();let dup=0;
+  Object.keys(src||{}).sort().forEach(k=>{
+    const arr=src[k];if(!Array.isArray(arr))return;
+    const nk=normKey(k);if(!out[nk])out[nk]=[];
+    arr.forEach(e=>{
+      if(!e||e.id==null){           // 没有编号的（理论上不会有）：原样留着，完全一样的才不重复放
+        const j=JSON.stringify(e);if(!out[nk].some(x=>JSON.stringify(x)===j))out[nk].push(e);else dup++;
+        return;
+      }
+      const id=String(e.id),hit=where.get(id);
+      if(hit){
+        dup++;
+        if((e.updatedAt||0)>(hit.e.updatedAt||0)){
+          out[hit.k]=out[hit.k].filter(x=>x!==hit.e);
+          out[nk].push(e);where.set(id,{k:nk,e});
+        }
+        return;
+      }
+      out[nk].push(e);where.set(id,{k:nk,e});
+    });
+  });
+  return {entries:out,dup};
+}
+
+/* ── 手动导入：文件里「这个账号删过」的东西（照规则会被挡掉）──
+   项目被挡、记录本身没被删的，也算进这个项目底下 —— 不然记录进来了项目没进来，
+   会变成挂在「?」底下的孤儿（2026-09-27 测试账号就是这样）。 */
+function importBlocked(inc){
+  const P=(inc.projects||[]).filter(p=>tombWins('p',p.id,p.updatedAt));
+  const pIds=new Set(P.map(p=>String(p.id)));
+  const E=[];let underP=0;
+  Object.values(inc.entries||{}).forEach(a=>{if(Array.isArray(a))a.forEach(e=>{
+    if(!e||e.id==null)return;
+    if(tombWins('e',e.id,e.updatedAt))E.push(e);
+    else if(pIds.has(String(e.projId)))underP++;
+  });});
+  return {P,E,underP};
+}
+/* 用户选了之后改文件内容（改的是副本）：
+   恢复 = 盖上「现在」的修改时间（一定比删除晚 → 合并时留下、名单作废）
+   跳过 = 从文件里拿掉，连同被挡项目底下的记录（不留孤儿） */
+function importDecide(inc,restore){
+  const b=importBlocked(inc);
+  if(!b.P.length&&!b.E.length)return inc;
+  const now=Date.now();
+  // 取「现在」和「删除时间 + 1」较晚的：就算那笔删除是时钟调快的设备写的（记在未来），恢复也一定赢
+  if(restore){b.P.forEach(p=>{p.updatedAt=Math.max(now,(tombs.p[String(p.id)]||0)+1);});b.E.forEach(e=>{e.updatedAt=Math.max(now,(tombs.e[String(e.id)]||0)+1);});return inc;}
+  const pIds=new Set(b.P.map(p=>String(p.id))),eIds=new Set(b.E.map(e=>String(e.id)));
+  inc.projects=(inc.projects||[]).filter(p=>!pIds.has(String(p.id)));
+  Object.keys(inc.entries||{}).forEach(k=>{
+    if(Array.isArray(inc.entries[k]))inc.entries[k]=inc.entries[k].filter(e=>!(e&&e.id!=null&&(eIds.has(String(e.id))||pIds.has(String(e.projId)))));
+  });
+  return inc;
 }
 
 /* ── 合并引擎（唯一一份）────────────────────────────────────
@@ -1364,7 +1459,8 @@ function purgeTombed(){
    三条规则：
      1. 对方有、我没有  → 收下（同名不同 id 的自动重命名，方案 A）
      2. 两边都有        → 比新旧记号，新的赢
-     3. 我删过的        → 永远不收（防止记录复活）
+     3. 删过的          → 比删除时间和修改时间，较晚的那个动作算数（第247次，原本是「永远不收」）
+     记录一律按编号对、不分日期标签，同一条永远只有一份（第247次）
    传入的 inc 必须先过 backfillStamps()。返回被重命名的项目数。
    ───────────────────────────────────────────────────────── */
 /* 换账号保护：决定本机数据是跟云端「合并」还是被云端「覆盖」。
@@ -1374,54 +1470,78 @@ function purgeTombed(){
    不同人       → replace（上一个账号的残留绝不能并进这个账号）*/
 function syncMode(owner,uid){return(!owner||owner===uid)?'merge':'replace';}
 
+/* 最近一次合并的实际结果（手动导入完照实显示；云端同步用不到） */
+let mergeReport=null;
 function mergeIncoming(inc){
+  const rep={eAdd:0,eUpd:0,eSame:0,pAdd:0,pUpd:0,revived:0,skipped:0,dups:0,renamed:0};
+  mergeReport=rep;
+  // 1. 删除名单：两边都记着同一笔，留较晚的删除时间
   const incT=inc.tombs||{e:{},p:{}};
-  // 先收下对方的删除名单 —— 对方删过的，我这边也该删
-  Object.keys(incT.p||{}).forEach(id=>{if(!tombs.p[id])tombs.p[id]=incT.p[id];});
-  Object.keys(incT.e||{}).forEach(id=>{if(!tombs.e[id])tombs.e[id]=incT.e[id];});
+  ['e','p'].forEach(k=>Object.keys(incT[k]||{}).forEach(id=>{
+    const v=incT[k][id];if(!(tombs[k][id]>=v))tombs[k][id]=v;
+  }));
 
-  let renamed=0;
-  const byId=new Map(projects.map(p=>[p.id,p]));
+  // 2. 项目（按 id 对）
+  const byId=new Map(projects.map(p=>[String(p.id),p]));
   (inc.projects||[]).forEach(p=>{
-    if(isTombedProj(p.id))return;                                     // 规则 3
-    const mine=byId.get(p.id);
-    if(mine){                                                         // 规则 2
-      if((p.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,p);
+    const id=String(p.id);
+    if(tombWins('p',id,p.updatedAt)){rep.skipped++;return;}          // 删得比它改得晚 → 不收
+    const mine=byId.get(id);
+    if(mine){                                                         // 两边都有 → 新的赢
+      if((p.updatedAt||0)>(mine.updatedAt||0)){Object.assign(mine,p);rep.pUpd++;}
       return;
     }
-    const cp={...p};                                                  // 规则 1
+    const cp={...p};                                                  // 对方有、我没有 → 收下
     if(projects.some(x=>x.name===cp.name)){
       let base=cp.name+' ('+t('bk_imported')+')', name=base, n=2;
       while(projects.some(x=>x.name===name)){name=base+' '+n;n++;}
-      cp.name=name;renamed++;
+      cp.name=name;rep.renamed++;
     }
-    projects.push(cp);byId.set(cp.id,cp);
+    projects.push(cp);byId.set(id,cp);rep.pAdd++;
   });
 
-  Object.entries(inc.entries||{}).forEach(([dkey,arr])=>{
-    if(!Array.isArray(arr))return;
-    if(!entries[dkey])entries[dkey]=[];
-    const mineById=new Map(entries[dkey].map(e=>[e.id,e]));
-    arr.forEach(e=>{
-      if(isTombedEntry(e.id))return;                                  // 规则 3
-      const mine=mineById.get(e.id);
-      if(mine){if((e.updatedAt||0)>(mine.updatedAt||0))Object.assign(mine,e);}  // 规则 2
-      else{entries[dkey].push(e);mineById.set(e.id,e);}                         // 规则 1
-    });
-  });
+  // 3. 记录：两边先整理（日期补零、同编号只留一份），再按「编号」对 —— 不分日期标签，
+  //    所以同一条永远只会有一份；较新的那份如果换了日期，就整条搬过去，不留两份
+  const loc=normEntries(entries);entries=loc.entries;rep.dups+=loc.dup;
+  const got=normEntries(inc.entries);rep.dups+=got.dup;
+  const where=new Map();
+  Object.keys(entries).forEach(k=>entries[k].forEach(e=>{if(e&&e.id!=null)where.set(String(e.id),k);}));
+  Object.keys(got.entries).forEach(k=>got.entries[k].forEach(e=>{
+    if(!e||e.id==null){                                              // 没编号的：完全一样的才算已经有
+      const j=JSON.stringify(e);if(!(entries[k]||[]).some(x=>JSON.stringify(x)===j)){(entries[k]=entries[k]||[]).push(e);rep.eAdd++;}
+      return;
+    }
+    const id=String(e.id);
+    if(tombWins('e',id,e.updatedAt)){rep.skipped++;return;}
+    const k0=where.get(id);
+    if(k0!==undefined){
+      const i0=entries[k0].findIndex(x=>x&&String(x.id)===id),mine=entries[k0][i0];
+      if((e.updatedAt||0)>(mine.updatedAt||0)){
+        if(k0===k)Object.assign(mine,e);
+        else{entries[k0].splice(i0,1);(entries[k]=entries[k]||[]).push(e);where.set(id,k);}
+        rep.eUpd++;
+      } else rep.eSame++;
+      return;
+    }
+    (entries[k]=entries[k]||[]).push(e);where.set(id,k);rep.eAdd++;
+  }));
 
-  purgeTombed();       // 对方删过、我这边还留着的，清掉
+  purgeTombed(rep);    // 删除名单赢的清掉；东西赢的，名单作废
   (inc.palette||[]).forEach(c=>{if(!cpMyPalette.includes(c))cpMyPalette.push(c)});
   recalcTotalCoins();  // 猫币是派生值，合并完重算，不参与冲突
-  return renamed;
+  return rep.renamed;
 }
 
 // 老数据没有 updatedAt，用它自己的 id 回填。
 // id 本身就是创建时的毫秒数，各设备算出来一致，不会互相打架。
 function stampOf(id){
-  if(typeof id==='number')return id;
-  const m=String(id).match(/(\d{10,})/);
-  return m?parseInt(m[1],10):0;
+  let n;
+  if(typeof id==='number')n=id;
+  else{const m=String(id).match(/(\d{10,})/);n=m?parseInt(m[1],10):0;}
+  // 新格式编号 = 毫秒 ×1000 + 随机三位。直接当时间会是几万年后，
+  // 在「最后一个动作算数」之下会永远赢过任何删除 —— 删掉的全部复活（第247次）
+  if(n>1e14)n=Math.floor(n/1000);
+  return n;
 }
 function backfillStamps(d){
   (d.projects||[]).forEach(p=>{if(!p.updatedAt)p.updatedAt=stampOf(p.id);});
@@ -1455,6 +1575,15 @@ function saveData(){
 }
 
 let {projects,entries,totalCoins}=backfillStamps(loadData());
+/* 日期标签补零 + 同编号只留一份，每次载入都跑（幂等）。
+   取代原本的 migrateKeys：它在记录读进记忆体「之后」才改储存，同一次打开里一存档就把旧格式写回去，
+   而「搬过了」的记号已经留下、之后再也不跑 —— 6/4「create journal」就是这样隐形的（第247次）。 */
+{const n=normEntries(entries);
+ if(JSON.stringify(n.entries)!==JSON.stringify(entries)){
+   entries=n.entries;
+   try{localStorage.setItem('cj_entries',JSON.stringify(entries));}catch(e){}
+   console.info('[load] 日期标签整理完成'+(n.dup?'，合并了 '+n.dup+' 条重复':''));
+ }}
 gcTombs();
 
 // Load saved palette from localStorage
@@ -4037,13 +4166,14 @@ function undoDelete(){
   const{p,idx,action,affectedEntries}=_deletedProj;
   if(action==='archive'){
     const found=projects.find(x=>x.id===p.id);
-    if(found)found.status='active';
+    if(found){found.status='active';found.updatedAt=Date.now();}
   } else {
-    projects.splice(idx,0,p);
+    const now=Date.now();
+    p.updatedAt=now;projects.splice(idx,0,p);
     untombProj(p.id);
     Object.entries(affectedEntries||{}).forEach(([dk2,arr])=>{
       if(!entries[dk2])entries[dk2]=[];
-      arr.forEach(e=>{untombEntry(e.id);if(!entries[dk2].find(x=>x.id===e.id))entries[dk2].push(e);});
+      arr.forEach(e=>{e.updatedAt=now;untombEntry(e.id);if(!entries[dk2].find(x=>x.id===e.id))entries[dk2].push(e);});
     });
   }
   saveData();renderAll();_deletedProj=null;
@@ -4137,7 +4267,7 @@ function wrProjLog(area,sortedProjs,projStats,scope){
       let head='<div class="wr-proj-top"><div class="wr-proj-dot" style="background:'+p.color+'"></div>'
         +'<div class="wr-proj-name">'+p.name+(isArchived?'<span class="wr-proj-archived-badge">ARCHIVED</span>':'')+'</div>'+chev+'</div>'
         +'<div class="wr-proj-bar-row"><div class="wr-proj-bar-bg"><div class="wr-proj-bar-fill" style="width:'+Math.round(ps.count/maxCount*100)+'%;background:'+p.color+'"></div></div>'
-        +'<div class="wr-proj-count">'+(lang==='zh'?ps.count+'条记录':ps.count+' records')+'</div></div>';
+        +'<div class="wr-proj-count">'+(lang==='zh'?ps.count+'条记录':ps.count+(ps.count===1?' record':' records'))+'</div></div>';
       if(!open){
         let sum='';
         selRows.forEach(r=>{
@@ -4288,7 +4418,7 @@ function renderMonth(){
   const WDL=lang==='zh'?['星期日','星期一','星期二','星期三','星期四','星期五','星期六']:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const monthName=(y,m)=>lang==='zh'?(m+1)+'月':MN[m].slice(0,3);
   const dayLabel=d=>WDL[new Date(Y,M,d).getDay()]+' · '+dd(d)+'/'+dd(M+1);
-  const nEnt=n=>t('mo_n_entries').replace('{n}',n);
+  const nEnt=n=>t(n===1?'mo_n_entry':'mo_n_entries').replace('{n}',n);
   const delta=(a,b)=>{const x=Math.round((a-b)*10)/10;return x>0?'<span class="mo-d up">▲'+x+'</span>':x<0?'<span class="mo-d dn">▼'+(-x)+'</span>':'<span class="mo-d eq">—</span>';};
 
   // ① 月历
@@ -4709,20 +4839,6 @@ function updateThemeBtn(){
   const btn=document.getElementById('stats-btn');if(btn)btn.title=txt;
 }
 function applyTheme(){document.documentElement.setAttribute('data-theme',theme);updateThemeBtn();applyChartTheme();if(window.charts)Object.values(window.charts).forEach(c=>{if(c&&c.update)c.update();});}
-(function migrateKeys(){
-  const raw=localStorage.getItem('cj_entries');
-  if(!raw||localStorage.getItem('cj_keymig')==='2')return;
-  try{
-    const data=JSON.parse(raw),fixed={};
-    Object.entries(data).forEach(([k,v])=>{
-      const p=k.split('-');
-      if(p.length===3){const nk=p[0]+'-'+(p[1].length<2?'0':'')+p[1]+'-'+(p[2].length<2?'0':'')+p[2];fixed[nk]=(fixed[nk]||[]).concat(v);}
-      else fixed[k]=(fixed[k]||[]).concat(v);
-    });
-    localStorage.setItem('cj_entries',JSON.stringify(fixed));
-    localStorage.setItem('cj_keymig','2');
-  }catch(e){}
-})();
 function toggleTheme(){theme=theme==='light'?'dark':'light';localStorage.setItem('cj_theme',theme);applyTheme();}
 applyTheme();
 // ════════════════════════════════════════════════════════
@@ -4956,8 +5072,43 @@ function bkCheck(txt){
   renderBackupModal();
   if(!ok){const msg=document.getElementById('bk-msg');if(msg){msg.textContent=t('bk_bad');msg.style.display='block';}}
 }
-function bkRun(){
+/* 导入完照实说：文件里几条是一回事，真的进来几条是另一回事（第247次）。
+   以前只显示文件里的数量，东西被删除名单挡掉了也照样说「导入完成」。 */
+function bkReportLine(){
+  const r=mergeReport;if(!r)return '';
+  let x=t('bk_result').replace('{a}',r.eAdd).replace('{u}',r.eUpd).replace('{s}',r.eSame);
+  if(r.pAdd)x+=' · '+t('bk_res_proj').replace('{n}',r.pAdd);
+  if(r.revived)x+=' · '+t('bk_res_rev').replace('{n}',r.revived);
+  if(r.skipped)x+=' · '+t('bk_res_skip').replace('{n}',r.skipped);
+  if(r.dups)x+=' · '+t('bk_res_dup').replace('{n}',r.dups);
+  return '<div style="font-size:11px;color:var(--dark);font-weight:700;line-height:1.6;margin-bottom:6px">'+x+'</div>';
+}
+/* 文件里有这个账号删过的东西 → 先问：恢复，还是跳过 */
+function bkAskRestore(b){
+  const mc=document.getElementById('modal-container');
+  const names=b.P.map(p=>'「'+p.name+'」').join('、');
+  mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)bkClose()">
+  <div class="modal" style="width:300px">
+    <div class="modal-title" style="color:var(--purple)">${t('bk_rs_title')}</div>
+    <div style="font-size:12px;color:var(--dark);font-weight:600;line-height:1.6;margin:6px 0">${t('bk_rs_body').replace('{p}',b.P.length).replace('{e}',b.E.length+b.underP)}</div>
+    ${names?`<div style="font-size:12px;color:var(--purple);font-weight:700;line-height:1.6;margin-bottom:6px">${names}</div>`:''}
+    <div style="font-size:11px;color:var(--mid);line-height:1.6;margin-bottom:12px">${t('bk_rs_note')}</div>
+    <div class="modal-btns"><button class="m-cancel" onclick="bkRun(false)">${t('bk_rs_skip')}</button><button class="m-save" onclick="bkRun(true)">${t('bk_rs_restore')}</button></div>
+  </div></div>`;
+}
+/* 手动导入。decision：undefined = 还没问过；true = 恢复删过的；false = 跳过删过的（第247次） */
+function bkRun(decision){
   if(!bkParsed)return;
+  const src=bkParsed;   // 先抓住原始文件：中途 bkClose() 会把 bkParsed 清掉
+  // 在副本上动手：老备份没有新旧记号先回填；「恢复」「跳过」都是改副本，不改使用者选的原文件
+  let inc=backfillStamps(JSON.parse(JSON.stringify(bkParsed)));
+  let skipN=0;   // 选了「跳过」的项数 —— 它们在合并前就被拿掉了，报告要另外算进去
+  if(bkMode!=='replace'){
+    const b=importBlocked(inc);
+    if((b.P.length||b.E.length)&&decision===undefined){bkAskRestore(b);return;}
+    if(decision===false)skipN=b.P.length+b.E.length+b.underP;
+    if(decision!==undefined)inc=importDecide(inc,decision);
+  }
   // 1. 导入前自动备份当前数据（全量，不受项目勾选影响）
   try{localStorage.setItem('cj_backup_'+Date.now(),JSON.stringify({
     app:'catVweb-journal',version:1,exportedAt:new Date().toISOString(),
@@ -4965,25 +5116,26 @@ function bkRun(){
       totalCoins:parseInt(localStorage.getItem('catTokens')||'0',10),
       palette:JSON.parse(localStorage.getItem('cj_mypalette')||'[]')}
   }));}catch(e){}
-  const inc=backfillStamps(bkParsed);   // 老备份没有新旧记号，先回填
   if(bkMode==='replace'){
-    projects=inc.projects;entries=inc.entries;totalCoins=inc.totalCoins;
+    projects=inc.projects;entries=normEntries(inc.entries).entries;totalCoins=inc.totalCoins;mergeReport=null;
     cpMyPalette=inc.palette;
     tombs=inc.tombs||{e:{},p:{}};
   } else {
     bkRenamed=mergeIncoming(inc);
+    if(mergeReport)mergeReport.skipped+=skipN;
   }
   localStorage.setItem('cj_mypalette',JSON.stringify(cpMyPalette));
   saveData();
   bkClose();
   view='journal';showForm=false;renderAll();
   const mc=document.getElementById('modal-container');
-  const s=bkStats(inc);
+  const s=bkStats(src);   // 上面这行数「原始文件」；实际进来多少看下面那行
   mc.innerHTML=`<div class="modal-bg" onmousedown="if(event.target===this)bkClose()">
   <div class="modal" style="width:280px">
     <div class="modal-title" style="color:var(--purple)">${t('bk_ok')}</div>
     <div style="font-size:12px;color:var(--mid);line-height:1.6;margin:6px 0 4px">${s.projs} ${t('bk_projs')} · ${s.entries} ${t('bk_entries')} · ${s.days} ${t('bk_days')}</div>
     ${bkRenamed?`<div style="font-size:11px;color:var(--c-past-hint);line-height:1.5;margin-bottom:4px">${bkRenamed} ${t('bk_renamed')}</div>`:''}
+    ${bkReportLine()}
     <div class="modal-btns"><button class="m-save" onclick="bkClose()">${t('bk_close')}</button></div>
   </div></div>`;
 }
@@ -5001,7 +5153,7 @@ function bkRun(){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=37;
+const APP_BUILD=38;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';
@@ -5054,10 +5206,11 @@ function cntProjects(o){return(o&&Array.isArray(o.projects))?o.projects.length:0
 function wouldLoseDetail(remote,local){
   const out={e:0,p:0};
   if(!remote)return out;
-  Object.entries(remote.entries||{}).forEach(([k,arr])=>{
+  const mine=new Set();
+  Object.values(((local||{}).entries)||{}).forEach(a=>{if(Array.isArray(a))a.forEach(e=>{if(e)mine.add(String(e.id));});});
+  Object.values(remote.entries||{}).forEach(arr=>{
     if(!Array.isArray(arr))return;
-    const mine=new Set((((local||{}).entries||{})[k]||[]).map(e=>String(e.id)));
-    arr.forEach(e=>{if(!mine.has(String(e.id))&&!isTombedEntry(e.id))out.e++;});
+    arr.forEach(e=>{if(e&&!mine.has(String(e.id))&&!isTombedEntry(e.id))out.e++;});
   });
   const mineP=new Set((((local||{}).projects)||[]).map(p=>String(p.id)));
   (remote.projects||[]).forEach(p=>{
@@ -5162,7 +5315,7 @@ async function cloudSync(){
         }
       }
       projects   = remote?(remote.projects||[]) : [];
-      entries    = remote?(remote.entries||{})  : {};
+      entries    = remote?normEntries(remote.entries||{}).entries : {};
       cpMyPalette= remote?(remote.palette||[])  : [];
       tombs      = remote?(remote.tombs||{e:{},p:{}}) : {e:{},p:{}};
       recalcTotalCoins();
