@@ -163,6 +163,12 @@ body { background:var(--lavender); min-height:100vh; font-family:'Nunito',sans-s
 /* 本周标题行：文字和日期同一行 */
 .week-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
 .week-header-row .sb-label { margin-bottom:0; }
+/* 翻到别周时，「本周」换成「回到今天」（第248次）。原本翻到哪周都写「本周」，标错了。
+   样子跟标题「项目日记」一样：字色跟主题、字形微凸，hover 变蓝，按下阴影收回。阴影用图标三态变量 */
+.sb-back { background:none; border:none; padding:0; cursor:pointer; font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--dark); filter:var(--icon-shadow); transition:filter .15s, color .15s; }
+.sb-back:hover { color:var(--purple); filter:var(--icon-shadow-hover); }
+.sb-back:active { filter:var(--icon-shadow-active); }
+.week-header-row.away .sb-label, .week-header-row:not(.away) .sb-back { display:none; }
 .week-header-row .week-range { font-size:11px; font-weight:600; color:var(--mid); }
 /* day-item — 凹陷容器内，hover 轻凸起，active 凹陷，selected 凹陷 */
 .day-item { display:flex; align-items:center; gap:7px; padding:5px 7px; border-radius:10px; cursor:pointer; margin-bottom:2px; transition:box-shadow .15s; }
@@ -372,14 +378,44 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 .oc-keep { color:var(--mid); background:var(--lavender); box-shadow:3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light); }
 .oc-keep:hover { color:var(--dark); box-shadow:4px 4px 9px var(--sh-dark), -4px -4px 9px var(--sh-light); }
 .oc-keep:active { box-shadow:inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light); }
-/* 单位排序模式（第242次）：「↕ 排序」胶囊按钮 + 每行 ▲▼。三态照标准新拟态，排序中保持按下 */
-.unit-sort-btn { font-size:10px; font-weight:800; font-family:'Nunito',sans-serif; color:var(--mid); background:var(--lavender); border:none; border-radius:999px; padding:3px 10px; cursor:pointer; flex-shrink:0; white-space:nowrap; box-shadow:2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light); transition:box-shadow .15s, color .15s; }
-.unit-sort-btn:hover { color:var(--purple); box-shadow:4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light); }
-.unit-sort-btn:active, .unit-sort-btn.on { color:var(--purple); box-shadow:inset 3px 3px 6px var(--sh-dark), inset -2px -2px 5px var(--sh-light); }
+/* 药丸开关（第248次，取代「↕ 排序 / 完成」那颗）：一颗雾面胶囊切两半「编辑 | 排序」，现在的模式那半边压下去。
+   原本排序中按钮凹着、字换成「完成」，看起来像状态而不像还能按；两个模式都摆出来，点哪边去哪边。
+   雾面：渐层只在底色附近微调，不冲到纯白；描边 --sh-btn-dark 夜间比底色暗，不会一圈白。
+   按压阴影画在 ::before 影子层（两头圆的胶囊，内侧伸出分隔线 14px 被裁掉）—— 暗影沿外框圆弧走，中间不留方块亮面。
+   hover 只给有鼠标的装置：手机点完 hover 会黏着不放，按钮看起来弹不回来。 */
+.pill-sw { display:flex; align-items:stretch; flex-shrink:0; border-radius:999px; border:1px solid var(--sh-btn-dark); overflow:hidden; background-image:linear-gradient(to top, var(--line-dark) 0%, var(--lavender) 45%, var(--sh-light-soft) 100%); }
+.pill-sw button { position:relative; overflow:hidden; isolation:isolate; border:none; background:none; cursor:pointer; font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; color:var(--c-muted); padding:3px 9px; white-space:nowrap; text-shadow:0 1px var(--sh-light-soft); transition:color .2s; }
+[data-theme="dark"] .pill-sw button { text-shadow:0 -1px var(--sh-dark); }
+.pill-sw button::before { content:''; position:absolute; top:0; bottom:0; left:0; right:0; border-radius:999px; z-index:-1; pointer-events:none; transition:box-shadow .2s; }
+.pill-sw button:first-child::before { right:-14px; }
+.pill-sw button:last-child::before { left:-14px; }
+@media (hover:hover){ .pill-sw button:not(.on):hover { color:var(--purple); } .pill-sw button:not(.on):hover::before { box-shadow:inset 0 0 1.5px 1.5px var(--sh-dark); } }
+.pill-sw button.on { color:var(--purple); cursor:default; }
+.pill-sw button.on::before { box-shadow:inset 0 0 2.5px 1.5px var(--sh-btn-hover), inset 0 0 10px var(--sh-dark); }
+.pill-sw .sep { width:0; align-self:center; height:12px; border-left:1px solid var(--line-dark); border-right:1px solid var(--line-light); }
+/* 字段卡片标题行（第248次）：看「卡片自己」的宽度（container query），不是看屏幕。
+   卡片内宽 < 300px 时字段名会被药丸开关挤到不足 ~110px → 换行：✕ 留第一行，开关掉到第二行靠右。够宽就维持一行 */
+.mf-card { container-type:inline-size; }
+@container (max-width:300px){
+  .mf-head { flex-wrap:wrap; row-gap:8px; }
+  /* 字段名输入框 inline 写着 flex:1（= 可缩到 0），不给保底宽度的话浏览器觉得一行塞得下、永远不换行 */
+  .mf-head input { flex-basis:110px !important; }
+  .mf-head .mi-del-field { order:3; }
+  .mf-head .pill-sw { order:4; margin-left:auto; }
+}
 .unit-mv { background:none; border:none; cursor:pointer; padding:2px 3px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--c-icon-idle); transition:color .15s, filter .15s; }
 .unit-mv:hover { color:var(--purple); filter:var(--icon-shadow-hover); }
 .unit-mv:active { filter:var(--icon-shadow-active); }
 .unit-mv:disabled { opacity:.25; cursor:default; color:var(--c-icon-idle); filter:none; }
+/* 项目设置里的 ✎ / × 小图标。原本是 inline 的 onmouseout 把颜色设成 --sh-dark（阴影色），
+   夜间模式那是近黑色 —— 鼠标划过一次就变黑回不来。改成 CSS 伪类，离开自动回到 --c-icon-idle */
+.mi-edit, .mi-del { background:none; border:none; cursor:pointer; padding:0 2px; flex-shrink:0; color:var(--c-icon-idle); transition:color .15s; }
+.mi-edit { display:flex; align-items:center; }
+.mi-del { font-size:11px; }
+.mi-edit:hover { color:var(--purple); }
+.mi-del:hover { color:var(--pink); }
+.mi-edit:active, .mi-del:active { opacity:.6; }
+.mi-del-field { font-size:14px; padding:2px 4px; line-height:1; }
 /* 周报告数字的汇总方式（第244次）：虚线字 → 点开四颗小胶囊 */
 .ag-link { font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; color:var(--purple); background:none; border:none; cursor:pointer; padding:0; border-bottom:1px dashed currentColor; }
 .ag-link:hover { opacity:.75; }
@@ -884,7 +920,7 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 <div class="page" id="app">
   <div class="page-header">
     <div>
-      <div class="page-title" id="page-title" onclick="view='journal';showForm=false;selDate=new Date(today);renderAll()">项目日记</div>
+      <div class="page-title" id="page-title" onclick="goToday()">项目日记</div>
       <div class="page-date" id="page-date"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
@@ -906,8 +942,9 @@ body.shift-down .ec-del:hover { color:var(--danger); filter:drop-shadow(2px 2px 
 
   <div class="main-layout">
     <div class="sidebar">
-      <div class="week-header-row">
+      <div class="week-header-row" id="week-header-row">
         <span class="sb-label" id="sb-this-week">本周</span>
+        <button class="sb-back" id="sb-back-lbl" onclick="goToday()">回到今天</button>
         <span class="week-range" id="week-range"></span>
       </div>
       <div class="week-nav">
@@ -972,7 +1009,7 @@ const I18N={
     btn_new:'新记录',btn_weekly:'周报告',btn_month:'月报告',
     back_to:'回到',story_suffix:'的故事',
     stat_entries:'今日记录',stat_earned:'今日赚得',stat_balance:'余额',
-    this_week:'本周',today:'今天',custom:'自定义',
+    this_week:'本周',today:'今天',back_today:'回到今天',custom:'自定义',
     weekdays:['日','一','二','三','四','五','六'],
     tracker:'项目追踪',
     status_active:'进行中',status_done:'已完成',status_archived:'已归档',
@@ -1063,7 +1100,10 @@ const I18N={
     modal_new:'新建',modal_task:'任务',modal_name:'名称',modal_color:'颜色',
     modal_field_name:'栏位名称',modal_num:'数字',modal_sel:'选项',modal_sel_title:'文字选择项',modal_sel_desc:'建立一组选项，记录时从中勾选，如工具、状态、项目阶段',modal_num_title:'数字栏位',modal_num_desc:'记录可量化的数据，例如时间、距离、次数',
     modal_unit:'单位',modal_unit_ph:'如 min、km、次…',
-    unit_sort:'↕ 排序',unit_sort_done:'完成',unit_up:'上移',unit_down:'下移',
+    mode_edit:'编辑',mode_sort:'排序',
+    del_field_q:'删除「{name}」这一栏？',del_field_used:'已有 {n} 条记录填了它，删除后这些记录上的这一栏会看不见，图表和报告也不再统计。',del_field_unused:'还没有记录用到它。',del_field_warn:'保存后无法复原',
+    del_unused_q:'删除「{name}」？还没有记录用到它。',
+    del_unit_used:'「{name}」已被 {n} 条记录使用。删除后图表和报告不再统计它，编辑那些记录时这个值也会被清掉。',del_unit_warn:'保存后无法复原',unit_up:'上移',unit_down:'下移',
     modal_save:'保存',modal_cancel:'取消',modal_delete:'删除',modal_edit:'编辑',
     del_title:'删除「',del_archive_btn:'保留历史记录，先归档',
     del_archive_desc:'Project 和所有记录完整保留，可在「已归档」里复原',
@@ -1132,7 +1172,7 @@ const I18N={
     btn_new:'New Log',btn_weekly:'Week in Review',btn_month:'Month in Review',
     back_to:'Back to',story_suffix:"'s Story",
     stat_entries:"Today's Entries",stat_earned:"Today's Earned",stat_balance:'Balance',
-    this_week:'This Week',today:'Today',custom:'Custom',
+    this_week:'This Week',today:'Today',back_today:'Back to today',custom:'Custom',
     weekdays:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
     tracker:'Project Tracker',
     status_active:'Active',status_done:'Done',status_archived:'Archived',
@@ -1223,7 +1263,10 @@ const I18N={
     modal_new:'New',modal_task:'Task',modal_name:'Name',modal_color:'Color',
     modal_field_name:'Field name',modal_num:'Number',modal_sel:'Select',modal_sel_title:'Text Options',modal_sel_desc:'Create a set of options to pick from when logging, e.g. tools, status, project stage',modal_num_title:'Number Field',modal_num_desc:'Record quantifiable data, e.g. time, distance, count',
     modal_unit:'Unit',modal_unit_ph:'e.g. min, km, times...',
-    unit_sort:'↕ Reorder',unit_sort_done:'Done',unit_up:'Move up',unit_down:'Move down',
+    mode_edit:'Edit',mode_sort:'Reorder',
+    del_field_q:'Delete the field "{name}"?',del_field_used:'{n} record(s) have it filled in. It will no longer show on those records, charts or reports.',del_field_unused:'No records use it yet.',del_field_warn:'Cannot be undone after saving.',
+    del_unused_q:'Delete "{name}"? No records use it yet.',
+    del_unit_used:'"{name}" is used in {n} record(s). Charts and reports will stop counting it, and the value is cleared when you edit those records.',del_unit_warn:'Cannot be undone after saving.',unit_up:'Move up',unit_down:'Move down',
     modal_save:'Save',modal_cancel:'Cancel',modal_delete:'Delete',modal_edit:'Edit',
     del_title:'Delete "',del_archive_btn:'Archive — keep all records',
     del_archive_desc:'Project and all entries are preserved. Restore from the Archived tab.',
@@ -2999,6 +3042,8 @@ function renderSidebar(){
   document.getElementById('week-range').textContent=lang==='zh'
     ?(ws.getMonth()+1)+'月'+ws.getDate()+'–'+(we.getMonth()+1)+'月'+we.getDate()
     :(ws.getMonth()+1)+'/'+ws.getDate()+'–'+(we.getMonth()+1)+'/'+we.getDate();
+  const whr=document.getElementById('week-header-row');if(whr)whr.classList.toggle('away',weekOffset!==0);
+  const sbl=document.getElementById('sb-back-lbl');if(sbl)sbl.textContent=t('back_today');
   const dl=document.getElementById('day-list');dl.innerHTML='';
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(d.getDate()+i);
@@ -3077,7 +3122,10 @@ function buildCard(e,p){
     if(e.skipped&&e.skipped[f.id])return;
     const v=e.fields&&e.fields[f.id];if(!v)return;
     const cls='ec-selval-f'+(fi%4);
-    const tags=Array.isArray(v)?v.filter(Boolean):String(v).split(',').map(s=>s.trim()).filter(Boolean);
+    const raw=Array.isArray(v)?v.filter(Boolean):String(v).split(',').map(s=>s.trim()).filter(Boolean);
+    // 照项目设置里的选项顺序排（第248次）；已经不在选项里的（改过名 / 删掉的）排最后、保持原顺序。只改显示，不动记录
+    const ord=f.options||[],rank=tg=>{const k=ord.indexOf(tg);return k<0?ord.length:k;};
+    const tags=raw.map((tg,k)=>[tg,k]).sort((a,b)=>rank(a[0])-rank(b[0])||a[1]-b[1]).map(x=>x[0]);
     // 先数胶囊再画分隔线：空数组 [] 在 JS 里算有值，原来先画线后发现没东西，就叠成两条
     if(!tags.length)return;
     if(fHTML)fHTML+=`<div class="ec-vdivider"></div>`;
@@ -3214,9 +3262,22 @@ function saveEdit(id,key){
   editingId=null;editState={};resetOptUI();saveData();renderAll();
 }
 function deleteEntry(key,id,evt){
-  if(evt&&evt.shiftKey){_doDeleteEntry(key,id);return;}
+  /* Shift + 删除 = 跳过确认直接删（电脑上的快捷键） */
+  if(evt&&evt.shiftKey){deleteEntryUndoable(key,id);return;}
   confirmDeleteEntry(key,id);
 }
+/* 删一条记录，5 秒内可以撤销（提示条或 Ctrl+Z）。第248次：Shift 快捷键和确认框的「删除」都走这里 */
+function deleteEntryUndoable(key,id){
+  const arr=entries[key]||[];const idx=arr.findIndex(e=>e.id===id);if(idx<0)return;
+  const copy={...arr[idx]};
+  _doDeleteEntry(key,id);
+  showUndoToast(delToastMsg(String(copy.title||'').trim().slice(0,24)||'...'),()=>{
+    const a=entries[key]=entries[key]||[];if(a.some(e=>e.id===copy.id))return;
+    copy.updatedAt=Date.now();untombEntry(copy.id);   // 盖新记号 + 作废删除名单，别台传来的删除才不会再删一次
+    a.splice(Math.min(idx,a.length),0,copy);saveData();renderAll();
+  });
+}
+function delToastMsg(name){return t('deleted')+name+(lang==='zh'?'」':'"');}
 function _doDeleteEntry(key,id){
   entries[key]=(entries[key]||[]).filter(e=>e.id!==id);
   tombEntry(id);
@@ -3236,7 +3297,7 @@ function confirmDeleteEntry(key,id){
     </p>
     <div class="modal-btns" style="border-top:0.5px solid var(--sh-dark);padding-top:12px;margin-top:0">
       <button class="m-cancel" onclick="_closeDelConfirm()">${t('modal_cancel')}</button>
-      <button class="m-save" style="background:var(--pink)" onclick="_doDeleteEntry('${key}',${id});_closeDelConfirm()">${t('del_entry_confirm')}</button>
+      <button class="m-save" style="background:var(--pink)" onclick="_closeDelConfirm();deleteEntryUndoable('${key}',${id})">${t('del_entry_confirm')}</button>
     </div>
   </div></div>`;
 }
@@ -3338,6 +3399,7 @@ function optDoDel(){
   if(!optConfirmDel)return;
   const c=optConfirmDel,p=optProj(c.key);
   const f=p&&p.fields&&p.fields.find(function(x){return x.id===c.fid});
+  const oIdx=f?f.options.indexOf(c.val):-1;
   if(f){
     f.options=f.options.filter(function(o){return o!==c.val});
     p.updatedAt=Date.now();   // 同步记号，同上
@@ -3348,6 +3410,12 @@ function optDoDel(){
   const i=sel.indexOf(c.val);if(i>=0)sel.splice(i,1);
   optConfirmDel=null;
   saveData();renderAll();
+  /* 撤销（第248次）：选项放回原位；原本在这条记录里选着的，也一起选回来 */
+  showUndoToast(delToastMsg(c.val),function(){
+    if(f&&f.options.indexOf(c.val)<0){f.options.splice(oIdx<0?f.options.length:Math.min(oIdx,f.options.length),0,c.val);p.updatedAt=Date.now();}
+    if(i>=0){const s=optSel(c.key);if(s.indexOf(c.val)<0)s.push(c.val);}
+    saveData();renderAll();
+  });
 }
 
 function optConfirmRow(key){
@@ -3627,6 +3695,12 @@ function tryNavigateDate(newDate,cb){
   cancelForm();
   if(cb){cb();}else{selDate=new Date(newDate);selDate.setHours(0,0,0,0);view='journal';editingId=null;renderAll();}
 }
+/* 回到今天（第248次）：侧栏「回到今天」、标题「项目日记」共用。
+   weekOffset 一定要归零 —— 原本标题的 onclick 只改 selDate，侧栏还停在翻过去的那周。
+   走 tryNavigateDate：表单有没存的内容会先问，不会直接丢掉。 */
+function goToday(){
+  tryNavigateDate(today,()=>{selDate=new Date(today);weekOffset=0;view='journal';editingId=null;renderAll();});
+}
 function tryNavAway(targetView){
   if(showForm&&hasFormContent()){
     _showNavConfirm(()=>{if(targetView==='tracker')showTracker();else{view=targetView;showForm=false;renderAll();}});return;
@@ -3694,7 +3768,7 @@ function openAddProject(){modal={mode:'add',name:'',color:COLORS[0],status:'acti
 
 function renderModal(){
   const mc=document.getElementById('modal-container');
-  if(!modal){mc.innerHTML='';return;}
+  if(!modal){if(window._undoIsModal)hideUndoToast();mc.innerHTML='';return;}
   const m=modal;
   const _modalEl=mc.querySelector('.modal');
   const _scrollTop=_modalEl?_modalEl.scrollTop:0;
@@ -3766,54 +3840,57 @@ function renderModal(){
       if(isSel){
         subHtml=`<div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
             ${f.options.map((o,oi)=>{
+          // 排序模式：✎ × 换成 ▲▼，跟数字单位同一套（第248次）
+          if(modal._sortUnit===i){
+            return`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px var(--sh-dark),-3px -3px 7px var(--sh-light)">
+              <span style="width:6px;height:6px;border-radius:50%;background:${selColors[i%4]};flex-shrink:0;display:inline-block"></span>
+              <span style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:${selColors[i%4]};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o}</span>
+              <button class="unit-mv" title="${t('unit_up')}" ${oi===0?'disabled':''} onclick="shiftOption(${i},${oi},-1)"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 7L6 2L11 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="unit-mv" title="${t('unit_down')}" ${oi===f.options.length-1?'disabled':''} onclick="shiftOption(${i},${oi},1)"><svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>`;
+          }
           const isEditing=(modal._editKey===`opt-${i}-${oi}`);
           const isConfirming=(modal._confirmDel&&modal._confirmDel.fi===i&&modal._confirmDel.oi===oi);
           if(isConfirming){
             const cnt=modal._confirmDel.count;
-            const warn=lang==='zh'?`「${o}」已被 ${cnt} 条记录使用，删除后无法复原，但会完整保存在历史数据中。`:`"${o}" is used in ${cnt} record(s). Cannot be undone, but historical records will be preserved.`;
+            if(!cnt)return confirmRowHtml(t('del_unused_q').replace('{name}',`<span style="color:var(--purple);font-weight:700">${o}</span>`),'','confirmDelOption()','cancelDelOption()');
             const line1=lang==='zh'?`<span style="color:var(--purple);font-weight:700">「${o}」</span>已被 <span style="color:var(--c-past-hint);font-weight:800">${cnt}</span> 条记录使用，历史数据会完整保存。`:`<span style="color:var(--purple);font-weight:700">"${o}"</span> is used in <span style="color:var(--c-past-hint);font-weight:800">${cnt}</span> record(s). Historical data will be preserved.`;
             const line2=lang==='zh'?'删除后无法复原':'Cannot be undone.';
-            const btnDel=lang==='zh'?'删除':'Delete';
-            const btnCancel=lang==='zh'?'取消':'Cancel';
-            return`<div style="display:flex;align-items:flex-start;gap:8px;background:rgba(229,57,53,0.05);border-radius:8px;padding:6px 10px">
-              <div style="flex:1">
-                <div style="font-size:11px;color:var(--mid);margin-bottom:2px;line-height:1.4">${line1}</div>
-                <div style="font-size:11px;font-weight:800;color:var(--c-past-hint)">${line2}</div>
-              </div>
-              <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-top:2px">
-                <button class="oc-del" onclick="confirmDelOption()">${btnDel}</button>
-                <button class="oc-keep" onclick="cancelDelOption()">${btnCancel}</button>
-              </div>
-            </div>`;
+            return confirmRowHtml(line1,line2,'confirmDelOption()','cancelDelOption()');
           }
           if(isEditing){
             return`<div style="display:flex;align-items:center;gap:6px">
               <input id="mopt-${i}-${oi}" type="text" autocomplete="off" value="${o}" style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--dark);border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);outline:none;box-shadow:inset 2px 2px 5px var(--sh-dark),inset -2px -2px 5px var(--sh-light)"
-                onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){modal.fields[${i}].options[${oi}]=v;}modal._editKey=null;renderModal()}"
-                onchange="modal.fields[${i}].options[${oi}]=this.value.trim()"
-                onblur="const v=this.value.trim();if(v)modal.fields[${i}].options[${oi}]=v;modal._editKey=null;renderModal()">
-              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--c-icon-edit);display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('mopt-${i}-${oi}').value.trim();if(v)modal.fields[${i}].options[${oi}]=v;modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
-              <button style="background:none;border:none;color:var(--c-icon-idle);cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="removeOption(${i},${oi})">×</button>
+                onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){renameOption(${i},${oi},v);}modal._editKey=null;renderModal()}"
+                onchange="renameOption(${i},${oi},this.value)"
+                onblur="const v=this.value.trim();if(v)renameOption(${i},${oi},v);modal._editKey=null;renderModal()">
+              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--c-icon-edit);display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('mopt-${i}-${oi}').value.trim();if(v)renameOption(${i},${oi},v);modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button class="mi-del" onclick="removeOption(${i},${oi})">×</button>
             </div>`;
           } else {
             return`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px var(--sh-dark),-3px -3px 7px var(--sh-light)">
               <span style="width:6px;height:6px;border-radius:50%;background:${selColors[i%4]};flex-shrink:0;display:inline-block"></span>
               <span style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:${selColors[i%4]};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o}</span>
-              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--c-icon-idle);display:flex;align-items:center;margin-left:auto;flex-shrink:0" onmouseover="this.style.color='var(--purple)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="modal._editKey='opt-${i}-${oi}';renderModal();setTimeout(()=>{const el=document.getElementById('mopt-${i}-${oi}');if(el){el.focus();el.select();}},30)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
-              <button style="background:none;border:none;color:var(--c-icon-idle);cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="removeOption(${i},${oi})">×</button>
+              <button class="mi-edit" style="margin-left:auto" onclick="modal._editKey='opt-${i}-${oi}';renderModal();setTimeout(()=>{const el=document.getElementById('mopt-${i}-${oi}');if(el){el.focus();el.select();}},30)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button class="mi-del" onclick="removeOption(${i},${oi})">×</button>
             </div>`;
           }
         }).join('')}
-            <div style="display:flex;gap:6px;margin-top:4px">
+            ${modal._sortUnit===i?'':`<div style="display:flex;gap:6px;margin-top:4px">
               <input type="text" id="modal-new-opt-${i}" placeholder="${t('form_add_sub')}" autocomplete="off" style="flex:1;font-size:11px;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:3px 8px;background:var(--lavender);color:var(--dark);outline:none;box-shadow:inset 2px 2px 5px var(--sh-dark),inset -2px -2px 5px var(--sh-light)" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionInModal(${i})}">
               <button style="width:28px;height:28px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 8px var(--sh-btn-dark),-3px -3px 8px var(--sh-light);flex-shrink:0" onclick="addOptionInModal(${i})">+</button>
-            </div>
+            </div>`}
           </div>`;
       } else {
         const units=f.units||[];
         subHtml=`<div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
             ${units.map((u,ui)=>{
           const isEditingU=(modal._editKey===`unit-${i}-${ui}`);
+          if(modal._confirmUnit&&modal._confirmUnit.fi===i&&modal._confirmUnit.ui===ui){
+            const n=modal._confirmUnit.count;
+            if(!n)return confirmRowHtml(t('del_unused_q').replace('{name}',`<span style="color:var(--purple);font-weight:700">${u}</span>`),'',`confirmDelUnit()`,`cancelDelUnit()`);
+            return confirmRowHtml(t('del_unit_used').replace('{name}',`<span style="color:var(--purple);font-weight:700">${u}</span>`).replace('{n}',`<span style="color:var(--c-past-hint);font-weight:800">${n}</span>`),t('del_unit_warn'),`confirmDelUnit()`,`cancelDelUnit()`);
+          }
           // 排序模式：✎ × 换成 ▲▼（第242次）
           if(modal._sortUnit===i){
             return`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px var(--sh-dark),-3px -3px 7px var(--sh-light)">
@@ -3831,15 +3908,15 @@ function renderModal(){
                 onblur="const v=this.value.trim();if(v)renameUnit(${i},${ui},v);modal._editKey=null;renderModal()">
               <span style="font-size:9px;font-weight:600;color:var(--c-unit-hint);flex-shrink:0;text-transform:lowercase">${t('modal_unit')}</span>
               <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--c-icon-edit);display:flex;align-items:center;flex-shrink:0" onclick="const v=document.getElementById('munit-${i}-${ui}').value.trim();if(v)renameUnit(${i},${ui},v);modal._editKey=null;renderModal()"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
-              <button style="background:none;border:none;color:var(--c-icon-idle);cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="removeUnit(${i},${ui})">×</button>
+              <button class="mi-del" onclick="removeUnit(${i},${ui})">×</button>
             </div>`;
           } else {
             return`<div style="display:flex;align-items:center;gap:6px;background:var(--lavender);border-radius:8px;padding:4px 10px;box-shadow:3px 3px 7px var(--sh-dark),-3px -3px 7px var(--sh-light)">
               <span style="width:6px;height:6px;border-radius:50%;background:var(--mid);flex-shrink:0;opacity:.4;display:inline-block"></span>
               <span style="flex:1;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--mid);min-width:0">${u}</span>
               <span style="font-size:9px;font-weight:600;color:var(--c-unit-hint);flex-shrink:0;text-transform:lowercase">${t('modal_unit')}</span>
-              <button style="background:none;border:none;cursor:pointer;padding:0 2px;color:var(--c-icon-idle);display:flex;align-items:center;flex-shrink:0" onmouseover="this.style.color='var(--purple)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="modal._editKey='unit-${i}-${ui}';renderModal();setTimeout(()=>{const el=document.getElementById('munit-${i}-${ui}');if(el){el.focus();el.select();}},30)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
-              <button style="background:none;border:none;color:var(--c-icon-idle);cursor:pointer;font-size:11px;padding:0 2px" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="removeUnit(${i},${ui})">×</button>
+              <button class="mi-edit" onclick="modal._editKey='unit-${i}-${ui}';renderModal();setTimeout(()=>{const el=document.getElementById('munit-${i}-${ui}');if(el){el.focus();el.select();}},30)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M13.5 2.5L17.5 6.5L7 17H3V13L13.5 2.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 4.5L15.5 8.5" stroke="currentColor" stroke-width="1.6"/></svg></button>
+              <button class="mi-del" onclick="removeUnit(${i},${ui})">×</button>
             </div>`;
           }
         }).join('')}
@@ -3849,13 +3926,14 @@ function renderModal(){
             </div>`}
           </div>`;
       }
-      return`<div style="background:var(--lavender);border-radius:12px;padding:10px 12px;box-shadow:6px 6px 12px var(--sh-dark),-6px -6px 12px var(--sh-light)">
-        <div style="display:flex;align-items:center;gap:8px;width:100%">
+      return`<div class="mf-card" style="background:var(--lavender);border-radius:12px;padding:10px 12px;box-shadow:6px 6px 12px var(--sh-dark),-6px -6px 12px var(--sh-light)">
+        <div class="mf-head" style="display:flex;align-items:center;gap:8px;width:100%">
           <span style="font-size:10px;font-weight:800;font-family:'Nunito',sans-serif;padding:3px 10px;border-radius:999px;background:${badgeBg};color:${badgeColor};flex-shrink:0;box-shadow:3px 3px 8px var(--sh-cloth),-3px -3px 8px var(--sh-light),inset 0 2px 6px var(--cloth-wash-sm),inset 0 -1px 2px var(--cloth-sheen-sm)">${isSel?t('modal_sel'):t('modal_num')}</span>
           <input type="text" autocomplete="off" value="${f.label}" placeholder="${t('modal_field_name')}" style="flex:1;font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;border:none;border-radius:6px;padding:4px 8px;background:var(--lavender);color:var(--dark);outline:none;min-width:0;box-shadow:inset 2px 2px 5px var(--sh-dark),inset -2px -2px 5px var(--sh-light)" onchange="renameField(${i},this.value)">
-          ${!isSel&&(f.units||[]).length>1?`<button class="unit-sort-btn${modal._sortUnit===i?' on':''}" onclick="toggleUnitSort(${i})">${modal._sortUnit===i?t('unit_sort_done'):t('unit_sort')}</button>`:''}
-          <button style="background:none;border:none;color:var(--c-icon-idle);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1" onmouseover="this.style.color='var(--pink)'" onmouseout="this.style.color='var(--sh-dark)'" onclick="removeField(${i})">\u2715</button>
+          ${(isSel?(f.options||[]).length:(f.units||[]).length)>1?`<div class="pill-sw"><button class="${modal._sortUnit===i?'':'on'}" onclick="setSortMode(${i},false)">${t('mode_edit')}</button><span class="sep"></span><button class="${modal._sortUnit===i?'on':''}" onclick="setSortMode(${i},true)">${t('mode_sort')}</button></div>`:''}
+          <button class="mi-del mi-del-field" onclick="removeField(${i})">\u2715</button>
         </div>
+        ${modal._confirmField&&modal._confirmField.fi===i?`<div style="margin-top:8px">${fieldDelConfirmHtml(f,modal._confirmField.count)}</div>`:''}
         ${subHtml}
       </div>`;
     }).join('')}</div>
@@ -3899,25 +3977,36 @@ function removeOption(fi,oi){
   const optVal=modal.fields[fi].options[oi];
   const fid=modal.fields[fi].id;
   // 用量统计走顶层那一份 countOptUsage()，跟表单里的删除共用同一个算法
-  const usageCount=countOptUsage(fid,optVal);
-  if(usageCount>0){
-    modal._confirmDel={fi,oi,count:usageCount};renderModal();return;
-  }
-  if(!modal||!modal.fields[fi])return;
-  modal.fields[fi].options.splice(oi,1);renderModal();
+  /* 第248次：一律先出确认行（原本没记录用到就直接删）。删完再给撤销 */
+  modal._confirmField=null;modal._confirmUnit=null;
+  modal._confirmDel={fi,oi,count:countOptUsage(fid,optVal)};renderModal();
 }
 function confirmDelOption(){
   if(!modal||!modal._confirmDel)return;
-  const {fi,oi}=modal._confirmDel;
+  const {fi,oi,count}=modal._confirmDel;
   const pid=modal.pid;
   modal._confirmDel=null;
-  if(modal.fields[fi]){
-    modal.fields[fi].options.splice(oi,1);
-    // persist to project immediately
+  /* 没记录用到的：只删弹窗里的草稿（按取消就回来），撤销只在弹窗开着时有效 */
+  if(!count){
+    const f=modal.fields[fi];if(!f){renderModal();return;}
+    const optVal=f.options[oi];f.options.splice(oi,1);renderModal();
+    modalUndoToast(optVal,()=>{if(f.options.indexOf(optVal)<0)f.options.splice(Math.min(oi,f.options.length),0,optVal);});
+    return;
+  }
+  const mf=modal.fields[fi];
+  if(mf){
+    const val=mf.options[oi];
+    mf.options.splice(oi,1);
+    /* 立刻写进项目 —— 但只写「删掉这一颗」。原本是把整份 modal.fields 抄进去，
+       连还没按保存的其他改动（调好的顺序、改过名的单位）一起生效；之后按「取消」，
+       单位名已经换了、记录却没跟着改（改记录在 saveProject 里）→ 旧记录跟单位断线。 */
+    let pf=null,pIdx=-1;
     if(pid){
       const p=projects.find(x=>x.id===pid);
-      if(p){
-        p.fields=modal.fields.map(f=>({...f,options:[...f.options],units:[...f.units]}));
+      pf=p&&(p.fields||[]).find(x=>x.id===mf.id);
+      if(pf){
+        pIdx=(pf.options||[]).indexOf(val);
+        pf.options=(pf.options||[]).filter(o=>o!==val);
         /* ⚠️ 这里立刻就写进 projects 了，所以记号也必须立刻打。
            原来只靠用户之后点「保存」走 saveProject 才补上 —— 删完选项
            直接点背景关掉弹窗的话，改动进了本机却永远同步不出去。 */
@@ -3925,6 +4014,19 @@ function confirmDelOption(){
       }
       saveData();
     }
+    renderModal();
+    /* 撤销：这一颗已经写进项目了，所以弹窗关掉之后撤销也照样有效（不用 modalUndoToast）。
+       弹窗还开着的话，弹窗里的草稿也一起放回去 */
+    showUndoToast(delToastMsg(val),()=>{
+      if(pf&&pf.options.indexOf(val)<0){
+        pf.options.splice(pIdx<0?pf.options.length:Math.min(pIdx,pf.options.length),0,val);
+        const p=projects.find(x=>x.id===pid);if(p)p.updatedAt=Date.now();
+        saveData();
+      }
+      if(modal&&modal.pid===pid&&mf.options.indexOf(val)<0){mf.options.splice(Math.min(oi,mf.options.length),0,val);renderModal();}
+      else renderAll();
+    });
+    return;
   }
   renderModal();
 }
@@ -3932,7 +4034,14 @@ function cancelDelOption(){
   if(modal)modal._confirmDel=null;
   renderModal();
 }
-function renameOption(fi,oi,val){if(modal&&modal.fields[fi]&&val.trim())modal.fields[fi].options[oi]=val.trim()}
+/* 改选项名字。空白不收（原本 onchange 直接写，清空会留下一个空选项）；
+   改成同字段里已有的名字也不收 —— 两颗同名选项在表单里会一起亮、一起删。 */
+function renameOption(fi,oi,val){
+  const f=modal&&modal.fields[fi];const v=String(val||'').trim();
+  if(!f||!f.options||!v)return;
+  if(f.options.some((o,j)=>j!==oi&&o===v))return;
+  f.options[oi]=v;
+}
 function addOptionInModal(fi){
   const inp=document.getElementById('modal-new-opt-'+fi);
   if(!inp)return;
@@ -3942,7 +4051,62 @@ function addOptionInModal(fi){
     renderModal();
   }
 }
-function removeField(i){modal.fields.splice(i,1);modal._sortUnit=null;renderModal()}
+/* 删除确认行（第248次抽出来共用）：原地变淡红底，说明 + 「删除 / 取消」。
+   选项、字段、单位三处共用同一份，外观只有这里一个来源（设计文档：子选项删除保护「确认行」） */
+/* 第248次：按钮从文字右边移到下面靠右（用户选 B）。原本文字只剩一半宽，英文被压成细长一条 */
+function confirmRowHtml(line1,line2,onDel,onKeep){
+  return`<div style="background:rgba(229,57,53,0.05);border-radius:8px;padding:6px 10px">
+    <div style="font-size:11px;color:var(--mid);margin-bottom:2px;line-height:1.4">${line1}</div>
+    ${line2?`<div style="font-size:11px;font-weight:800;color:var(--c-past-hint)">${line2}</div>`:''}
+    <div style="display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:6px">
+      <button class="oc-del" onclick="${onDel}">${t('modal_delete')}</button>
+      <button class="oc-keep" onclick="${onKeep}">${t('modal_cancel')}</button>
+    </div>
+  </div>`;
+}
+/* 一个字段有几条记录填过（空白不算）。新增中的项目（还没存）一定是 0 */
+function countFieldUsage(pid,fid){
+  if(!pid)return 0;let n=0;
+  Object.values(entries).forEach(arr=>arr.forEach(e=>{
+    if(e.projId!==pid||!e.fields)return;const v=e.fields[fid];if(v==null)return;
+    const has=Array.isArray(v)?v.some(x=>x&&typeof x==='object'?String(x.val==null?'':x.val).trim()!=='':String(x).trim()!==''):String(v).trim()!=='';
+    if(has)n++;
+  }));
+  return n;
+}
+/* 一个单位有几条记录用着。记录里靠名字对应；这次弹窗里改过名的，记录还是旧名，要一起算。
+   只有一个值的旧格式（字符串）算在第一个单位头上 */
+function countUnitUsage(pid,f,unit){
+  if(!pid||!f)return 0;
+  const ren=(modal&&modal._unitRen&&modal._unitRen[f.id])||{};
+  const names=[unit].concat(Object.keys(ren).filter(k=>ren[k]===unit));
+  const first=(f.units||[])[0]===unit;let n=0;
+  Object.values(entries).forEach(arr=>arr.forEach(e=>{
+    if(e.projId!==pid||!e.fields)return;const v=e.fields[f.id];if(v==null)return;
+    if(Array.isArray(v)?v.some(o=>o&&names.indexOf(o.unit)>=0&&String(o.val==null?'':o.val).trim()!==''):(first&&String(v).trim()!==''))n++;
+  }));
+  return n;
+}
+function fieldDelConfirmHtml(f,n){
+  const nm=`<span style="color:var(--purple);font-weight:700">${f.label||t('modal_field_name')}</span>`;
+  const line1=t('del_field_q').replace('{name}',nm)+' '+(n?t('del_field_used').replace('{n}',`<span style="color:var(--c-past-hint);font-weight:800">${n}</span>`):t('del_field_unused'));
+  return confirmRowHtml(line1,t('del_field_warn'),'confirmDelField()','cancelDelField()');
+}
+/* 删除整个字段（第248次加确认）：原本一点 ✕ 就删，点背景关弹窗又会自动保存 ——
+   手滑一下，这一栏连同所有记录上填的值就从画面上消失了。现在一律先问，不管有没有记录用到 */
+function removeField(i){
+  if(!modal||!modal.fields[i])return;
+  modal._confirmDel=null;modal._confirmUnit=null;
+  modal._confirmField={fi:i,count:countFieldUsage(modal.pid,modal.fields[i].id)};
+  renderModal();
+}
+function confirmDelField(){
+  const c=modal&&modal._confirmField;if(!c)return;
+  modal._confirmField=null;modal._confirmDel=null;modal._confirmUnit=null;modal._editKey=null;modal._sortUnit=null;
+  const gone=modal.fields.splice(c.fi,1)[0];renderModal();
+  if(gone)modalUndoToast(gone.label||t('modal_field_name'),()=>{if(modal.fields.indexOf(gone)<0)modal.fields.splice(Math.min(c.fi,modal.fields.length),0,gone);});
+}
+function cancelDelField(){if(modal)modal._confirmField=null;renderModal()}
 function addUnitInModal(fi){
   const inp=document.getElementById('modal-new-unit-'+fi);
   if(!inp)return;
@@ -3955,7 +4119,24 @@ function addUnitInModal(fi){
     }
   }
 }
-function removeUnit(fi,ui){if(modal&&modal.fields[fi]&&modal.fields[fi].units)modal.fields[fi].units.splice(ui,1);renderModal()}
+/* 删除单位（第248次加确认）：有记录用着才问。删了之后记录里的值还在，但图表 / 周报告不再统计，
+   而且编辑那条记录一存档就会被清掉（编辑表单只照 f.units 收值）—— 所以要讲清楚 */
+function removeUnit(fi,ui){
+  const f=modal&&modal.fields[fi];if(!f||!f.units)return;
+  /* 第248次：一律先出确认行（原本没记录用到就直接删）。删完再给撤销 */
+  modal._confirmDel=null;modal._confirmField=null;
+  modal._confirmUnit={fi,ui,count:countUnitUsage(modal.pid,f,f.units[ui])};renderModal();
+}
+function confirmDelUnit(){
+  const c=modal&&modal._confirmUnit;if(!c)return;modal._confirmUnit=null;
+  const f=modal.fields[c.fi];if(f&&f.units)unitDelUndoable(f,c.ui);else renderModal();
+}
+/* 删一个单位 + 弹窗开着时可撤销（第248次） */
+function unitDelUndoable(f,ui){
+  const u=f.units.splice(ui,1)[0];renderModal();
+  modalUndoToast(u,()=>{if(f.units.indexOf(u)<0)f.units.splice(Math.min(ui,f.units.length),0,u);});
+}
+function cancelDelUnit(){if(modal)modal._confirmUnit=null;renderModal()}
 /* 改单位名字。记录里存的是 {unit:'名字',val}，只改设置不改记录的话，旧记录就跟单位断线
    （编辑时那格变空、图表对不上）。所以这里只记下「原名 → 新名」，按保存时 saveProject 再一次性改记录，
    按取消就什么都不动。连改两次（A→B→C）记成 A→C；改成同字段里已有的名字会撞车，不收。 */
@@ -3997,11 +4178,21 @@ function wrAggCtl(pid,r){
   return '<button class="ag-link wr-ag" title="'+t('agg_title')+'" onclick="wrTogAgg('+arg(k)+')">'+t('agg_'+a)+'</button>'
     +(a==='avg'?'<span class="wr-agg">· '+t('wr_avg_n').replace('{n}',r.n)+'</span>':'');
 }
-function toggleUnitSort(fi){if(!modal)return;modal._sortUnit=modal._sortUnit===fi?null:fi;modal._editKey=null;renderModal()}
+/* 排序模式数字单位、文字选项共用（第248次起文字也能排）。进出都清掉编辑中 / 待确认删除 ——
+   _confirmDel 记的是位置 {fi,oi}，排序挪过之后那个位置就是另一颗选项了，按「删除」会删错。 */
+function toggleUnitSort(fi){if(!modal)return;modal._sortUnit=modal._sortUnit===fi?null:fi;modal._editKey=null;modal._confirmDel=null;modal._confirmUnit=null;renderModal()}
+/* 药丸开关：点已经压下去的那半边什么都不做，点另一半才切换 */
+function setSortMode(fi,on){if(!modal||(modal._sortUnit===fi)===on)return;toggleUnitSort(fi)}
+/* 文字选项调顺序：只动 f.options。记录里存的是选项的名字，不是位置，所以一条记录都不用改 */
+function shiftOption(fi,oi,d){
+  const o=modal&&modal.fields[fi]&&modal.fields[fi].options;const j=oi+d;
+  if(!o||j<0||j>=o.length)return;
+  [o[oi],o[j]]=[o[j],o[oi]];modal._confirmDel=null;renderModal();
+}
 function moveUnit(fi,ui,d){
   const u=modal&&modal.fields[fi]&&modal.fields[fi].units;const j=ui+d;
   if(!u||j<0||j>=u.length)return;
-  [u[ui],u[j]]=[u[j],u[ui]];renderModal();
+  [u[ui],u[j]]=[u[j],u[ui]];modal._confirmUnit=null;renderModal();
 }
 function _bgClose(){
   if(!modal)return;
@@ -4133,11 +4324,20 @@ function confirmPermDelete(id,name){
 
 function _permDeleteProject(id){
   const p=projects.find(x=>x.id===id);if(!p)return;
-  const entryCount=Object.values(entries).reduce((s,arr)=>s+arr.filter(e=>e.projId===id).length,0);
-  Object.values(entries).forEach(arr=>{if(Array.isArray(arr))arr.forEach(e=>{if(e.projId===id)tombEntry(e.id);});});
+  const idx=projects.indexOf(p);
+  /* 第248次：原本这里没记下 _deletedProj，提示条上的「撤销」按了没反应；
+     5 秒内刚删过别的项目的话，撤销回来的还是上一个。现在跟 _doDeleteProject 一样先存一份 */
+  const affectedEntries={};
+  Object.entries(entries).forEach(([dk2,arr])=>{
+    const hits=(arr||[]).filter(e=>e.projId===id);
+    if(hits.length)affectedEntries[dk2]=hits.map(e=>({...e}));
+  });
+  const entryCount=Object.values(affectedEntries).flat().length;
+  Object.values(affectedEntries).forEach(arr=>arr.forEach(e=>tombEntry(e.id)));
   Object.keys(entries).forEach(dk2=>{entries[dk2]=entries[dk2].filter(e=>e.projId!==id);});
   projects=projects.filter(x=>x.id!==id);
   tombProj(id);
+  _deletedProj={p,idx,action:'delete',affectedEntries};
   _closeDelConfirm();
   saveData();renderAll();
   showUndoToast(t('perm_deleted')+'"'+p.name+'」'+(entryCount?' '+t('records_suffix')+' '+entryCount+' '+t('records_suffix'):''));
@@ -4146,6 +4346,7 @@ function _permDeleteProject(id){
 /* onUndo 不给 = 撤销删除项目（原来的用法）；给了就按「撤销」时跑它（第244次：周报告隐藏数字） */
 function showUndoToast(msg,onUndo){
   clearTimeout(_delTimer);
+  window._undoIsModal=false;
   if(onUndo)_deletedProj=null;   // 别让 Ctrl+Z 去撤销一个已经看不到提示的删除
   window._undoFn=onUndo||null;
   let _toast=document.getElementById('undo-toast');
@@ -4153,6 +4354,16 @@ function showUndoToast(msg,onUndo){
   _toast.innerHTML=msg+' <button class="undo-btn" onclick="'+(onUndo?'runUndoFn()':'undoDelete()')+'">'+t('undo')+'</button>';
   _toast.style.display='flex';
   _delTimer=setTimeout(()=>{_toast.style.display='none';_deletedProj=null;window._undoFn=null;},5000);
+}
+/* 项目设置弹窗里的删除（第248次）：删的是弹窗里还没存的草稿，所以撤销只在弹窗开着时有效。
+   弹窗一关（保存或取消）就把提示条收掉 —— 不然按「撤销」什么都不会发生 */
+function modalUndoToast(name,fn){
+  showUndoToast(delToastMsg(name),()=>{if(modal){fn();renderModal();}});
+  window._undoIsModal=true;
+}
+function hideUndoToast(){
+  clearTimeout(_delTimer);window._undoFn=null;window._undoIsModal=false;
+  const tt=document.getElementById('undo-toast');if(tt)tt.style.display='none';
 }
 function runUndoFn(){
   clearTimeout(_delTimer);const f=window._undoFn;window._undoFn=null;
@@ -5153,7 +5364,7 @@ function bkRun(decision){
    加这个是因为：改了十几版之后，Service Worker 可能给浏览器送旧代码，
    而你我都看不出当前跑的是哪一份 —— 结果是拿旧代码测新修复，白折腾好几轮。
    ⚠️ 每次改 journal.html，这里和 sw.js 的 VERSION 一起加 1。 */
-const APP_BUILD=38;
+const APP_BUILD=49;
 console.info('%c[catVweb] 代码版本 '+APP_BUILD,'color:#266ea7;font-weight:700');
 
 const SB_URL='https://buxqkndyfjhajdjwbcrp.supabase.co';

@@ -387,6 +387,11 @@ f.unit = ''                 // 旧版单一字符串，保留向后兼容，不�
 
 **单位改名（第242次）：** 记录里存的是 `{unit:'名字',val}`，**靠名字对应**。改名必须走 `renameUnit()`：它在 `modal._unitRen` 记下「原名 → 新名」，`saveProject()` 时一次性改掉这个项目的旧记录并更新 `updatedAt`。直接写 `modal.fields[i].units[ui]=v` 会让旧记录跟单位断线（编辑时那格变空、图表对不上）。
 **调顺序**（`moveUnit`）只动 `f.units`，不用改记录。
+**文字选项调顺序**（第248次，`shiftOption`）同理只动 `f.options`，共用 `modal._sortUnit` 排序模式；记录卡片的胶囊照 `f.options` 顺序显示（不在选项里的排最后）。
+⚠️ `modal._confirmDel` 记的是位置 `{fi,oi}`，进出排序模式 / 挪动时必须清掉，否则按「删除」会删到另一颗。
+`confirmDelOption` 只把「删掉那一颗」立刻写进项目，**不要**再整份抄 `modal.fields`（会让未保存的单位改名提前生效、记录跟单位断线）。
+
+**项目设置里的 ✎ / × 用 `.mi-edit` / `.mi-del` class**（第248次）。别再写 inline `onmouseout` 设颜色 —— 原本设成 `--sh-dark`（阴影色），夜间模式是近黑，划过一次就变黑。
 
 **Chart Builder 专属规则：**
 多单位字段在 `initChartBuilder` 的 `vars` 构建时，拆分成多个独立变量，`key = f.id+'::'+unit`，`label = f.label+' ('+unit+')'`，让颜色分配/图例/统计天然走现有单变量逻辑，不需要改下游渲染代码。

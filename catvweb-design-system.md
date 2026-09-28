@@ -1024,6 +1024,7 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 | 「改选项态」 | 点铅笔进入，胶囊晃动 + 冒删除角标 |
 | 「删除角标」 | `.chip-badge`，17px 圆，1.5px 阴影 |
 | 「删除键红」 | `--c-del-btn` `#9A5C5C`，只给确认删除那颗按钮 |
+| 「药丸开关」 | `.pill-sw`，雾面胶囊切两半「编辑 \| 排序」，现在的模式那半边压下去（第248次，见第十三节） |
 
 ---
 
@@ -1038,7 +1039,18 @@ View panel 用 `.tr-view-panel` class；胶囊复用 `.cb-type-btn`（灰蓝选�
 
 **顺序**：一律照项目设置里 `f.units` 的顺序（`sortUnitVals`），不是记录存的时候的先后。
 
-**单位排序模式（第242次）**：数字字段有 ≥2 个单位时，标题行出现 `↕ 排序`（`.unit-sort-btn`，标准三态，排序中保持按下 `.on`）。
+**排序模式（第242次；第248次起文字选项也能排）**：数字单位 / 文字选项有 ≥2 个时，标题行出现「药丸开关」`.pill-sw`。
+（取代原本的 `↕ 排序 / 完成` 那颗 `.unit-sort-btn` —— 排序中它凹着、字换成「完成」，看起来像状态不像还能按。）
+
+**药丸开关 `.pill-sw`（第248次，用户命名）**：一颗胶囊切两半「编辑 | 排序」，现在的模式那半边压下去；点已压下的那半边不动作（`setSortMode`）。
+- 雾面渐层：`linear-gradient(to top, var(--line-dark) 0%, var(--lavender) 45%, var(--sh-light-soft) 100%)` —— 不冲到纯白，用户的界面是雾面
+- 描边 `1px solid var(--sh-btn-dark)`：夜间 `#1D1F26` 比底色暗。**不能用 `--mid`**，夜间会变一圈白框
+- 字 10px / 800，默认 `--c-muted`，选中 / hover `--purple`；字影 白天 `0 1px var(--sh-light-soft)`、夜间 `0 -1px var(--sh-dark)`
+- 中间分隔：竖向雕刻线（12px 高）
+- **按压阴影画在 `::before` 影子层**：两头圆的胶囊，外侧贴外框圆弧，内侧伸出分隔线 14px 被裁掉 → 暗影沿外框形状走。直接画在按钮长方形上会在中间留一块方形亮面（用户放大看过，不自然）
+- 按下 `inset 0 0 2.5px 1.5px var(--sh-btn-hover), inset 0 0 10px var(--sh-dark)`；hover `inset 0 0 1.5px 1.5px var(--sh-dark)`。
+  来源：用户贴的 150×50 立体按钮，照比例缩到约 20px 高（×0.5）再定案。原版 `inset 0 0 30px` 用在小按钮上会扩散到正中间、整颗压成深灰
+- ⚠️ hover 一律包 `@media (hover:hover)`：手机点完 hover 会黏着不放，按钮看起来弹不回来
 进入后每行 ✎ × 换成 ▲▼（`.unit-mv`），新增单位输入框隐藏；首行 ▲、末行 ▼ `disabled`（opacity .25）。
 
 ▲▼ 图标（12×8，线宽 2，圆头，`currentColor`；默认 `--c-icon-idle`，hover `--purple` + `--icon-shadow-hover`，按下 `--icon-shadow-active`）：
